@@ -12,13 +12,14 @@ enum ConfigType: String, Codable {
     case text
     case password
     case number
+    case slider
     case boolean
     case select
 
     func parseValue(_ stringValue: String) -> Any {
         let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         switch self { case .boolean: return trimmed.lowercased() == "true" || trimmed == "1"
-            case .number:
+            case .number, .slider:
                 if let intValue = Int(trimmed) { return intValue }
                 return Double(trimmed) ?? trimmed
             case .text, .password, .select: return trimmed
@@ -32,6 +33,9 @@ enum ConfigType: String, Codable {
     var description: String?
     var type: ConfigType
     var options: [String]?
+    var min: Double?
+    var max: Double?
+    var step: Double?
 
     @CodingKey("defaultValue") private var codedDefaultValue: AnyCodable?
 
@@ -42,13 +46,16 @@ enum ConfigType: String, Codable {
 
     init(
         key: String, name: String, description: String? = nil, type: ConfigType, defaultValue: Any,
-        options: [String]? = nil
+        options: [String]? = nil, min: Double? = nil, max: Double? = nil, step: Double? = nil
     ) {
         self.key = key
         self.name = name
         self.description = description
         self.type = type
         self.options = options
+        self.min = min
+        self.max = max
+        self.step = step
         codedDefaultValue = AnyCodable(defaultValue)
     }
 }

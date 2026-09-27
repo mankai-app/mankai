@@ -449,13 +449,16 @@ interface Config {
   key: string;
   name: string;
   description?: string;
-  type: "text" | "password" | "number" | "boolean" | "select";
+  type: "text" | "password" | "number" | "slider" | "boolean" | "select";
   defaultValue: unknown;
   options?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
 }
 ```
 
-`options` is used for `select` configs. The app initializes each config with `defaultValue`, persists changes made in plugin settings, and exposes the current values through `getConfigs()`.
+`options` is used for `select` configs. `min`, `max`, and `step` configure the range and increment for `slider` configs. The app initializes each config with `defaultValue`, persists changes made in plugin settings, and exposes the current values through `getConfigs()`.
 
 Example:
 
@@ -471,6 +474,15 @@ Example:
       "options": ["en", "zh-Hans", "zh-Hant"]
     },
     {
+      "key": "imageQuality",
+      "name": "Image quality",
+      "type": "slider",
+      "defaultValue": 80,
+      "min": 10,
+      "max": 100,
+      "step": 5
+    },
+    {
       "key": "includeMature",
       "name": "Include mature content",
       "type": "boolean",
@@ -480,7 +492,7 @@ Example:
 }
 ```
 
-When a plugin is imported from a URL, matching query parameters override the declared defaults. Values are parsed according to `type`: booleans recognize `true` and `1`, numbers parse as integers or decimals, and text/password/select values remain strings after surrounding whitespace is trimmed.
+When a plugin is imported from a URL, matching query parameters override the declared defaults. Values are parsed according to `type`: booleans recognize `true` and `1`, numbers and sliders parse as integers or decimals, and text/password/select values remain strings after surrounding whitespace is trimmed.
 
 ## Cooldowns
 

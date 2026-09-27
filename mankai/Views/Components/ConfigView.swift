@@ -18,6 +18,7 @@ struct ConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
                 case .password:
                     TextConfigView(configurable: configurable, config: config, isPassword: true)
                 case .number: NumberConfigView(configurable: configurable, config: config)
+                case .slider: SliderConfigView(configurable: configurable, config: config)
                 case .boolean: BooleanConfigView(configurable: configurable, config: config)
                 case .select: SelectConfigView(configurable: configurable, config: config)
             }
@@ -81,6 +82,77 @@ private struct TextConfigView: View {
         let newValue =
             configurable.getConfig(config.key) as? String ?? config.defaultValue as? String ?? ""
         if textValue != newValue { textValue = newValue }
+    }
+}
+
+private struct SliderConfigView: View {
+    let configurable: any Configurable
+    let config: Config
+
+    @State private var sliderValue: Double = 0
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
+
+    private var range: ClosedRange<Double> {
+        let lowerBound = config.min ?? 0
+        let upperBound = config.max ?? 1
+        if lowerBound < upperBound { return lowerBound...upperBound }
+        if upperBound < lowerBound { return upperBound...lowerBound }
+        return lowerBound...(lowerBound + 1)
+    }
+
+    private var step: Double {
+        guard let step = config.step, step > 0 else { return 1 }
+        return step
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading) {
+                    Text(LocalizedStringKey(config.name))
+
+                    if let description = config.description {
+                        Text(description).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+                Text(sliderValue, format: .number).foregroundStyle(.secondary)
+            }
+
+            Slider(value: $sliderValue, in: range, step: step).onAppear { updateSliderValue() }
+                .onReceive(configurable.objectWillChange) { updateSliderValue() }
+                .onChange(of: sliderValue, initial: false) { _, newValue in
+                    do { try configurable.setConfig(key: config.key, value: newValue) } catch {
+                        errorMessage = error.localizedDescription
+                        showErrorAlert = true
+                    }
+                }
+        }
+        .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
+            Button("ok") {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+
+    private func updateSliderValue() {
+        var newValue: Double
+        if let value = configurable.getConfig(config.key) as? Double {
+            newValue = value
+        } else if let value = configurable.getConfig(config.key) as? Int {
+            newValue = Double(value)
+        } else if let value = config.defaultValue as? Double {
+            newValue = value
+        } else if let value = config.defaultValue as? Int {
+            newValue = Double(value)
+        } else {
+            newValue = range.lowerBound
+        }
+
+        newValue = min(max(newValue, range.lowerBound), range.upperBound)
+        if sliderValue != newValue { sliderValue = newValue }
     }
 }
 

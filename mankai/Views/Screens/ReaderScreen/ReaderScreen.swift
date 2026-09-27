@@ -581,25 +581,23 @@ struct ReaderScreen: View {
 
                 loadOverlay
 
-                if loadPhase == .ready {
-                    if #available(iOS 26.0, *) {
-                        GlassEffectContainer {
-                            if isChromeVisible {
-                                readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
-                                    .frame(maxHeight: .infinity, alignment: .bottom)
-                            }
+                if #available(iOS 26.0, *) {
+                    GlassEffectContainer {
+                        if isChromeVisible {
+                            readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                                .frame(maxHeight: .infinity, alignment: .bottom)
                         }
-                        .animation(.default, value: isChromeVisible)
-                    } else {
-                        ZStack(alignment: .bottom) {
-                            if isChromeVisible {
-                                readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
                     }
+                    .animation(.default, value: isChromeVisible)
+                } else {
+                    ZStack(alignment: .bottom) {
+                        if isChromeVisible {
+                            readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
                 }
             }
             .ignoresSafeArea(edges: .bottom).onAppear { updateViewportSize(proxy.size) }
@@ -773,7 +771,8 @@ struct ReaderScreen: View {
                 enabled: nextChapterAvailability == .available
             ) { stepChapter(.next) }
         }
-        .padding(.horizontal, 16).padding(.bottom, max(8, bottomSafeAreaInset))
+        .disabled(loadPhase != .ready).padding(.horizontal, 16)
+        .padding(.bottom, max(8, bottomSafeAreaInset))
     }
 
     private var readerSlider: some View {
