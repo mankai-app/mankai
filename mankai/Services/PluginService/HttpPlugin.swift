@@ -24,7 +24,7 @@ import ReerCodable
     @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
 }
 
-class HttpPlugin: Plugin {
+class HttpPlugin: Plugin, Configurable {
     private var _id: String
     private var _name: String?
     private var _version: String?
@@ -53,12 +53,22 @@ class HttpPlugin: Plugin {
 
     override var capabilities: [PluginCapability] { _capabilities }
 
-    override var configs: [Config] {
+    var configs: [Config] {
         [
             Config(key: "username", name: "username", type: .text, defaultValue: ""),
             Config(key: "password", name: "password", type: .password, defaultValue: "")
         ]
     }
+
+    lazy var _configValues: [String: ConfigValue] = {
+        var configValues: [String: ConfigValue] = [:]
+        for config in configs {
+            configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
+        }
+        return configValues
+    }()
+
+    var configValues: [ConfigValue] { Array(_configValues.values) }
 
     private var _authenticationEnabled: Bool
     var authenticationEnabled: Bool { _authenticationEnabled }
@@ -99,6 +109,23 @@ class HttpPlugin: Plugin {
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
         for configValue in configValues { _configValues[configValue.key] = configValue }
+    }
+
+    func getConfig(_ key: String) -> Any { _configValues[key]!.value }
+
+    func setConfig(key: String, value: Any) throws {
+        _configValues[key] = ConfigValue(key: key, value: value)
+        objectWillChange.send()
+        try savePlugin()
+    }
+
+    func resetConfigs() throws {
+        _configValues = [:]
+        for config in configs {
+            _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
+        }
+        objectWillChange.send()
+        try savePlugin()
     }
 
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {

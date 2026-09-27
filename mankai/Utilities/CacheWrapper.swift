@@ -30,6 +30,13 @@ class CacheWrapper: Plugin {
 
     private let plugin: Plugin
 
+    private var configurablePlugin: any Configurable {
+        guard let configurablePlugin = plugin as? any Configurable else {
+            preconditionFailure("Configurable wrapper requires a configurable plugin")
+        }
+        return configurablePlugin
+    }
+
     // MARK: - Cache Properties
 
     private let cache = NSCache<NSString, AnyObject>()
@@ -39,9 +46,15 @@ class CacheWrapper: Plugin {
     // MARK: - Init
 
     static func wrapping(_ plugin: Plugin) -> Plugin {
+        if let configurableEditablePlugin = plugin as? any Configurable & Editable {
+            return ConfigurableEditableCacheWrapper(plugin: configurableEditablePlugin)
+        }
+
         if let editablePlugin = plugin as? any Editable {
             return EditableCacheWrapper(plugin: editablePlugin)
         }
+
+        if plugin is any Configurable { return ConfigurableCacheWrapper(plugin: plugin) }
 
         return CacheWrapper(plugin: plugin)
     }
@@ -82,7 +95,7 @@ class CacheWrapper: Plugin {
 
     override var availableGenres: [Genre] { plugin.availableGenres }
 
-    override var configs: [Config] { plugin.configs }
+    var configs: [Config] { configurablePlugin.configs }
 
     override var cooldown: Cooldown? { plugin.cooldown }
 
@@ -98,15 +111,19 @@ class CacheWrapper: Plugin {
 
     // MARK: - Configs Delegation
 
-    override var configValues: [ConfigValue] { plugin.configValues }
+    var configValues: [ConfigValue] { configurablePlugin.configValues }
 
-    override func getConfig(_ key: String) -> Any { return plugin.getConfig(key) }
+    func getConfig(_ key: String) -> Any { configurablePlugin.getConfig(key) }
 
-    override func setConfig(key: String, value: Any) throws {
-        try plugin.setConfig(key: key, value: value)
+    func setConfig(key: String, value: Any) throws {
+        defer { objectWillChange.send() }
+        try configurablePlugin.setConfig(key: key, value: value)
     }
 
-    override func resetConfigs() throws { try plugin.resetConfigs() }
+    func resetConfigs() throws {
+        defer { objectWillChange.send() }
+        try configurablePlugin.resetConfigs()
+    }
 
     // MARK: - Methods Delegation (Non-cached)
 
@@ -240,7 +257,9 @@ class CacheWrapper: Plugin {
     }
 }
 
-private final class EditableCacheWrapper: CacheWrapper, Editable {
+private final class ConfigurableCacheWrapper: CacheWrapper, Configurable {}
+
+private class EditableCacheWrapper: CacheWrapper, Editable {
     private let editablePlugin: any Editable
 
     init(plugin: any Editable) {
@@ -308,3 +327,5 @@ private final class EditableCacheWrapper: CacheWrapper, Editable {
         clearAllCache()
     }
 }
+
+private final class ConfigurableEditableCacheWrapper: EditableCacheWrapper, Configurable {}

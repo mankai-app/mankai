@@ -37,7 +37,7 @@ enum ScriptType: String {
     @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
 }
 
-final class JsPlugin: Plugin {
+final class JsPlugin: Plugin, Configurable {
     // MARK: - Metadata
 
     private var _id: String
@@ -65,7 +65,17 @@ final class JsPlugin: Plugin {
 
     override var availableGenres: [Genre] { _availableGenres }
 
-    override var configs: [Config] { _configs }
+    var configs: [Config] { _configs }
+
+    lazy var _configValues: [String: ConfigValue] = {
+        var configValues: [String: ConfigValue] = [:]
+        for config in configs {
+            configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
+        }
+        return configValues
+    }()
+
+    var configValues: [ConfigValue] { Array(_configValues.values) }
 
     override var cooldown: Cooldown? { _cooldown }
 
@@ -130,6 +140,23 @@ final class JsPlugin: Plugin {
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
         for configValue in configValues { _configValues[configValue.key] = configValue }
+    }
+
+    func getConfig(_ key: String) -> Any { _configValues[key]!.value }
+
+    func setConfig(key: String, value: Any) throws {
+        _configValues[key] = ConfigValue(key: key, value: value)
+        objectWillChange.send()
+        try savePlugin()
+    }
+
+    func resetConfigs() throws {
+        _configValues = [:]
+        for config in configs {
+            _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
+        }
+        objectWillChange.send()
+        try savePlugin()
     }
 
     static func fromJson(_ json: [String: Any]) -> JsPlugin? {

@@ -137,6 +137,12 @@ private actor AsyncSemaphore {
 
 class CooldownWrapper: Plugin {
     private let plugin: Plugin
+    private var configurablePlugin: any Configurable {
+        guard let configurablePlugin = plugin as? any Configurable else {
+            preconditionFailure("Configurable wrapper requires a configurable plugin")
+        }
+        return configurablePlugin
+    }
     private let configuredCooldown: Cooldown
     private let pluginScheduler = CooldownScheduler()
     private let imageScheduler = CooldownScheduler()
@@ -145,8 +151,17 @@ class CooldownWrapper: Plugin {
     static func wrapping(_ plugin: Plugin) -> Plugin {
         guard let cooldown = plugin.cooldown else { return plugin }
 
+        if let configurableEditablePlugin = plugin as? any Configurable & Editable {
+            return ConfigurableEditableCooldownWrapper(
+                plugin: configurableEditablePlugin, cooldown: cooldown)
+        }
+
         if let editablePlugin = plugin as? any Editable {
             return EditableCooldownWrapper(plugin: editablePlugin, cooldown: cooldown)
+        }
+
+        if plugin is any Configurable {
+            return ConfigurableCooldownWrapper(plugin: plugin, cooldown: cooldown)
         }
 
         return CooldownWrapper(plugin: plugin, cooldown: cooldown)
@@ -197,7 +212,7 @@ class CooldownWrapper: Plugin {
 
     override var availableGenres: [Genre] { plugin.availableGenres }
 
-    override var configs: [Config] { plugin.configs }
+    var configs: [Config] { configurablePlugin.configs }
 
     override var cooldown: Cooldown? { plugin.cooldown }
 
@@ -213,15 +228,19 @@ class CooldownWrapper: Plugin {
 
     // MARK: - Config Delegation
 
-    override var configValues: [ConfigValue] { plugin.configValues }
+    var configValues: [ConfigValue] { configurablePlugin.configValues }
 
-    override func getConfig(_ key: String) -> Any { plugin.getConfig(key) }
+    func getConfig(_ key: String) -> Any { configurablePlugin.getConfig(key) }
 
-    override func setConfig(key: String, value: Any) throws {
-        try plugin.setConfig(key: key, value: value)
+    func setConfig(key: String, value: Any) throws {
+        defer { objectWillChange.send() }
+        try configurablePlugin.setConfig(key: key, value: value)
     }
 
-    override func resetConfigs() throws { try plugin.resetConfigs() }
+    func resetConfigs() throws {
+        defer { objectWillChange.send() }
+        try configurablePlugin.resetConfigs()
+    }
 
     // MARK: - Method Delegation
 
@@ -333,7 +352,9 @@ class CooldownWrapper: Plugin {
     }
 }
 
-private final class EditableCooldownWrapper: CooldownWrapper, Editable {
+private final class ConfigurableCooldownWrapper: CooldownWrapper, Configurable {}
+
+private class EditableCooldownWrapper: CooldownWrapper, Editable {
     private let editablePlugin: any Editable
 
     init(plugin: any Editable, cooldown: Cooldown) {
@@ -387,3 +408,5 @@ private final class EditableCooldownWrapper: CooldownWrapper, Editable {
         try await editablePlugin.arrangeImageOrder(ids: ids)
     }
 }
+
+private final class ConfigurableEditableCooldownWrapper: EditableCooldownWrapper, Configurable {}

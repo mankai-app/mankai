@@ -6,68 +6,6 @@
 //
 
 import Foundation
-import ReerCodable
-
-enum ConfigType: String, Codable {
-    case text
-    case password
-    case number
-    case boolean
-    case select
-
-    func parseValue(_ stringValue: String) -> Any {
-        let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch self { case .boolean: return trimmed.lowercased() == "true" || trimmed == "1"
-            case .number:
-                if let intValue = Int(trimmed) { return intValue }
-                return Double(trimmed) ?? trimmed
-            case .text, .password, .select: return trimmed
-        }
-    }
-}
-
-@Codable struct Config {
-    var key: String
-    var name: String
-    var description: String?
-    var type: ConfigType
-    var options: [String]?
-
-    @CodingKey("defaultValue") private var codedDefaultValue: AnyCodable?
-
-    var defaultValue: Any {
-        get { codedDefaultValue?.value ?? NSNull() }
-        set { codedDefaultValue = AnyCodable(newValue) }
-    }
-
-    init(
-        key: String, name: String, description: String? = nil, type: ConfigType, defaultValue: Any,
-        options: [String]? = nil
-    ) {
-        self.key = key
-        self.name = name
-        self.description = description
-        self.type = type
-        self.options = options
-        codedDefaultValue = AnyCodable(defaultValue)
-    }
-}
-
-@Codable struct ConfigValue {
-    var key: String
-
-    @CodingKey("value") private var codedValue: AnyCodable
-
-    var value: Any {
-        get { codedValue.value }
-        set { codedValue = AnyCodable(newValue) }
-    }
-
-    init(key: String, value: Any) {
-        self.key = key
-        codedValue = AnyCodable(value)
-    }
-}
 
 struct Cooldown: Codable {
     var `default`: Int?
@@ -118,8 +56,6 @@ enum PluginCapability: String, Codable, CaseIterable {
 
     var availableGenres: [Genre] { [] }
 
-    var configs: [Config] { [] }
-
     var cooldown: Cooldown? { nil }
 
     /// Operations supported by the plugin.
@@ -140,44 +76,6 @@ enum PluginCapability: String, Codable, CaseIterable {
     /// Whether this plugin can check saved manga for updates.
     var canUpdate: Bool {
         capabilities.contains(.batchMangas) || capabilities.contains(.mangaUpdates)
-    }
-
-    // MARK: - Config Values
-
-    lazy var _configValues: [String: ConfigValue] = {
-        var _configValues: [String: ConfigValue] = [:]
-
-        for config in configs {
-            _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
-        }
-
-        return _configValues
-    }()
-
-    var configValues: [ConfigValue] { Array(_configValues.values) }
-
-    // MARK: - Methods
-
-    func getConfig(_ key: String) -> Any { _configValues[key]!.value }
-
-    func setConfig(key: String, value: Any) throws {
-        _configValues[key] = ConfigValue(key: key, value: value)
-
-        objectWillChange.send()
-
-        try savePlugin()
-    }
-
-    func resetConfigs() throws {
-        _configValues = [:]
-
-        for config in configs {
-            _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
-        }
-
-        objectWillChange.send()
-
-        try savePlugin()
     }
 
     // MARK: - Abstract Methods
