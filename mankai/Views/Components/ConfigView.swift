@@ -34,8 +34,8 @@ private struct ConfigTextFieldStyle: TextFieldStyle {
     }
 }
 
-private struct TextConfigView: View {
-    let configurable: any Configurable
+private struct TextConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
+    let configurable: ConfigurableObject
     let config: Config
     var isPassword: Bool = false
 
@@ -63,7 +63,7 @@ private struct TextConfigView: View {
             }
             .textFieldStyle(ConfigTextFieldStyle()).autocapitalization(.none)
             .onAppear { updateTextValue() }
-            .onReceive(configurable.objectWillChange) { updateTextValue() }
+            .onReceive(configurable.objectWillChange) { _ in updateTextValue() }
             .onChange(of: textValue, initial: false) { _, newValue in
                 do { try configurable.setConfig(key: config.key, value: newValue) } catch {
                     errorMessage = error.localizedDescription
@@ -85,8 +85,8 @@ private struct TextConfigView: View {
     }
 }
 
-private struct SliderConfigView: View {
-    let configurable: any Configurable
+private struct SliderConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
+    let configurable: ConfigurableObject
     let config: Config
 
     @State private var sliderValue: Double = 0
@@ -122,7 +122,7 @@ private struct SliderConfigView: View {
             }
 
             Slider(value: $sliderValue, in: range, step: step).onAppear { updateSliderValue() }
-                .onReceive(configurable.objectWillChange) { updateSliderValue() }
+                .onReceive(configurable.objectWillChange) { _ in updateSliderValue() }
                 .onChange(of: sliderValue, initial: false) { _, newValue in
                     do { try configurable.setConfig(key: config.key, value: newValue) } catch {
                         errorMessage = error.localizedDescription
@@ -156,8 +156,8 @@ private struct SliderConfigView: View {
     }
 }
 
-private struct NumberConfigView: View {
-    let configurable: any Configurable
+private struct NumberConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
+    let configurable: ConfigurableObject
     let config: Config
 
     @State private var numberValue: Double = 0
@@ -179,7 +179,7 @@ private struct NumberConfigView: View {
             )
             .textFieldStyle(ConfigTextFieldStyle()).keyboardType(.decimalPad)
             .onAppear { updateNumberValue() }
-            .onReceive(configurable.objectWillChange) { updateNumberValue() }
+            .onReceive(configurable.objectWillChange) { _ in updateNumberValue() }
             .onChange(of: numberValue, initial: false) { _, newValue in
                 do { try configurable.setConfig(key: config.key, value: newValue) } catch {
                     errorMessage = error.localizedDescription
@@ -210,8 +210,8 @@ private struct NumberConfigView: View {
     }
 }
 
-private struct BooleanConfigView: View {
-    let configurable: any Configurable
+private struct BooleanConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
+    let configurable: ConfigurableObject
     let config: Config
 
     @State private var boolValue: Bool = false
@@ -228,7 +228,7 @@ private struct BooleanConfigView: View {
             }
         }
         .onAppear { updateBoolValue() }
-        .onReceive(configurable.objectWillChange) { updateBoolValue() }
+        .onReceive(configurable.objectWillChange) { _ in updateBoolValue() }
         .onChange(of: boolValue, initial: false) { _, newValue in
             do { try configurable.setConfig(key: config.key, value: newValue) } catch {
                 errorMessage = error.localizedDescription
@@ -249,8 +249,8 @@ private struct BooleanConfigView: View {
     }
 }
 
-private struct SelectConfigView: View {
-    let configurable: any Configurable
+private struct SelectConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
+    let configurable: ConfigurableObject
     let config: Config
 
     @State private var selectedValue: String? = nil
@@ -288,7 +288,7 @@ private struct SelectConfigView: View {
             }
         }
         .onAppear { updateSelectedValue() }
-        .onReceive(configurable.objectWillChange) { updateSelectedValue() }
+        .onReceive(configurable.objectWillChange) { _ in updateSelectedValue() }
         .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {

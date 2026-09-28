@@ -76,7 +76,7 @@ enum ConfigType: String, Codable {
     }
 }
 
-@MainActor protocol Configurable: Plugin {
+@MainActor protocol Configurable: AnyObject {
     var configs: [Config] { get }
     var configValues: [ConfigValue] { get }
 

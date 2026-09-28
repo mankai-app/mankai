@@ -68,6 +68,30 @@ struct ImageProcessorConfigurationScreen: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                } else if model.type == RemoteImageProcessor.type,
+                    let processor = service.processor(id: id, as: RemoteImageProcessor.self)
+                {
+                    Section("info") {
+                        LabeledContent("id") { Text(processor.remoteID) }
+                        LabeledContent("server") {
+                            Text(processor.serverURL).lineLimit(1).truncationMode(.middle)
+                        }
+                        if let version = processor.version {
+                            LabeledContent("version") { Text(version) }
+                        }
+                        if !processor.authors.isEmpty {
+                            LabeledContent("authors") {
+                                Text(processor.authors.joined(separator: ", "))
+                            }
+                        }
+                        if let repository = processor.repository {
+                            LabeledContent("repository") { Text(repository) }
+                        }
+                    }
+
+                    if !processor.configs.isEmpty {
+                        Section("configs") { ConfigView(configurable: processor) }
+                    }
                 } else {
                     Text("imageProcessorNoSettings").foregroundStyle(.secondary)
                 }

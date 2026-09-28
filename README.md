@@ -12,8 +12,8 @@
 
 <!-- [![Swift](https://img.shields.io/badge/swift-F54A2A?style=for-the-badge&logo=swift&logoColor=white)](https://developer.apple.com/swift/) -->
 
-[![GitHub License](https://img.shields.io/github/license/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/blob/master/LICENSE)
-[![Version](https://img.shields.io/github/v/tag/nohackjustnoobb/mankai?style=for-the-badge&label=version)](https://github.com/nohackjustnoobb/mankai/tags)
+[![GitHub License](https://img.shields.io/github/license/mankai-app/mankai?style=for-the-badge)](https://github.com/mankai-app/mankai/blob/master/LICENSE)
+[![Version](https://img.shields.io/github/v/tag/mankai-app/mankai?style=for-the-badge&label=version)](https://github.com/mankai-app/mankai/tags)
 [![Supported iOS/iPadOS](https://img.shields.io/badge/iOS%2FiPadOS-17.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/ios/)
 [![Supported macOS](https://img.shields.io/badge/macOS%20Catalyst-14.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/mac-catalyst/)
 
@@ -59,6 +59,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 - **Library & History**: Manage your collection and track reading progress.
 - **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
 - **Download Manager**: Save manga chapters for offline access.
+- **Remote Image Processing**: Send reader images to configurable HTTP processors, with optional JWT authentication.
 
 ## Road to 1.0.0
 
@@ -105,7 +106,7 @@ Mankai is designed to be extensible. It supports three types of plugins, each se
 This plugin scrapes content from third-party manga websites, allowing you to browse and read manga from various online aggregators directly within the app.
 
 - **Documentation**: [JavaScript Plugin API](docs/jsplugin/api.md)
-- **Examples**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins)
+- **Examples**: [plugins](https://github.com/mankai-app/plugins)
 
 ### File System Plugin (FsPlugin)
 
@@ -116,7 +117,13 @@ This plugin manages manga stored as local files stored on your device or a conne
 This plugin is designed for external providers to use Mankai as a reader and, optionally, an editor. It connects to servers implementing the standard API and supports authentication.
 
 - **Specification**: [Mankai API Specification](docs/httpplugin/api.md) (see also the [Mankai Editor API Specification](docs/httpplugin/editor-api.md) for optional editor support)
-- **Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server) - a manga management and sync server implementing the API.
+- **Server**: [server](https://github.com/mankai-app/server) - a manga management and sync server implementing the API.
+
+### Remote Image Processor
+
+Remote image processors extend the ordered reader image pipeline with an HTTP service. The service supplies its own configuration schema and can optionally use the same JWT login and refresh flow as an HTTP plugin.
+
+- **Specification**: [Remote Image Processor API](docs/imageprocessor/api.md)
 
 ## Remote Sources
 
@@ -141,7 +148,7 @@ Mankai provides two high-performance reading modes, both implemented in UIKit to
 
 Mankai can optionally upscale low-resolution reader images to four times their original pixel dimensions with the `realesr-animevideov3` model.
 
-- **Core ML Conversion**: [Real-ESRGAN-CoreML](https://github.com/nohackjustnoobb/Real-ESRGAN-CoreML)
+- **Core ML Conversion**: [Real-ESRGAN-CoreML](https://github.com/mankai-app/Real-ESRGAN-CoreML)
 - **Original Model**: [`realesr-animevideov3`](https://github.com/xinntao/Real-ESRGAN/blob/master/docs/anime_video_model.md) from [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), licensed under the [BSD 3-Clause License](https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE)
 
 #### Performance
@@ -161,7 +168,7 @@ End-to-end page processing time varies with the source image dimensions because 
 
 Mankai features an advanced **Smart Grouping** system that uses a deep learning model to detect and merge split-page spreads. By analyzing the visual adjacency of images, the app can automatically group two separate files into a single seamless spread, restoring the original artistic intent.
 
-- **Model Repository**: [mankai-smart-grouping](https://github.com/nohackjustnoobb/mankai-smart-grouping)
+- **Model Repository**: [smart-grouping](https://github.com/mankai-app/smart-grouping)
 
 #### Performance
 
@@ -192,14 +199,14 @@ Mankai supports syncing your library and reading history across devices using th
 
 The **HttpEngine** requires a self-hosted server to function. You can use either of the following:
 
-- **[mankai-server](https://github.com/nohackjustnoobb/mankai-server)** - A manga management and sync server, which can also serve as an [HttpPlugin](#http-plugin-httpplugin) source.
-- **[mankai-sync](https://github.com/nohackjustnoobb/mankai-sync)** - A lightweight server dedicated solely to syncing.
+- **[server](https://github.com/mankai-app/server)** - A manga management and sync server, which can also serve as an [HttpPlugin](#http-plugin-httpplugin) source.
+- **[sync](https://github.com/mankai-app/sync)** - A lightweight server dedicated solely to syncing.
 
 Once hosted, you can configure the server URL in the app settings to enable syncing.
 
 ### SupabaseEngine
 
-The **SupabaseEngine** allows you to sync using Supabase as the backend. You can set up your own Supabase project using the database schema provided in the [mankai-supabase](https://github.com/nohackjustnoobb/mankai-supabase) repository.
+The **SupabaseEngine** allows you to sync using Supabase as the backend. You can set up your own Supabase project using the database schema provided in the [supabase](https://github.com/mankai-app/supabase) repository.
 
 Once configured, you can enter your Supabase URL and Key in the app settings to enable syncing.
 

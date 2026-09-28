@@ -17,8 +17,8 @@ struct NfsConnectionConfiguration: Sendable {
     init(host: String, export: String) throws {
         let trimmedExport = export.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
-            BrowsableConnectionUtilities.serverURL(scheme: "nfs", host: normalizedHost) != nil,
+        guard let normalizedHost = URL.normalizedHost(host),
+            URL.serverURL(scheme: "nfs", host: normalizedHost) != nil,
             BrowsablePathUtilities.isValidAbsolutePath(trimmedExport)
         else { throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError() }
 
@@ -28,7 +28,7 @@ struct NfsConnectionConfiguration: Sendable {
 
     var serverURL: URL {
         // Validation in the initializer guarantees this URL can be built.
-        BrowsableConnectionUtilities.serverURL(scheme: "nfs", host: host)!
+        URL.serverURL(scheme: "nfs", host: host)!
     }
 }
 
@@ -48,8 +48,8 @@ actor NfsSession: BrowsableSession {
 
     /// Returns the exports advertised by an NFS server.
     static func discoverExports(host: String) async throws -> [String] {
-        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
-            let url = BrowsableConnectionUtilities.serverURL(scheme: "nfs", host: normalizedHost)
+        guard let normalizedHost = URL.normalizedHost(host),
+            let url = URL.serverURL(scheme: "nfs", host: normalizedHost)
         else { throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError() }
         guard let client = try NFSClient(url: url) else {
             throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError()

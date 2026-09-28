@@ -17,10 +17,10 @@ struct ImageProcessorInstance: Identifiable {
     var processor: any ImageProcessor
 
     var type: String { Swift.type(of: processor).type }
-    var titleKey: LocalizedStringResource { Swift.type(of: processor).titleKey }
-    var descriptionKey: LocalizedStringResource { Swift.type(of: processor).descriptionKey }
+    var title: String { processor.title }
+    var description: String { processor.description }
 
-    init(model: ImageProcessorModel) throws {
+    @MainActor init(model: ImageProcessorModel) throws {
         id = model.id
         order = model.order
         isEnabled = model.isEnabled
@@ -28,11 +28,12 @@ struct ImageProcessorInstance: Identifiable {
             processor = try UpscalingImageProcessor.decode(model)
             case DownsampleImageProcessor.type:
                 processor = try DownsampleImageProcessor.decode(model)
+            case RemoteImageProcessor.type: processor = try RemoteImageProcessor.decode(model)
             default: throw MankaiErrorCode.imageProcessingUnknownProcessorType.makeError()
         }
     }
 
-    func encode() throws -> ImageProcessorModel {
+    @MainActor func encode() throws -> ImageProcessorModel {
         try processor.encode(id: id, order: order, isEnabled: isEnabled)
     }
 }

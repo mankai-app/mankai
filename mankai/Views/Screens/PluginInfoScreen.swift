@@ -92,8 +92,10 @@ struct PluginInfoScreen: View {
                     Section { Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins) }
                 }
 
-                if let configurable = plugin as? any Configurable, !configurable.configs.isEmpty {
-                    Section("configs") { makeConfigView(configurable) }
+                if let configurable = plugin as? any Configurable & ObservableObject,
+                    !configurable.configs.isEmpty
+                {
+                    Section("configs") { configView(for: configurable) }
                 }
 
                 if !(plugin is AppDirPlugin) {
@@ -156,7 +158,7 @@ struct PluginInfoScreen: View {
         }
     }
 
-    private func makeConfigView<ConfigurableObject: Configurable & ObservableObject>(
-        _ configurable: ConfigurableObject
+    private func configView<ConfigurableObject: Configurable & ObservableObject>(
+        for configurable: ConfigurableObject
     ) -> AnyView { AnyView(ConfigView(configurable: configurable)) }
 }

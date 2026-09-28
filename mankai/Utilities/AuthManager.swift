@@ -293,12 +293,15 @@ import Foundation
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
 
         if let httpResponse = response as? HTTPURLResponse {
-            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403, retry {
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403, retry,
+                _refreshToken != nil
+            {
                 Logger.authManager.warning(
                     "AuthManager request 401/403, retrying with token refresh")
                 try await refreshAccessToken()
                 return try await request(
-                    method: method, path: path, query: query, body: body, retry: false)
+                    method: method, path: path, query: query, body: body, contentType: contentType,
+                    retry: false)
             }
 
             if (200...299).contains(httpResponse.statusCode) {

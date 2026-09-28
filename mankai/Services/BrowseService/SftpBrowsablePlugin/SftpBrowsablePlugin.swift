@@ -19,9 +19,8 @@ struct SftpConnectionConfiguration: Sendable {
     init(host: String, port: Int = 22, username: String, password: String) throws {
         let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
-            BrowsableConnectionUtilities.isValidPort(port), !trimmedUsername.isEmpty,
-            !trimmedUsername.contains("\0"), !password.contains("\0")
+        guard let normalizedHost = URL.normalizedHost(host), URL.isValidPort(port),
+            !trimmedUsername.isEmpty, !trimmedUsername.contains("\0"), !password.contains("\0")
         else { throw MankaiErrorCode.browseSftpInvalidConnectionConfiguration.makeError() }
 
         self.host = normalizedHost

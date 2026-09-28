@@ -23,8 +23,7 @@ struct SmbConnectionConfiguration: Sendable {
     ) throws {
         let trimmedShare = share.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
-            BrowsableConnectionUtilities.isValidPort(port),
+        guard let normalizedHost = URL.normalizedHost(host), URL.isValidPort(port),
             BrowsablePathUtilities.isValidComponent(trimmedShare), !trimmedShare.contains("\\")
         else { throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError() }
 

@@ -19,7 +19,7 @@ struct OpdsConnectionConfiguration: Sendable {
 
     init(catalogURL: String, username: String? = nil, password: String? = nil) throws {
         guard
-            let normalizedURL = BrowsableConnectionUtilities.normalizedHTTPURL(
+            let normalizedURL = URL.normalizedHTTPURL(
                 catalogURL, allowsCredentials: true, allowsQuery: true, allowsFragment: true)
         else { throw URLError(.badURL) }
 

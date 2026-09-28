@@ -16,10 +16,9 @@ struct WebDavConnectionConfiguration: Sendable {
     var password: String?
 
     init(baseURL: String, username: String? = nil, password: String? = nil) throws {
-        guard
-            let normalizedURL = BrowsableConnectionUtilities.normalizedHTTPURL(
-                baseURL, ensuresTrailingSlash: true)
-        else { throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError() }
+        guard let normalizedURL = URL.normalizedHTTPURL(baseURL, ensuresTrailingSlash: true) else {
+            throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError()
+        }
 
         self.baseURL = normalizedURL
         self.username = username.trimmed

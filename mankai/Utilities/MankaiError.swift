@@ -95,6 +95,10 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case imageProcessingInvalidInputImage
     case imageProcessingFailed
     case imageProcessingFailedToRender
+    case imageProcessingRemoteInvalidURL
+    case imageProcessingRemoteInvalidMetadata
+    case imageProcessingRemoteInvalidResponse
+    case imageProcessingRemoteRequestFailed
 
     case authMissingCredentialsOrServerUrl
     case authInvalidServerUrl
@@ -232,6 +236,14 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .imageProcessing, code: 8, messageKey: "imageProcessingFailed"),
         .imageProcessingFailedToRender: .init(
             domain: .imageProcessing, code: 9, messageKey: "failedToRenderImage"),
+        .imageProcessingRemoteInvalidURL: .init(
+            domain: .imageProcessing, code: 10, messageKey: "invalidUrl"),
+        .imageProcessingRemoteInvalidMetadata: .init(
+            domain: .imageProcessing, code: 11, messageKey: "invalidImageProcessorConfiguration"),
+        .imageProcessingRemoteInvalidResponse: .init(
+            domain: .imageProcessing, code: 12, messageKey: "invalidResponse"),
+        .imageProcessingRemoteRequestFailed: .init(
+            domain: .imageProcessing, code: 13, messageKey: "httpRequestFailed"),
 
         .authMissingCredentialsOrServerUrl: .init(
             domain: .auth, code: 1, messageKey: "missingCredentialsOrServerUrl"),

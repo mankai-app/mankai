@@ -30,14 +30,14 @@ struct ImageProcessorSettingsScreen: View {
                     ForEach(service.processors, id: \.id) { model in
                         HStack {
                             if editMode?.wrappedValue.isEditing == true {
-                                Text(model.titleKey)
+                                Text(model.title)
                             } else {
                                 NavigationLink {
                                     ImageProcessorConfigurationScreen(id: model.id)
                                 } label: {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(model.titleKey)
-                                        Text(model.descriptionKey).font(.caption)
+                                        Text(model.title)
+                                        Text(model.description).font(.caption)
                                             .foregroundColor(.secondary)
                                     }
                                 }
@@ -48,7 +48,7 @@ struct ImageProcessorSettingsScreen: View {
                                             service.processors.first(where: { $0.id == model.id })?
                                                 .isEnabled ?? false
                                         }, set: { service.setEnabled($0, for: model.id) })
-                                ) { Text(model.titleKey) }
+                                ) { Text(model.title) }
                                 .labelsHidden()
                             }
                         }
