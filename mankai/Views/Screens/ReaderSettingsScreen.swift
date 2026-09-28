@@ -30,7 +30,7 @@ struct ReaderSettingsScreen: View {
 
             Section("readingMode") {
                 Picker(
-                    String(localized: "readerType"),
+                    "readerType",
                     selection: Binding(
                         get: {
                             ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
@@ -41,9 +41,7 @@ struct ReaderSettingsScreen: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Toggle(
-                        String(localized: "respectMangaReadingDirection"),
-                        isOn: $respectMangaReadingDirection)
+                    Toggle("respectMangaReadingDirection", isOn: $respectMangaReadingDirection)
                     Text("respectMangaReadingDirectionDescription").font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -61,7 +59,7 @@ struct ReaderSettingsScreen: View {
 
             Section("imageGrouping") {
                 Picker(
-                    String(localized: "imageLayout"),
+                    "imageLayout",
                     selection: Binding(
                         get: {
                             ImageLayout(rawValue: imageLayoutRawValue)
@@ -74,7 +72,7 @@ struct ReaderSettingsScreen: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Toggle(String(localized: "smartGrouping"), isOn: $smartGrouping)
+                    Toggle("smartGrouping", isOn: $smartGrouping)
                     Text("smartGroupingDescription").font(.caption).foregroundColor(.secondary)
                 }
 
@@ -127,11 +125,11 @@ struct ContinuousReaderSettingsView: View {
                 Text(ReadingDirection.rightToLeft.localizedName).tag(ReadingDirection.rightToLeft)
             }
 
-            Toggle(String(localized: "tapNavigation"), isOn: $tapNavigation)
+            Toggle("tapNavigation", isOn: $tapNavigation)
 
-            Toggle(String(localized: "snapToPage"), isOn: $snapToPage)
+            Toggle("snapToPage", isOn: $snapToPage)
 
-            if snapToPage { Toggle(String(localized: "softSnap"), isOn: $softSnap) }
+            if snapToPage { Toggle("softSnap", isOn: $softSnap) }
         }
     }
 }
@@ -192,7 +190,7 @@ struct PagedReaderSettingsView: View {
                 Text(ReadingDirection.rightToLeft.localizedName).tag(ReadingDirection.rightToLeft)
             }
 
-            Toggle(String(localized: "tapNavigation"), isOn: $tapNavigation)
+            Toggle("tapNavigation", isOn: $tapNavigation)
 
             if tapNavigation && !isVertical {
                 Picker(

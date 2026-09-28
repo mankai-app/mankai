@@ -38,7 +38,7 @@ struct PluginSettingsScreen: View {
 
             ForEach(sortedPlugins) { plugin in
                 NavigationLink(destination: { PluginInfoScreen(plugin: plugin) }) {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 8) {
                             Text(plugin.name ?? plugin.id)
 

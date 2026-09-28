@@ -109,14 +109,7 @@ private struct SliderConfigView<ConfigurableObject: Configurable & ObservableObj
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading) {
-                    Text(LocalizedStringKey(config.name))
-
-                    if let description = config.description {
-                        Text(description).font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-
+                Text(LocalizedStringKey(config.name))
                 Spacer()
                 Text(sliderValue, format: .number).foregroundStyle(.secondary)
             }
@@ -129,6 +122,10 @@ private struct SliderConfigView<ConfigurableObject: Configurable & ObservableObj
                         showErrorAlert = true
                     }
                 }
+
+            if let description = config.description {
+                Text(description).font(.caption).foregroundStyle(.secondary)
+            }
         }
         .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
@@ -219,12 +216,11 @@ private struct BooleanConfigView<ConfigurableObject: Configurable & ObservableOb
     @State private var errorMessage = ""
 
     var body: some View {
-        Toggle(isOn: $boolValue) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(LocalizedStringKey(config.name))
-                if let description = config.description {
-                    Text(description).font(.caption).foregroundStyle(.secondary)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(LocalizedStringKey(config.name), isOn: $boolValue)
+
+            if let description = config.description {
+                Text(description).font(.caption).foregroundStyle(.secondary)
             }
         }
         .onAppear { updateBoolValue() }
@@ -262,25 +258,26 @@ private struct SelectConfigView<ConfigurableObject: Configurable & ObservableObj
     var body: some View {
         Group {
             if selectedValue != nil {
-                Picker(selection: $selectedValue) {
-                    ForEach(options, id: \.self) { option in Text(option).tag(option) }
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker(selection: $selectedValue) {
+                        ForEach(options, id: \.self) { option in Text(option).tag(option) }
+                    } label: {
                         Text(LocalizedStringKey(config.name))
-                        if let description = config.description {
-                            Text(description).font(.caption).foregroundStyle(.secondary)
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: selectedValue, initial: false) { _, newValue in
+                        do {
+                            if let newValue {
+                                try configurable.setConfig(key: config.key, value: newValue)
+                            }
+                        } catch {
+                            errorMessage = error.localizedDescription
+                            showErrorAlert = true
                         }
                     }
-                }
-                .pickerStyle(.menu)
-                .onChange(of: selectedValue, initial: false) { _, newValue in
-                    do {
-                        if let newValue {
-                            try configurable.setConfig(key: config.key, value: newValue)
-                        }
-                    } catch {
-                        errorMessage = error.localizedDescription
-                        showErrorAlert = true
+
+                    if let description = config.description {
+                        Text(description).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             } else {

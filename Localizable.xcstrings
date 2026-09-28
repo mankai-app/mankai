@@ -6541,34 +6541,6 @@
         }
       }
     },
-    "imageProcessorNoSettings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No settings available for this processor."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "この処理に設定はありません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此处理器没有可用设置。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此處理器沒有可用設定。"
-          }
-        }
-      }
-    },
     "imageProcessorOrderHint" : {
       "localizations" : {
         "en" : {
