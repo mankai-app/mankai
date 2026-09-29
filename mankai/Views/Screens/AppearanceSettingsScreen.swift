@@ -152,31 +152,33 @@ private enum AppIconOption: String, CaseIterable, Identifiable {
     case sakura
     case lily
     case rose
+    case sunflower
+    case lotus
+    case hydrangea
 
     var id: Self { self }
 
     init(alternateIconName: String?) {
-        switch alternateIconName { case nil: self = .sakura case "LilyIcon": self = .lily
-            case "RoseIcon": self = .rose
-            default: self = .sakura
-        }
+        self = Self.allCases.first { $0.alternateIconName == alternateIconName } ?? .sakura
     }
 
     var alternateIconName: String? {
         switch self { case .sakura: nil case .lily: "LilyIcon" case .rose: "RoseIcon"
+            case .sunflower: "SunflowerIcon"
+            case .lotus: "LotusIcon"
+            case .hydrangea: "HydrangeaIcon"
         }
     }
 
-    var previewAssetName: String {
-        switch self { case .sakura: "SakuraIconPreview" case .lily: "LilyIconPreview" case .rose:
-            "RoseIconPreview"
-        }
-    }
+    var previewAssetName: String { "\(alternateIconName ?? "SakuraIcon")Preview" }
 
     var localizedName: String {
         switch self { case .sakura: String(localized: "sakura") case .lily:
             String(localized: "lily")
             case .rose: String(localized: "rose")
+            case .sunflower: String(localized: "sunflower")
+            case .lotus: String(localized: "lotus")
+            case .hydrangea: String(localized: "hydrangea")
         }
     }
 }

@@ -1,0 +1,334 @@
+{
+  "fill" : "automatic",
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "heart.svg",
+          "name" : "Golden heart",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "inner-petal-1.svg",
+          "name" : "Inner petal 1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-2.svg",
+          "name" : "Inner petal 2",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-3.svg",
+          "name" : "Inner petal 3",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-4.svg",
+          "name" : "Inner petal 4",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-5.svg",
+          "name" : "Inner petal 5",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-6.svg",
+          "name" : "Inner petal 6",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-7.svg",
+          "name" : "Inner petal 7",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-petal-8.svg",
+          "name" : "Inner petal 8",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "main-petal-1.svg",
+          "name" : "Main petal 1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-2.svg",
+          "name" : "Main petal 2",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-3.svg",
+          "name" : "Main petal 3",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-4.svg",
+          "name" : "Main petal 4",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-5.svg",
+          "name" : "Main petal 5",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-6.svg",
+          "name" : "Main petal 6",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-7.svg",
+          "name" : "Main petal 7",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-petal-8.svg",
+          "name" : "Main petal 8",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "back-petal-1.svg",
+          "name" : "Back petal 1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-2.svg",
+          "name" : "Back petal 2",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-3.svg",
+          "name" : "Back petal 3",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-4.svg",
+          "name" : "Back petal 4",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-5.svg",
+          "name" : "Back petal 5",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-6.svg",
+          "name" : "Back petal 6",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-7.svg",
+          "name" : "Back petal 7",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "back-petal-8.svg",
+          "name" : "Back petal 8",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

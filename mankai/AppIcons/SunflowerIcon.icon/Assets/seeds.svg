@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <circle cx="256" cy="256" r="6" fill="#F4D59D"/>
+  <circle cx="256" cy="231" r="5.5" fill="#F4D59D"/>
+  <circle cx="277.65" cy="243.5" r="5.5" fill="#F4D59D"/>
+  <circle cx="277.65" cy="268.5" r="5.5" fill="#F4D59D"/>
+  <circle cx="256" cy="281" r="5.5" fill="#F4D59D"/>
+  <circle cx="234.35" cy="268.5" r="5.5" fill="#F4D59D"/>
+  <circle cx="234.35" cy="243.5" r="5.5" fill="#F4D59D"/>
+  <circle cx="268.94" cy="207.7" r="5" fill="#F4D59D"/>
+  <circle cx="291.36" cy="220.64" r="5" fill="#F4D59D"/>
+  <circle cx="304.3" cy="243.06" r="5" fill="#F4D59D"/>
+  <circle cx="304.3" cy="268.94" r="5" fill="#F4D59D"/>
+  <circle cx="291.36" cy="291.36" r="5" fill="#F4D59D"/>
+  <circle cx="268.94" cy="304.3" r="5" fill="#F4D59D"/>
+  <circle cx="243.06" cy="304.3" r="5" fill="#F4D59D"/>
+  <circle cx="220.64" cy="291.36" r="5" fill="#F4D59D"/>
+  <circle cx="207.7" cy="268.94" r="5" fill="#F4D59D"/>
+  <circle cx="207.7" cy="243.06" r="5" fill="#F4D59D"/>
+  <circle cx="220.64" cy="220.64" r="5" fill="#F4D59D"/>
+  <circle cx="243.06" cy="207.7" r="5" fill="#F4D59D"/>
+</svg>
