@@ -15,6 +15,7 @@ enum ConfigType: String, Codable {
     case slider
     case boolean
     case select
+    case color
 
     func parseValue(_ stringValue: String) -> Any {
         let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -22,7 +23,7 @@ enum ConfigType: String, Codable {
             case .number, .slider:
                 if let intValue = Int(trimmed) { return intValue }
                 return Double(trimmed) ?? trimmed
-            case .text, .password, .select: return trimmed
+            case .text, .password, .select, .color: return trimmed
         }
     }
 }
@@ -36,6 +37,7 @@ enum ConfigType: String, Codable {
     var min: Double?
     var max: Double?
     var step: Double?
+    var supportsOpacity: Bool?
 
     @CodingKey("defaultValue") private var codedDefaultValue: AnyCodable?
 
@@ -46,7 +48,8 @@ enum ConfigType: String, Codable {
 
     init(
         key: String, name: String, description: String? = nil, type: ConfigType, defaultValue: Any,
-        options: [String]? = nil, min: Double? = nil, max: Double? = nil, step: Double? = nil
+        options: [String]? = nil, min: Double? = nil, max: Double? = nil, step: Double? = nil,
+        supportsOpacity: Bool? = nil
     ) {
         self.key = key
         self.name = name
@@ -56,6 +59,7 @@ enum ConfigType: String, Codable {
         self.min = min
         self.max = max
         self.step = step
+        self.supportsOpacity = supportsOpacity
         codedDefaultValue = AnyCodable(defaultValue)
     }
 }

@@ -449,14 +449,18 @@ interface Config {
   key: string;
   name: string;
   description?: string;
-  type: "text" | "password" | "number" | "slider" | "boolean" | "select";
+  type:
+    "text" | "password" | "number" | "slider" | "boolean" | "select" | "color";
   defaultValue: unknown;
   options?: string[];
   min?: number;
   max?: number;
   step?: number;
+  supportsOpacity?: boolean;
 }
 ```
+
+`color` configs use sRGB hex strings. By default, the picker is opaque and saves uppercase `#RRGGBB` values such as `"#F2E4C9"`. Set `supportsOpacity` to `true` to enable the opacity control and save `#RRGGBBAA` values. The leading `#` is optional on input.
 
 `options` is used for `select` configs. `min`, `max`, and `step` configure the range and increment for `slider` configs. The app initializes each config with `defaultValue`, persists changes made in plugin settings, and exposes the current values through `getConfigs()`.
 
@@ -492,7 +496,7 @@ Example:
 }
 ```
 
-When a plugin is imported from a URL, matching query parameters override the declared defaults. Values are parsed according to `type`: booleans recognize `true` and `1`, numbers and sliders parse as integers or decimals, and text/password/select values remain strings after surrounding whitespace is trimmed.
+When a plugin is imported from a URL, matching query parameters override the declared defaults. Values are parsed according to `type`: booleans recognize `true` and `1`, numbers and sliders parse as integers or decimals, and text/password/select/color values remain strings after surrounding whitespace is trimmed.
 
 ## Cooldowns
 

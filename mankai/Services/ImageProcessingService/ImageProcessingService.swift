@@ -28,6 +28,8 @@ struct ImageProcessorInstance: Identifiable {
             processor = try UpscalingImageProcessor.decode(model)
             case DownsampleImageProcessor.type:
                 processor = try DownsampleImageProcessor.decode(model)
+            case MonochromeToneImageProcessor.type:
+                processor = try MonochromeToneImageProcessor.decode(model)
             case RemoteImageProcessor.type: processor = try RemoteImageProcessor.decode(model)
             default: throw MankaiErrorCode.imageProcessingUnknownProcessorType.makeError()
         }

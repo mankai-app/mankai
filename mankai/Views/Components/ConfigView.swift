@@ -21,6 +21,7 @@ struct ConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
                 case .slider: SliderConfigView(configurable: configurable, config: config)
                 case .boolean: BooleanConfigView(configurable: configurable, config: config)
                 case .select: SelectConfigView(configurable: configurable, config: config)
+                case .color: ColorConfigView(configurable: configurable, config: config)
             }
         }
     }
@@ -300,5 +301,46 @@ private struct SelectConfigView<ConfigurableObject: Configurable & ObservableObj
         if !options.contains(newValue), !options.isEmpty { newValue = options.first ?? "" }
 
         if selectedValue != newValue { selectedValue = newValue }
+    }
+}
+
+private struct ColorConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
+    @ObservedObject var configurable: ConfigurableObject
+    let config: Config
+
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
+
+    private var selectedColor: Color {
+        let storedColor = (configurable.getConfig(config.key) as? String).flatMap { Color(hex: $0) }
+        let defaultColor = (config.defaultValue as? String).flatMap { Color(hex: $0) }
+        return storedColor ?? defaultColor ?? .white
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ColorPicker(
+                selection: Binding(
+                    get: { selectedColor },
+                    set: { newValue in
+                        guard
+                            let hex = newValue.hex(includingAlpha: config.supportsOpacity ?? false)
+                        else { return }
+                        do { try configurable.setConfig(key: config.key, value: hex) } catch {
+                            errorMessage = error.localizedDescription
+                            showErrorAlert = true
+                        }
+                    }), supportsOpacity: config.supportsOpacity ?? false
+            ) { Text(LocalizedStringKey(config.name)) }
+
+            if let description = config.description {
+                Text(description).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
+            Button("ok") {}
+        } message: {
+            Text(errorMessage)
+        }
     }
 }

@@ -34,6 +34,16 @@ struct AddImageProcessorModal: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+
+                    Button {
+                        if service.add(MonochromeToneImageProcessor.defaultProcessor) { dismiss() }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(MonochromeToneImageProcessor.titleKey)
+                            Text(MonochromeToneImageProcessor.descriptionKey).font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
 

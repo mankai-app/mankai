@@ -46,7 +46,7 @@ interface ImageProcessorInfo {
 }
 
 type ConfigType =
-  "text" | "password" | "number" | "slider" | "boolean" | "select";
+  "text" | "password" | "number" | "slider" | "boolean" | "select" | "color";
 
 interface Config {
   key: string; // Unique within this processor
@@ -58,8 +58,11 @@ interface Config {
   min?: number; // Used by "slider"
   max?: number; // Used by "slider"
   step?: number; // Used by "slider"
+  supportsOpacity?: boolean; // Used by "color", defaults to false
 }
 ```
+
+`color` configs use sRGB hex strings. By default, the picker is opaque and saves uppercase `#RRGGBB` values such as `"#F2E4C9"`. Set `supportsOpacity` to `true` to enable the opacity control and save `#RRGGBBAA` values. The leading `#` is optional on input.
 
 Example:
 

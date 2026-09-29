@@ -6,6 +6,7 @@
 //
 
 import CoreGraphics
+import SwiftUI
 import UIKit
 
 extension UIApplication {
@@ -82,5 +83,44 @@ extension Optional where Wrapped == String {
         guard let self else { return nil }
         let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+extension Color {
+    /// Creates an sRGB color from #RRGGBB or #RRGGBBAA.
+    init?(hex: String) {
+        var value = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.hasPrefix("#") { value.removeFirst() }
+        guard value.utf8.count == 6 || value.utf8.count == 8,
+            value.utf8.allSatisfy({
+                (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0)
+            }), let rgba = UInt32(value, radix: 16)
+        else { return nil }
+
+        let hasAlpha = value.utf8.count == 8
+        let rgb = hasAlpha ? rgba >> 8 : rgba
+        let alpha = hasAlpha ? Double(rgba & 0xFF) / 255 : 1
+        self.init(
+            .sRGB, red: Double((rgb >> 16) & 0xFF) / 255, green: Double((rgb >> 8) & 0xFF) / 255,
+            blue: Double(rgb & 0xFF) / 255, opacity: alpha)
+    }
+
+    @MainActor var hex: String? { hex(includingAlpha: false) }
+
+    /// Encodes a configuration color as #RRGGBB or #RRGGBBAA.
+    @MainActor func hex(includingAlpha: Bool = false) -> String? {
+        guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+            let converted = UIColor(self).cgColor
+                .converted(to: colorSpace, intent: .defaultIntent, options: nil),
+            let components = converted.components, components.count == 4,
+            components.allSatisfy({ $0.isFinite })
+        else { return nil }
+
+        let channels = components.prefix(3).map { UInt32((min(max($0, 0), 1) * 255).rounded()) }
+        let rgb = (channels[0] << 16) | (channels[1] << 8) | channels[2]
+        guard includingAlpha else { return String(format: "#%06X", rgb) }
+
+        let alpha = UInt32((min(max(components[3], 0), 1) * 255).rounded())
+        return String(format: "#%06X%02X", rgb, alpha)
     }
 }
