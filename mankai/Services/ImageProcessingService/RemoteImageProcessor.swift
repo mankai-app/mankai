@@ -21,7 +21,6 @@ import ReerCodable
     @DecodingDefault([]) let configs: [Config]
 }
 
-/// Sends pipeline images to a server implementing `docs/imageprocessor/api.md`.
 final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked Sendable {
     static let type = "remote"
     static let titleKey: LocalizedStringResource = "remoteImageProcessor"

@@ -6,60 +6,41 @@
 
 <div align="center">
 
-<img src="assets/icon.png" width="128" />
+<a href="https://mankai.app">
+  <img src="assets/icon.png" alt="Mankai icon" width="128" />
+</a>
 
 # Mankai
 
-<!-- [![Swift](https://img.shields.io/badge/swift-F54A2A?style=for-the-badge&logo=swift&logoColor=white)](https://developer.apple.com/swift/) -->
+**An extensible manga reader and library manager for iOS, iPadOS, and macOS.**
 
-[![GitHub License](https://img.shields.io/github/license/mankai-app/mankai?style=for-the-badge)](https://github.com/mankai-app/mankai/blob/master/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/mankai-app/mankai?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/github/v/tag/mankai-app/mankai?style=for-the-badge&label=version)](https://github.com/mankai-app/mankai/tags)
 [![Supported iOS/iPadOS](https://img.shields.io/badge/iOS%2FiPadOS-17.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/ios/)
 [![Supported macOS](https://img.shields.io/badge/macOS%20Catalyst-14.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/mac-catalyst/)
 
+[**Website**](https://mankai.app) · [**Install**](https://mankai.app/guides/installation/) · [**Quick start**](https://mankai.app/guides/quick-start/) · [**API reference**](https://mankai.app/api/overview/)
+
 </div>
 
-Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and macOS via Mac Catalyst. It supports iOS and iPadOS 17.0+ and macOS 14.0+, and is primarily built with SwiftUI, featuring a high-performance UIKit-based reader, multi-source plugin support, and cross-device syncing.
+Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and plugin sources together with collections, offline downloads, and optional sync across devices.
 
-![Demo](assets/demo.png)
+<p align="center">
+  <a href="https://mankai.app/screenshots/">
+    <img src="assets/preview.png" alt="Mankai on iPad and iPhone" width="800" />
+  </a>
+</p>
 
-<details>
-<summary>More Screenshots</summary>
-
-### iPhone
-
-|              Home               |                Library                |                Details                |
-| :-----------------------------: | :-----------------------------------: | :-----------------------------------: |
-| ![Home](assets/iphone-home.png) | ![Library](assets/iphone-library.png) | ![Details](assets/iphone-details.png) |
-
-|                History                |                 Downloads                 |               Reader                |
-| :-----------------------------------: | :---------------------------------------: | :---------------------------------: |
-| ![History](assets/iphone-history.png) | ![Downloads](assets/iphone-downloads.png) | ![Reader](assets/iphone-reader.png) |
-
-### iPad
-
-|             Home              |               Library               |               Details               |
-| :---------------------------: | :---------------------------------: | :---------------------------------: |
-| ![Home](assets/ipad-home.png) | ![Library](assets/ipad-library.png) | ![Details](assets/ipad-details.png) |
-
-|               History               |                Downloads                |              Reader               |
-| :---------------------------------: | :-------------------------------------: | :-------------------------------: |
-| ![History](assets/ipad-history.png) | ![Downloads](assets/ipad-downloads.png) | ![Reader](assets/ipad-reader.png) |
-
-</details>
+[View all screenshots](https://mankai.app/screenshots/)
 
 ## Features
 
-- **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
-- **Local and Network Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) from local folders, [remote shares, or OPDS catalogs](#remote-sources).
-- **Modern UI**: A responsive interface built with SwiftUI.
-- **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
-- **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
-- **On-Device AI Upscaling**: Sharpen low-resolution pages with optional [4× Real-ESRGAN upscaling](#real-esrgan-upscaling).
-- **Library & History**: Manage your collection and track reading progress.
-- **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
-- **Download Manager**: Save manga chapters for offline access.
-- **Remote Image Processing**: Send reader images to configurable HTTP processors, with optional JWT authentication.
+- **Flexible sources** — JavaScript, file system, and HTTP plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV connections.
+- **Local books** — Read CBZ, CBR, EPUB, and PDF files from your device or connected folders.
+- **Reader controls** — Paged and continuous layouts, horizontal and vertical navigation, and page-curl transitions.
+- **Image processing** — [Automatic spread grouping](#smart-grouping), optional [on-device 4× AI upscaling](#real-esrgan-upscaling), and configurable remote image processors.
+- **Collections and downloads** — Bookmark titles, track reading history, and download chapters for offline reading.
+- **Optional sync** — Keep your collection and reading progress in sync through an HTTP server or Supabase.
 
 ## Road to 1.0.0
 
@@ -97,58 +78,39 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 - [x] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
 - [ ] **Smart Dark Mode** - Transform page images into dark-friendly versions with AI while preserving readable line art, contrast, and important details.
 
-## Plugins
+## Documentation
 
-Mankai is designed to be extensible. It supports three types of plugins, each serving a distinct function:
+For setup instructions, usage guides, and troubleshooting, visit the [Mankai documentation](https://mankai.app).
 
-### JavaScript Plugin (JsPlugin)
+| Guide                                                             | What you will find                                                     |
+| :---------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| [Installation](https://mankai.app/guides/installation/)           | Installation options for your device.                                  |
+| [Quick start](https://mankai.app/guides/quick-start/)             | Add a source, read your first book, and save your place.               |
+| [Add books and sources](https://mankai.app/guides/sources/)       | Set up plugins, import books, and connect local or network folders.    |
+| [Collections and downloads](https://mankai.app/guides/library/)   | Manage saved titles, reading history, and offline chapters.            |
+| [Reading and reader settings](https://mankai.app/guides/reading/) | Reading layouts, navigation, and reader controls.                      |
+| [Image processing](https://mankai.app/guides/image-processing/)   | Configure upscaling, downsampling, page colors, and remote processors. |
+| [Sync across devices](https://mankai.app/guides/sync/)            | Configure syncing for your collection and reading progress.            |
+| [Troubleshooting](https://mankai.app/guides/troubleshooting/)     | Resolve common setup and reading issues.                               |
 
-This plugin scrapes content from third-party manga websites, allowing you to browse and read manga from various online aggregators directly within the app.
+## Plugins and APIs
 
-- **Documentation**: [JavaScript Plugin API](docs/jsplugin/api.md)
-- **Examples**: [plugins](https://github.com/mankai-app/plugins)
+Build a content source or connect a service using the [API reference](https://mankai.app/api/overview/).
 
-### File System Plugin (FsPlugin)
+| Reference                                                        | Build                                                         |
+| :--------------------------------------------------------------- | :------------------------------------------------------------ |
+| [JavaScript plugins](https://mankai.app/api/javascript-plugins/) | A content plugin with browsing, search, chapters, and images. |
+| [HTTP plugin API](https://mankai.app/api/http-api/)              | A server that serves a manga library to Mankai.               |
+| [Editor API](https://mankai.app/api/editor-api/)                 | Editing support for an HTTP source.                           |
+| [Image processor API](https://mankai.app/api/image-processors/)  | A configurable service that processes reader images.          |
 
-This plugin manages manga stored as local files stored on your device or a connected service.
-
-### Http Plugin (HttpPlugin)
-
-This plugin is designed for external providers to use Mankai as a reader and, optionally, an editor. It connects to servers implementing the standard API and supports authentication.
-
-- **Specification**: [Mankai API Specification](docs/httpplugin/api.md) (see also the [Mankai Editor API Specification](docs/httpplugin/editor-api.md) for optional editor support)
-- **Server**: [server](https://github.com/mankai-app/server) - a manga management and sync server implementing the API.
-
-### Remote Image Processor
-
-Remote image processors extend the ordered reader image pipeline with an HTTP service. The service supplies its own configuration schema and can optionally use the same JWT login and refresh flow as an HTTP plugin.
-
-- **Specification**: [Remote Image Processor API](docs/imageprocessor/api.md)
-
-## Remote Sources
-
-Mankai supports remote sources for browsing and reading manga stored on remote services.
-
-| Protocol     | Description                                                                                                                                        | Test Environment                                                                           |
-| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| **OPDS 1.2** | Browse OPDS 1.2 catalogs over HTTP or HTTPS with optional username and password authentication. Supports OPDS Page Streaming Extension (OPDS-PSE). | [Komga](https://github.com/gotson/komga), [calibre](https://github.com/kovidgoyal/calibre) |
-| **SMB**      | Browse and read manga from an SMB share, with optional username and password authentication.                                                       | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba)                        |
-| **SFTP**     | Browse, read, and import manga from an SFTP directory using username and password authentication.                                                  | openssh-server                                                                             |
-| **NFS**      | Browse, read, and import manga from an exported NFS directory.                                                                                     | nfs-kernel-server                                                                          |
-| **WebDAV**   | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication.                                 | [hacdias/webdav](https://github.com/hacdias/webdav)                                        |
-
-## Reader
-
-Mankai provides two high-performance reading modes, both implemented in UIKit to ensure smooth scrolling and page transitions:
-
-- **Continuous Reader**: A traditional webtoon-style vertical scrolling experience.
-- **Paged Reader**: A paginated experience supporting vertical and horizontal navigation, with scroll and page-curl transition styles.
+## Models and Benchmarks
 
 ### Real-ESRGAN Upscaling
 
 Mankai can optionally upscale low-resolution reader images to four times their original pixel dimensions with the `realesr-animevideov3` model.
 
-- **Core ML Conversion**: [Real-ESRGAN-CoreML](https://github.com/mankai-app/Real-ESRGAN-CoreML)
+- **Core ML Conversion**: [Real-ESRGAN-CoreML](https://github.com/nohackjustnoobb/Real-ESRGAN-CoreML)
 - **Original Model**: [`realesr-animevideov3`](https://github.com/xinntao/Real-ESRGAN/blob/master/docs/anime_video_model.md) from [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), licensed under the [BSD 3-Clause License](https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE)
 
 #### Performance
@@ -190,36 +152,6 @@ Performance benchmarks on **iPhone 15**:
 | **CPU Only**                      | 2.28 ms             | 17.94 ms      | 62.82 ms             |
 | **CPU + GPU**                     | 8.15 ms             | 21.09 ms      | 81.25 ms             |
 | **CPU + Neural Engine**           | 0.91 ms             | 45.80 ms      | 64.19 ms             |
-
-## Syncing
-
-Mankai supports syncing your library and reading history across devices using the following sync engines:
-
-### HttpEngine
-
-The **HttpEngine** requires a self-hosted server to function. You can use either of the following:
-
-- **[server](https://github.com/mankai-app/server)** - A manga management and sync server, which can also serve as an [HttpPlugin](#http-plugin-httpplugin) source.
-- **[sync](https://github.com/mankai-app/sync)** - A lightweight server dedicated solely to syncing.
-
-Once hosted, you can configure the server URL in the app settings to enable syncing.
-
-### SupabaseEngine
-
-The **SupabaseEngine** allows you to sync using Supabase as the backend. You can set up your own Supabase project using the database schema provided in the [supabase](https://github.com/mankai-app/supabase) repository.
-
-Once configured, you can enter your Supabase URL and Key in the app settings to enable syncing.
-
-## Parsers
-
-Mankai ships with built-in parsers that read local book files (e.g., CBZ, CBR, EPUB, and PDF) and extract their metadata and images. Each parser targets a specific file format.
-
-| Parser         | Extensions | Description                                                                                           |
-| :------------- | :--------- | :---------------------------------------------------------------------------------------------------- |
-| **CbzParser**  | `.cbz`     | Parses Comic Book ZIP archives, extracting metadata from `ComicInfo.xml` and images from the archive. |
-| **CbrParser**  | `.cbr`     | Parses Comic Book RAR archives, extracting metadata from `ComicInfo.xml` and images from the archive. |
-| **EpubParser** | `.epub`    | Parses EPUB 2/3 publications, extracting package metadata and comic images in spine order.            |
-| **PdfParser**  | `.pdf`     | Parses PDF documents and renders their pages as images.                                               |
 
 ## Development Notes
 
