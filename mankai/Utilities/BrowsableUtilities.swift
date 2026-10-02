@@ -48,10 +48,21 @@ enum BrowsablePathUtilities {
     }
 
     static func isValidAbsolutePath(_ value: String) -> Bool {
-        guard value.hasPrefix("/"), !value.contains("\\"), !value.contains("\0") else {
+        guard value.hasPrefix("/") else { return false }
+        return hasValidPathComponents(String(value.dropFirst()))
+    }
+
+    static func isValidRelativePath(_ value: String) -> Bool {
+        let firstComponent = value.prefix { $0 != "/" }
+        guard !value.isEmpty, !value.hasPrefix("/"), !firstComponent.contains(":") else {
             return false
         }
-        return value.dropFirst().split(separator: "/", omittingEmptySubsequences: false)
+        return hasValidPathComponents(value)
+    }
+
+    private static func hasValidPathComponents(_ value: String) -> Bool {
+        guard !value.contains("\\") else { return false }
+        return value.split(separator: "/", omittingEmptySubsequences: false)
             .allSatisfy { isValidComponent(String($0)) }
     }
 

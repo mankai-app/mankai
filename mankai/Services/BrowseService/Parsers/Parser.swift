@@ -13,6 +13,8 @@ import Foundation
 struct ParserChapterMetadata: Codable, Sendable {
     let chapters: [String: [String]]
 
+    init(chapters: [String: [String]]) { self.chapters = chapters }
+
     init(chapterId: String, pages: [String]) { chapters = [chapterId: pages] }
 
     func pages(for chapterId: String) -> [String]? {

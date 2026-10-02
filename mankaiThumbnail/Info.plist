@@ -10,6 +10,7 @@
 			<array>
 				<string>public.cbz</string>
 				<string>public.cbr</string>
+				<string>app.mankai.mma</string>
 			</array>
 			<key>QLThumbnailMinimumDimension</key>
 			<integer>0</integer>

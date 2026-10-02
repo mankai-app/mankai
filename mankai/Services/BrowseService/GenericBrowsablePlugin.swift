@@ -210,9 +210,10 @@ where Session: BrowsableSession, Session.Config == Config {
             let cbrParser = CbrParser()
             let pdfParser = PdfParser()
             let epubParser = EpubParser()
+            let mmaParser = MmaParser()
             self.parsers = [
                 cbzParser.id: cbzParser, cbrParser.id: cbrParser, pdfParser.id: pdfParser,
-                epubParser.id: epubParser
+                epubParser.id: epubParser, mmaParser.id: mmaParser
             ]
         }
 

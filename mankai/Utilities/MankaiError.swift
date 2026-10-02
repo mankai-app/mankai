@@ -116,6 +116,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseInvalidPlugin
     case browseArchiveNoImagesFoundInArchive
     case browseArchiveEntryNotFound
+    case browseArchiveInvalidMetadata
     case browseFilesystemFailedToAccessFolder
     case browseFilesystemDatabaseNotAvailable
     case browseFilesystemParserNotFound
@@ -267,6 +268,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .browseArchive, code: 1, messageKey: "noImagesFoundInArchive"),
         .browseArchiveEntryNotFound: .init(
             domain: .browseArchive, code: 2, messageKey: "entryNotFound"),
+        .browseArchiveInvalidMetadata: .init(
+            domain: .browseArchive, code: 3, messageKey: "invalidMangaMeta"),
         .browseFilesystemFailedToAccessFolder: .init(
             domain: .browseFilesystem, code: 1, messageKey: "failedToAccessFolder"),
         .browseFilesystemDatabaseNotAvailable: .init(

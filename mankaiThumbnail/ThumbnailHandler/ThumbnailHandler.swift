@@ -17,7 +17,9 @@ protocol ThumbnailHandler: Sendable {
 }
 
 enum ThumbnailHandlers {
-    static let all: [ThumbnailHandler] = [CbzThumbnailHandler(), CbrThumbnailHandler()]
+    static let all: [ThumbnailHandler] = [
+        CbzThumbnailHandler(), CbrThumbnailHandler(), MmaThumbnailHandler()
+    ]
 
     static func handler(forExtension ext: String) -> ThumbnailHandler? {
         let ext = ext.lowercased()

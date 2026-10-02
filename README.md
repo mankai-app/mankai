@@ -36,7 +36,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 ## Features
 
 - **Flexible sources** — JavaScript, file system, and HTTP plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV connections.
-- **Local books** — Read CBZ, CBR, EPUB, and PDF files from your device or connected folders.
+- **Local books** — Read MMA, CBZ, CBR, EPUB, and PDF files from your device or connected folders.
 - **Reader controls** — Paged and continuous layouts, horizontal and vertical navigation, and page-curl transitions.
 - **Image processing** — [Automatic spread grouping](#smart-grouping), optional [on-device 4× AI upscaling](#real-esrgan-upscaling), and configurable remote image processors.
 - **Collections and downloads** — Bookmark titles, track reading history, and download chapters for offline reading.
@@ -71,7 +71,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 - [x] **EPUB** - Digital book format.
 - [x] **PDF** - Portable Document Format.
 - [x] **CBR** - Comic Book RAR archive.
-- [ ] **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
+- [x] **Mankai Custom Format** - ZIP archives with manga metadata and chapter images.
 
 ### AI Features
 
