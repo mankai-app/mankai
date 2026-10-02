@@ -58,12 +58,12 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ### Integrations
 
-- [ ] **Komga** - Support for the Komga API.
+- [ ] ~~**Komga** - Support for the Komga API.~~
 - [x] **OPDS 1.2** - Open Publication Distribution System catalog support.
 - [x] **SMB** - Server Message Block support.
 - [x] **WebDAV** - Web Distributed Authoring and Versioning support.
 - [x] **NFS** - Network File System support.
-- [ ] **FTP** - File Transfer Protocol support.
+- [ ] ~~**FTP** - File Transfer Protocol support.~~
 - [x] **SFTP** - SSH File Transfer Protocol support.
 
 ### Parsers
@@ -76,7 +76,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 ### AI Features
 
 - [x] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
-- [ ] **Smart Dark Mode** - Transform page images into dark-friendly versions with AI while preserving readable line art, contrast, and important details.
+- [ ] ~~**Smart Dark Mode** - Transform page images into dark-friendly versions with AI while preserving readable line art, contrast, and important details.~~
 
 ## Documentation
 
@@ -97,12 +97,13 @@ For setup instructions, usage guides, and troubleshooting, visit the [Mankai doc
 
 Build a content source or connect a service using the [API reference](https://mankai.app/api/overview/).
 
-| Reference                                                        | Build                                                         |
-| :--------------------------------------------------------------- | :------------------------------------------------------------ |
-| [JavaScript plugins](https://mankai.app/api/javascript-plugins/) | A content plugin with browsing, search, chapters, and images. |
-| [HTTP plugin API](https://mankai.app/api/http-api/)              | A server that serves a manga library to Mankai.               |
-| [Editor API](https://mankai.app/api/editor-api/)                 | Editing support for an HTTP source.                           |
-| [Image processor API](https://mankai.app/api/image-processors/)  | A configurable service that processes reader images.          |
+| Reference                                                        | Build                                                                    |
+| :--------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| [JavaScript plugins](https://mankai.app/api/javascript-plugins/) | A content plugin with browsing, search, chapters, and images.            |
+| [HTTP plugin API](https://mankai.app/api/http-api/)              | A server that serves a manga library to Mankai.                          |
+| [Editor API](https://mankai.app/api/editor-api/)                 | Editing support for an HTTP source.                                      |
+| [Image processor API](https://mankai.app/api/image-processors/)  | A configurable service that processes reader images.                     |
+| [MMA format](https://mankai.app/api/mma-format/)                 | A ZIP archive containing book metadata, chapter groups, and page images. |
 
 ## Models and Benchmarks
 
