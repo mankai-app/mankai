@@ -24,6 +24,7 @@ enum MankaiErrorDomain: String {
     case browseEpub = "app.mankai.browse.epub"
     case chapter = "app.mankai.chapter"
     case download = "app.mankai.download"
+    case export = "app.mankai.export"
     case history = "app.mankai.history"
     case library = "app.mankai.library"
     case plugin = "app.mankai.plugin"
@@ -53,6 +54,7 @@ enum MankaiErrorDomain: String {
             case .browseEpub: return 33
             case .chapter: return 40
             case .download: return 50
+            case .export: return 51
             case .history: return 60
             case .library: return 70
             case .plugin: return 80
@@ -151,6 +153,10 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case downloadDatabaseNotAvailable
     case downloadPluginNotFound
     case downloadDisabled
+    case exportNoChaptersSelected
+    case exportChaptersNotDownloaded
+    case exportNoFilesCreated
+    case exportInvalidSelection
     case historyFailedToUpdateHistoryRecord
     case libraryFailedToUpdateSavedManga
     case libraryFailedToDeleteSavedManga
@@ -328,6 +334,13 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .download, code: 1, messageKey: "downloadDatabaseNotAvailable"),
         .downloadPluginNotFound: .init(domain: .download, code: 2, messageKey: "pluginNotFound"),
         .downloadDisabled: .init(domain: .download, code: 3, messageKey: "downloadDisabled"),
+        .exportNoChaptersSelected: .init(
+            domain: .export, code: 1, messageKey: "exportNoChaptersSelected"),
+        .exportChaptersNotDownloaded: .init(
+            domain: .export, code: 2, messageKey: "exportChaptersNotDownloaded"),
+        .exportNoFilesCreated: .init(domain: .export, code: 3, messageKey: "exportNoFilesCreated"),
+        .exportInvalidSelection: .init(
+            domain: .export, code: 4, messageKey: "exportInvalidSelection"),
         .historyFailedToUpdateHistoryRecord: .init(
             domain: .history, code: 1, messageKey: "failedToUpdateHistoryRecord"),
         .libraryFailedToUpdateSavedManga: .init(

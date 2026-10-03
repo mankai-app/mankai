@@ -23,6 +23,8 @@ struct MangaDetailsScreen: View {
     @State private var isUpdateMangaModalPresented = false
     @State private var isUpdateChaptersModalPresented = false
     @State private var isSelectChaptersModalPresented = false
+    @State private var isExportModalPresented = false
+    @State private var openDownloadAfterExport = false
 
     @State private var selectedGenre: Genre? = nil
     @State private var showPluginLibraryScreen = false
@@ -509,6 +511,24 @@ struct MangaDetailsScreen: View {
                     })
             }
         }
+        .sheet(
+            isPresented: $isExportModalPresented,
+            onDismiss: {
+                if openDownloadAfterExport {
+                    openDownloadAfterExport = false
+                    isSelectChaptersModalPresented = true
+                }
+            }
+        ) { [mangaData, downloadManga, downloadedChapterIds] in
+            if let mangaData {
+                ExportModal(
+                    manga: mangaData, downloadMangaId: downloadMangaId,
+                    chapterGroups: downloadManga?.chapters ?? mangaData.chapters,
+                    downloadedChapterIds: downloadedChapterIds ?? [],
+                    onDownload: plugin.supportsDownloads && detailedManga != nil
+                        ? { openDownloadAfterExport = true } : nil)
+            }
+        }
         .navigationDestination(item: $readerRoute) { params in
             ReaderScreen(
                 plugin: params.plugin, manga: params.manga, downloadManga: params.downloadManga,
@@ -526,27 +546,49 @@ struct MangaDetailsScreen: View {
             }
         }
         .toolbar {
+            if plugin is Editable, detailedManga?.editable ?? true {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { isUpdateMangaModalPresented = true }) {
+                        Label {
+                            Text("editManga")
+                        } icon: {
+                            ToolbarIcon(systemName: "pencil", legacySystemName: "pencil.circle")
+                        }
+                    }
+                    .labelStyle(.iconOnly).disabled(detailedManga == nil)
+                }
+            }
+
             ToolbarItemGroup(placement: .primaryAction) {
                 if plugin.supportsDownloads, mangaData == nil || detailedManga != nil {
                     Button(action: { isSelectChaptersModalPresented = true }) {
-                        ToolbarIcon(systemName: "arrow.down", legacySystemName: "arrow.down.circle")
+                        Label {
+                            Text("download")
+                        } icon: {
+                            ToolbarIcon(
+                                systemName: "arrow.down", legacySystemName: "arrow.down.circle")
+                        }
                     }
-                }
+                    .disabled(detailedManga == nil)
 
-                if plugin is Editable, detailedManga?.editable ?? true {
-                    Button(action: { isUpdateMangaModalPresented = true }) {
-                        ToolbarIcon(systemName: "pencil", legacySystemName: "pencil.circle")
+                    Button(action: { isExportModalPresented = true }) {
+                        Label("export", systemImage: "square.and.arrow.up")
                     }
+                    .disabled(mangaData == nil)
                 }
 
                 if let externalLink = mangaData?.externalLink,
                     let externalLinkURL = URL(string: externalLink)
                 {
                     Link(destination: externalLinkURL) {
-                        ToolbarIcon(
-                            systemName: "arrow.up.right.square",
-                            legacySystemName: "arrow.up.right.square")
+                        Label("openInBrowser", systemImage: "arrow.up.right.square")
                     }
+                }
+            } label: {
+                Label {
+                    Text("actions")
+                } icon: {
+                    ToolbarIcon(systemName: "ellipsis", legacySystemName: "ellipsis.circle")
                 }
             }
         }

@@ -97,6 +97,12 @@ struct DownloadedMangaRow: View {
     let manga: DetailedManga
     let navigate: (Plugin, Manga) -> Void
 
+    @State private var showingExportModal = false
+
+    private var downloadedChapterIds: Set<String> {
+        Set(manga.chapters.flatMap(\.chapters).filter { $0.locked != true }.map(\.id))
+    }
+
     var body: some View {
         Button(action: handleTap) {
             HStack(spacing: 12) {
@@ -122,6 +128,18 @@ struct DownloadedMangaRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if manga.meta != nil, !downloadedChapterIds.isEmpty {
+                Button("export", systemImage: "square.and.arrow.up") { showingExportModal = true }
+            }
+        }
+        .sheet(isPresented: $showingExportModal) {
+            if let pluginId = manga.meta {
+                ExportModal(
+                    manga: manga, downloadMangaId: "\(pluginId)+\(manga.id)",
+                    chapterGroups: manga.chapters, downloadedChapterIds: downloadedChapterIds)
+            }
+        }
     }
 
     private func handleTap() {

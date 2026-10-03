@@ -9,15 +9,17 @@ import SwiftUI
 
 struct BrowseTab: View {
     @ObservedObject private var browseService = BrowseService.shared
-    @Binding var importedFiles: [URL]
+    @Binding var importDestinationPluginId: String?
+    var onShowImports: () -> Void
     @State private var showingAddFolderModal = false
     @State private var importError: String?
     @State private var pluginPendingDeletion: BrowsablePlugin?
-    @State private var showingImportsModal = false
-    @State private var importDestinationPluginId: String?
     @State private var editDestinationPluginId: String?
 
-    init(importedFiles: Binding<[URL]>) { _importedFiles = importedFiles }
+    init(importDestinationPluginId: Binding<String?>, onShowImports: @escaping () -> Void) {
+        _importDestinationPluginId = importDestinationPluginId
+        self.onShowImports = onShowImports
+    }
 
     var body: some View {
         NavigationStack {
@@ -70,7 +72,7 @@ struct BrowseTab: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showingImportsModal = true
+                        onShowImports()
                     } label: {
                         Label("imports", systemImage: "square.and.arrow.down")
                     }
@@ -103,18 +105,6 @@ struct BrowseTab: View {
                 Button("cancel", role: .cancel) { pluginPendingDeletion = nil }
             } message: {
                 Text("removeFolderConfirmation")
-            }
-            .sheet(
-                isPresented: .init(
-                    get: { showingImportsModal || !importedFiles.isEmpty },
-                    set: { _ in
-                        showingImportsModal = false
-                        importedFiles = []
-                    })
-            ) {
-                ImportsModal(initialFiles: importedFiles) { plugin in
-                    importDestinationPluginId = plugin.id
-                }
             }
             .sheet(isPresented: $showingAddFolderModal) { AddBrowsableFolderModal() }
             .navigationDestination(item: $importDestinationPluginId) { pluginId in

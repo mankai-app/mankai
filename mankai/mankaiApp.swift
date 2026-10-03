@@ -12,6 +12,8 @@ import SwiftUI
         SettingsDefaults.accentColor.rawValue
 
     init() {
+        Exporter.clearTemporaryFiles()
+
         _ = DbService.shared.appDb
 
         // Initialize SyncService to start periodic syncing

@@ -13,6 +13,8 @@ struct MainScreen: View {
 
     @State private var selectedTab: Tab = .home
     @State private var importedFiles: [URL] = []
+    @State private var showingImportsModal = false
+    @State private var importDestinationPluginId: String?
     @State private var pluginImportRequest: PluginImportRequest?
     @State private var lastCheckedPasteboardChangeCount: Int?
 
@@ -26,11 +28,19 @@ struct MainScreen: View {
             HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
             LibraryTab().tag(Tab.library)
                 .tabItem { Label("library", systemImage: "books.vertical.fill") }
-            BrowseTab(importedFiles: $importedFiles).tag(Tab.browse)
-                .tabItem { Label("browse", systemImage: "folder.fill") }
+            BrowseTab(importDestinationPluginId: $importDestinationPluginId) {
+                showingImportsModal = true
+            }
+            .tag(Tab.browse).tabItem { Label("browse", systemImage: "folder.fill") }
             SettingsTab().tag(Tab.settings).tabItem { Label("settings", systemImage: "gearshape") }
         }
         .overlay(alignment: .bottom) { NotificationContainerView() }
+        .sheet(isPresented: $showingImportsModal, onDismiss: { importedFiles = [] }) {
+            [importedFiles] in
+            ImportsModal(initialFiles: importedFiles) { plugin in
+                importDestinationPluginId = plugin.id
+            }
+        }
         .sheet(item: $pluginImportRequest) { request in AddPluginsModal(sources: request.sources) }
         .onOpenURL { url in
             Logger.ui.info("Received URL: \(url)")
@@ -38,6 +48,7 @@ struct MainScreen: View {
             if url.isFileURL {
                 selectedTab = .browse
                 importedFiles.append(url)
+                showingImportsModal = true
                 return
             }
 
