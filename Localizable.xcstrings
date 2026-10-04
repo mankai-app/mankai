@@ -4447,62 +4447,6 @@
         }
       }
     },
-    "exportMmaSingleFile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MMA is Mankai's manga archive format. It bundles all selected chapters, original images, and manga details into one archive. It usually exports faster than PDF."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MMAはMankai独自のマンガアーカイブ形式です。選択したすべての章、元の画像、マンガ情報を1つのアーカイブにまとめます。通常はPDFより高速にエクスポートできます。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MMA 是 Mankai 的漫画归档格式，将所有所选章节、原始图片和漫画信息打包为一个归档文件。导出通常比 PDF 更快。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MMA 是 Mankai 的漫畫封存格式，將所有所選章節、原始圖片和漫畫資訊打包為一個封存檔案。匯出通常比 PDF 更快。"
-          }
-        }
-      }
-    },
-    "exportPdfOneFilePerChapter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each selected chapter is exported as a separate PDF file."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選択した各章は個別のPDFファイルとしてエクスポートされます。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每个所选章节将导出为单独的 PDF 文件。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每個所選章節將匯出為獨立的 PDF 檔案。"
-          }
-        }
-      }
-    },
     "exporting" : {
       "localizations" : {
         "en" : {
@@ -4559,6 +4503,34 @@
         }
       }
     },
+    "exportMmaSingleFile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MMA is Mankai's manga archive format. It bundles all selected chapters, original images, and manga details into one archive. It usually exports faster than PDF."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MMAはMankai独自のマンガアーカイブ形式です。選択したすべての章、元の画像、マンガ情報を1つのアーカイブにまとめます。通常はPDFより高速にエクスポートできます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MMA 是 Mankai 的漫画归档格式，将所有所选章节、原始图片和漫画信息打包为一个归档文件。导出通常比 PDF 更快。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MMA 是 Mankai 的漫畫封存格式，將所有所選章節、原始圖片和漫畫資訊打包為一個封存檔案。匯出通常比 PDF 更快。"
+          }
+        }
+      }
+    },
     "exportNoChaptersSelected" : {
       "localizations" : {
         "en" : {
@@ -4611,6 +4583,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯出器未產生任何檔案。"
+          }
+        }
+      }
+    },
+    "exportPdfOneFilePerChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each selected chapter is exported as a separate PDF file."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した各章は個別のPDFファイルとしてエクスポートされます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个所选章节将导出为单独的 PDF 文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每個所選章節將匯出為獨立的 PDF 檔案。"
           }
         }
       }
