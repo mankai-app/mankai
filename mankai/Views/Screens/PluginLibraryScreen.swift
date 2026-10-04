@@ -170,18 +170,7 @@ struct PluginLibraryScreen: View {
         .toolbar {
             if supportsGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showingFilters = true }) {
-                        ZStack {
-                            ToolbarIcon(
-                                systemName: "line.3.horizontal.decrease",
-                                legacySystemName: "line.3.horizontal.decrease.circle")
-
-                            if hasActiveFilters {
-                                Circle().fill(Color.red).frame(width: 8, height: 8)
-                                    .offset(x: 8, y: -8)
-                            }
-                        }
-                    }
+                    FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
                 }
             }
         }
