@@ -91,8 +91,7 @@ struct BrowsableSessionParserFile<Session: BrowsableSession>: ParserFile {
     func getContent() async throws -> Data { try Data(contentsOf: try await getUrl()) }
 
     func getUrl() async throws -> URL {
-        let localURL = BrowsableFileUtilities.parserCacheURL(
-            for: remotePath, in: temporaryDirectory)
+        let localURL = FileUtilities.cacheURL(for: remotePath, in: temporaryDirectory)
         do {
             return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
                 [session, remotePath] localURL in
@@ -234,7 +233,7 @@ where Session: BrowsableSession, Session.Config == Config {
             .compactMap { entry in
                 guard !entry.name.hasPrefix(".") else { return nil }
 
-                let entryPath = parentPath.isEmpty ? entry.name : "\(parentPath)/\(entry.name)"
+                let entryPath = PathUtilities.appending(entry.name, to: parentPath)
                 return BrowsableEntry(
                     path: entryPath, isDirectory: entry.isDirectory,
                     isRegularFile: entry.isRegularFile)
@@ -253,7 +252,12 @@ where Session: BrowsableSession, Session.Config == Config {
     func hashFile(relativePath: String) async throws -> String {
         let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
         let fileURL = try await file.getUrl()
-        return try await BrowsableFileUtilities.sha256(of: fileURL)
+        do { return try await FileUtilities.sha256(of: fileURL) } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError(
+                underlyingError: error)
+        }
     }
 
     func absoluteURL(for path: String?) -> URL? { try? session.localURL(for: path) }
@@ -602,9 +606,7 @@ where Session: BrowsableSession, Session.Config == Config {
             }
         }
 
-        if FileManager.default.fileExists(atPath: cacheDir.path(percentEncoded: false)) {
-            try FileManager.default.removeItem(at: cacheDir)
-        }
+        try FileUtilities.clearDirectoryIfPresent(at: cacheDir)
     }
 
     override func deletePlugin() throws {
@@ -615,7 +617,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     private func clearTemporaryDirectory() throws {
         guard temporaryDirectoryName != nil else { return }
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
+        try FileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
     private func disconnectSessionIfNeeded() {
@@ -678,9 +680,10 @@ where Session: BrowsableSession, Session.Config == Config {
         }
 
         let existingEntries = try await session.list(path: importPath)
-        let fileName = BrowsableFileUtilities.uniqueFileName(
+        let fileName = FileUtilities.uniqueFileName(
             for: source, existingNames: Set(existingEntries.map(\.name)))
-        try await session.upload(file: source, path: "\(importPath)/\(fileName)")
+        try await session.upload(
+            file: source, path: PathUtilities.appending(fileName, to: importPath))
         try Task.checkCancellation()
 
         let importedEntries = try await session.list(path: importPath)

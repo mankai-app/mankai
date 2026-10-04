@@ -65,8 +65,7 @@ actor SftpSession: BrowsableSession {
                 var attributes = component.attributes
                 var kind = Self.entryKind(attributes: attributes, longName: component.longname)
                 if kind == nil {
-                    let childPath = BrowsablePathUtilities.appending(
-                        component.filename, to: remotePath)
+                    let childPath = PathUtilities.appending(component.filename, to: remotePath)
                     if let resolvedAttributes = try? await client.getAttributes(at: childPath) {
                         attributes = resolvedAttributes
                         kind = Self.entryKind(attributes: attributes, longName: component.longname)
@@ -184,8 +183,7 @@ actor SftpSession: BrowsableSession {
             throw MankaiErrorCode.browseSftpInvalidPlugin.makeError()
         }
         let remotePath =
-            path.isEmpty
-            ? canonicalRootPath : BrowsablePathUtilities.appending(path, to: canonicalRootPath)
+            path.isEmpty ? canonicalRootPath : PathUtilities.appending(path, to: canonicalRootPath)
 
         do { return try await operation(sftpClient, remotePath) } catch {
             await invalidateConnection()
@@ -209,7 +207,7 @@ final class SftpBrowsablePlugin: GenericBrowsablePlugin<SftpConnectionConfigurat
     /// Creates a new SFTP plugin after validating the connection and resolving its identity.
     convenience init(session: SftpSession, name: String?) async throws {
         do {
-            let identity = try await BrowsableFileUtilities.resolveIdentity(
+            let identity = try await BrowsablePluginUtilities.resolveIdentity(
                 using: session,
                 invalidPluginError: MankaiErrorCode.browseSftpInvalidPlugin.makeError())
 

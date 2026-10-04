@@ -47,7 +47,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 ### App Features
 
 - [x] **Plugin Installation Deep Links** - Review and add one or more plugins through a deep link.
-- [x] **Export** - Export downloaded chapters as MMA archives and share them.
+- [x] **Export** - Export downloaded chapters as MMA archives or separate PDF files for each chapter and share them.
 - [ ] ~~**Sharing** - Share manga as an image.~~
 - [x] **Page curl animations** - Choose realistic page-turning animations in the paged reader for a more immersive reading experience.
 - [ ] ~~**NavigationTransition (Hero Animation)** - Add smooth hero animations between related views.~~

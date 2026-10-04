@@ -13,6 +13,7 @@ struct MangaDetailsScreen: View {
     let manga: Manga
 
     @State private var detailedManga: DetailedManga? = nil
+    @State private var hasFinishedInitialLoad = false
 
     @State private var showingChaptersModal = false
     @State private var selectedChapterGroupIndex: Int? = nil
@@ -597,64 +598,89 @@ struct MangaDetailsScreen: View {
             subtitle: Text(plugin.name ?? plugin.id)
         )
         .onAppear {
-            loadDetailedManga()
+            hasFinishedInitialLoad = false
+            Task {
+                var cachedError: Error?
+                do { try await loadDetailedManga() } catch { cachedError = error }
+                do { try await loadDownloadManga() } catch { cachedError = error }
+                hasFinishedInitialLoad = true
+                if let cachedError { handleMangaLoadError(cachedError) }
+            }
             updateRecord()
             updateSaved()
         }
-        .onReceive(plugin.objectWillChange) { loadDetailedManga() }
-        .onReceive(DownloadPlugin.shared.objectWillChange) { loadDetailedManga() }
+        .onReceive(plugin.objectWillChange) {
+            Task { do { try await loadDetailedManga() } catch { handleMangaLoadError(error) } }
+        }
+        .onReceive(DownloadPlugin.shared.objectWillChange) {
+            Task { do { try await loadDownloadManga() } catch { handleMangaLoadError(error) } }
+        }
         .onReceive(SavedService.shared.objectWillChange) { updateSaved() }
         .onReceive(HistoryService.shared.objectWillChange) { updateRecord() }
         .toolbarBackground(
             horizontalSizeClass == .regular ? .visible : .automatic, for: .navigationBar)
     }
 
-    private func loadDetailedManga() {
-        Task {
-            var cachedError: Error?
+    private func loadDetailedManga() async throws {
+        defer { updateSelectedChapterGroup() }
 
-            if plugin.supports(.mangaDetails) {
-                do {
-                    detailedManga = try await plugin.getDetailedManga(manga.id)
-                    selectedChapterGroupIndex = detailedManga!.chapters.isEmpty ? nil : 0
-                } catch {
-                    detailedManga = nil
-
-                    // If the plugin is editable, there is a high chance that it is deleted
-                    if !(plugin is Editable) {
-                        Logger.ui.error("Failed to load detailed manga", error: error)
-                        cachedError = error
-                    }
-                }
-            } else {
-                detailedManga = nil
-            }
-
-            do {
-                downloadManga = try await DownloadPlugin.shared.getDetailedManga(downloadMangaId)
-                if detailedManga == nil {
-                    selectedChapterGroupIndex = downloadManga!.chapters.isEmpty ? nil : 0
-                }
-
-                downloadedChapterIds = Set(
-                    downloadManga!.chapters
-                        .flatMap { group in
-                            group.chapters.filter { !($0.locked ?? false) }.map(\.id)
-                        })
-            } catch {
-                if detailedManga == nil {
-                    Logger.ui.error("Failed to load detailed manga", error: error)
-                    cachedError = error
-                }
-            }
-
-            if mangaData == nil, let cachedError = cachedError {
-                let message = String(localized: "failedToLoadMangaDetails")
-                NotificationService.shared.showError(
-                    String(format: message, cachedError.localizedDescription))
-
-                dismiss()
-            }
+        guard plugin.supports(.mangaDetails) else {
+            detailedManga = nil
+            return
         }
+
+        do { detailedManga = try await plugin.getDetailedManga(manga.id) } catch {
+            detailedManga = nil
+
+            // If the plugin is editable, there is a high chance that it is deleted
+            if !(plugin is Editable) {
+                Logger.ui.error("Failed to load detailed manga", error: error)
+            }
+
+            throw error
+        }
+    }
+
+    private func loadDownloadManga() async throws {
+        defer { updateSelectedChapterGroup() }
+
+        do {
+            let downloadedManga = try await DownloadPlugin.shared.getDetailedManga(downloadMangaId)
+            downloadManga = downloadedManga
+            downloadedChapterIds = Set(
+                downloadedManga.chapters.flatMap { group in
+                    group.chapters.filter { !($0.locked ?? false) }.map(\.id)
+                })
+        } catch {
+            if detailedManga == nil {
+                Logger.ui.error("Failed to load detailed manga", error: error)
+            }
+
+            throw error
+        }
+    }
+
+    private func updateSelectedChapterGroup() {
+        guard let mangaData, !mangaData.chapters.isEmpty else {
+            selectedChapterGroupIndex = nil
+            return
+        }
+
+        if let selectedChapterGroupIndex,
+            mangaData.chapters.indices.contains(selectedChapterGroupIndex)
+        {
+            return
+        }
+
+        selectedChapterGroupIndex = 0
+    }
+
+    private func handleMangaLoadError(_ error: Error) {
+        guard hasFinishedInitialLoad, mangaData == nil else { return }
+
+        let message = String(localized: "failedToLoadMangaDetails")
+        NotificationService.shared.showError(String(format: message, error.localizedDescription))
+
+        dismiss()
     }
 }

@@ -117,7 +117,9 @@ struct ExportModal: View {
                     ForEach(Exporter.allCases) { exporter in Text(exporter.name).tag(exporter) }
                 }
             } footer: {
-                Text("exportDownloadedChaptersOnly")
+                switch selectedExporter { case .mma: Text("exportMmaSingleFile") case .pdf:
+                    Text("exportPdfOneFilePerChapter")
+                }
             }
 
             ForEach(Array(availableGroups.enumerated()), id: \.offset) { index, group in
@@ -127,6 +129,8 @@ struct ExportModal: View {
                     if expandedGroupIndex == index {
                         ForEach(group.chapters, id: \.id) { chapter in chapterRow(chapter) }
                     }
+                } footer: {
+                    Text("exportDownloadedChaptersOnly")
                 }
             }
         }

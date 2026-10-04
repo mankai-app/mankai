@@ -397,8 +397,6 @@ final class DownloadPlugin: Plugin {
         }
 
         try await db.write { db in try image.save(db) }
-
-        objectWillChange.send()
     }
 
     /// Deletes a manga from the database and removes its image directory from disk

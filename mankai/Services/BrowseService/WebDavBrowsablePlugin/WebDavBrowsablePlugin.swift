@@ -149,7 +149,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin<
     /// Creates a new WebDAV plugin after validating the connection and resolving its identity.
     convenience init(session: WebDavSession, name: String?) async throws {
         do {
-            let identity = try await BrowsableFileUtilities.resolveIdentity(
+            let identity = try await BrowsablePluginUtilities.resolveIdentity(
                 using: session,
                 invalidPluginError: MankaiErrorCode.browseWebDavInvalidPlugin.makeError())
 

@@ -5,7 +5,6 @@
 //  Created by Travis XU on 10/8/2026.
 //
 
-import CryptoKit
 import Foundation
 import SwiftUI
 
@@ -41,39 +40,7 @@ final class ParserFileDownloadRegistry: @unchecked Sendable {
     }
 }
 
-enum BrowsablePathUtilities {
-    static func isValidComponent(_ value: String) -> Bool {
-        !value.isEmpty && value != "." && value != ".." && !value.contains("/")
-            && !value.contains("\0")
-    }
-
-    static func isValidAbsolutePath(_ value: String) -> Bool {
-        guard value.hasPrefix("/") else { return false }
-        return hasValidPathComponents(String(value.dropFirst()))
-    }
-
-    static func isValidRelativePath(_ value: String) -> Bool {
-        let firstComponent = value.prefix { $0 != "/" }
-        guard !value.isEmpty, !value.hasPrefix("/"), !firstComponent.contains(":") else {
-            return false
-        }
-        return hasValidPathComponents(value)
-    }
-
-    private static func hasValidPathComponents(_ value: String) -> Bool {
-        guard !value.contains("\\") else { return false }
-        return value.split(separator: "/", omittingEmptySubsequences: false)
-            .allSatisfy { isValidComponent(String($0)) }
-    }
-
-    static func appending(_ relativePath: String, to rootPath: String) -> String {
-        let rootPath =
-            rootPath == "/" ? "" : rootPath.hasSuffix("/") ? String(rootPath.dropLast()) : rootPath
-        return "\(rootPath)/\(relativePath)"
-    }
-}
-
-enum BrowsableFileUtilities {
+enum BrowsablePluginUtilities {
     static func resolveIdentity<Session: BrowsableSession>(
         using session: Session, invalidPluginError: @autoclosure () -> Error
     ) async throws -> (id: String, shouldSync: Bool) {
@@ -95,60 +62,6 @@ enum BrowsableFileUtilities {
             Session.logger.warning(
                 "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)")
             return (id: id, shouldSync: false)
-        }
-    }
-
-    static func parserCacheURL(for relativePath: String, in directory: URL) -> URL {
-        let hash = SHA256.hash(data: Data(relativePath.utf8)).map { String(format: "%02x", $0) }
-            .joined()
-        let extensionName = (relativePath as NSString).pathExtension
-        let fileName = extensionName.isEmpty ? hash : "\(hash).\(extensionName)"
-        return directory.appendingPathComponent(fileName, isDirectory: false)
-    }
-
-    static func sha256(of fileURL: URL) async throws -> String {
-        try await Task.detached(priority: .utility) {
-            guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
-                throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError()
-            }
-            defer { try? handle.close() }
-
-            var hasher = SHA256()
-            while true {
-                try Task.checkCancellation()
-                let chunk = handle.readData(ofLength: 1 << 16)
-                if chunk.isEmpty { break }
-                hasher.update(data: chunk)
-            }
-            return hasher.finalize().map { String(format: "%02x", $0) }.joined()
-        }
-        .value
-    }
-
-    static func uniqueFileName(for source: URL, existingNames: Set<String>) -> String {
-        let baseName = source.lastPathComponent.replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "\\", with: "_")
-        let stem = (baseName as NSString).deletingPathExtension
-        let extensionName = (baseName as NSString).pathExtension
-
-        func candidate(_ suffix: String) -> String {
-            let name = suffix.isEmpty ? stem : "\(stem) \(suffix)"
-            return extensionName.isEmpty ? name : "\(name).\(extensionName)"
-        }
-
-        var result = candidate("")
-        var counter = 1
-        while existingNames.contains(result) {
-            result = candidate("(\(counter))")
-            counter += 1
-        }
-        return result
-    }
-
-    static func clearDirectoryIfPresent(at directory: URL) throws {
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: directory.path(percentEncoded: false)) {
-            try fileManager.removeItem(at: directory)
         }
     }
 }

@@ -55,7 +55,7 @@ struct SelectChaptersModal: View {
             }
             result.append(
                 ChapterGroup(
-                    title: group.title,
+                    id: group.id, title: group.title,
                     chapters: group.chapters.filter { selectedIds.contains($0.id) }))
         }
         return result

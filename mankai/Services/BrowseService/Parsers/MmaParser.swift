@@ -96,7 +96,7 @@ final class MmaParser: Parser {
     }
 
     private func validateImagePath(_ path: String) throws {
-        guard BrowsablePathUtilities.isValidRelativePath(path) else {
+        guard PathUtilities.isValidRelativePath(path) else {
             Logger.mmaParser.error("Invalid archive-relative image path: \(path)")
             throw MankaiErrorCode.browseArchiveInvalidMetadata.makeError()
         }

@@ -11,11 +11,12 @@ typealias ExportProgressHandler = @Sendable (Double) async -> Void
 
 enum Exporter: String, CaseIterable, Identifiable, Sendable {
     case mma
+    case pdf
 
     var id: String { rawValue }
 
     var name: String {
-        switch self { case .mma: return "MMA"
+        switch self { case .mma: return "MMA" case .pdf: return "PDF"
         }
     }
 
@@ -24,11 +25,7 @@ enum Exporter: String, CaseIterable, Identifiable, Sendable {
     }
 
     static func clearTemporaryFiles() {
-        let fileManager = FileManager.default
-        let directory = temporaryDirectory
-        guard fileManager.fileExists(atPath: directory.path) else { return }
-
-        do { try fileManager.removeItem(at: directory) } catch {
+        do { try FileUtilities.clearDirectoryIfPresent(at: temporaryDirectory) } catch {
             Logger.general.error("Failed to clear temporary export files", error: error)
         }
     }
@@ -42,6 +39,10 @@ enum Exporter: String, CaseIterable, Identifiable, Sendable {
             return try await MmaExporter.shared.export(
                 manga: manga, downloadMangaId: downloadMangaId, chapters: chapters,
                 progress: progress)
+            case .pdf:
+                return try await PdfExporter.shared.export(
+                    manga: manga, downloadMangaId: downloadMangaId, chapters: chapters,
+                    progress: progress)
         }
     }
 }

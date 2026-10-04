@@ -210,46 +210,48 @@ enum DownloadStatus {
         // Create the combined ID (pluginId+mangaId)
         let combinedId = "\(plugin.id)+\(manga.id)"
 
-        // Merge chapters: start with new chapters, then add old chapters if they exist
-        var finalChapters = chapters
-
-        // Check if manga exists and get old chapters
+        var existingChapters: ChapterGroups = []
         if let existingManga = try await db.read({ db in
             try DownloadMangaModel.fetchOne(db, key: combinedId)
-        }) {
+        }), let existingChaptersJson = existingManga.chapters,
+            let chaptersData = existingChaptersJson.data(using: .utf8),
+            let decodedChapters = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
+        {
+            existingChapters = decodedChapters
             Logger.downloadService.info("Found existing manga in database, merging chapters")
+        }
 
-            // Parse existing chapters
-            if let existingChaptersJson = existingManga.chapters,
-                let chaptersData = existingChaptersJson.data(using: .utf8),
-                let existingChapters = try? JSONDecoder()
-                    .decode(ChapterGroups.self, from: chaptersData)
-            {
-                for existingGroup in existingChapters {
-                    guard
-                        let currentIndex = finalChapters.firstIndex(where: {
-                            $0.title == existingGroup.title
-                        })
-                    else {
-                        finalChapters.append(existingGroup)
-                        continue
-                    }
+        // The source determines group and chapter order, regardless of download batch order.
+        let retainedIds = Set((existingChapters + chapters).flatMap(\.chapters).map(\.id))
+        var includedIds = Set<String>()
+        var finalChapters = manga.chapters.compactMap { group -> ChapterGroup? in
+            var group = group
+            group.chapters = group.chapters.filter {
+                retainedIds.contains($0.id) && includedIds.insert($0.id).inserted
+            }
+            return group.chapters.isEmpty ? nil : group
+        }
 
-                    // Merge lists, avoiding duplicates while retaining the selected order.
-                    for existingChapter in existingGroup.chapters {
-                        if !finalChapters[currentIndex].chapters
-                            .contains(where: { $0.id == existingChapter.id })
-                        {
-                            finalChapters[currentIndex].chapters.append(existingChapter)
-                        }
-                    }
-                }
+        // Retain chapters no longer listed by the source, in their previously stored order.
+        for group in existingChapters + chapters {
+            let missingChapters = group.chapters.filter { includedIds.insert($0.id).inserted }
+            guard !missingChapters.isEmpty else { continue }
+
+            if let groupIndex = finalChapters.firstIndex(where: {
+                if let currentId = $0.id, let groupId = group.id { return currentId == groupId }
+                return $0.title == group.title
+            }) {
+                finalChapters[groupIndex].chapters.append(contentsOf: missingChapters)
+            } else {
+                var retainedGroup = group
+                retainedGroup.chapters = missingChapters
+                finalChapters.append(retainedGroup)
             }
         }
 
         let chaptersToPersist = finalChapters.map { group in
             ChapterGroup(
-                title: group.title,
+                id: group.id, title: group.title,
                 chapters: group.chapters.map { chapter in
                     Chapter(id: chapter.id, title: chapter.title)
                 })

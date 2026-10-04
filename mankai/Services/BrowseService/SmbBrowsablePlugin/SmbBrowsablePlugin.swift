@@ -24,7 +24,7 @@ struct SmbConnectionConfiguration: Sendable {
         let trimmedShare = share.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let normalizedHost = URL.normalizedHost(host), URL.isValidPort(port),
-            BrowsablePathUtilities.isValidComponent(trimmedShare), !trimmedShare.contains("\\")
+            PathUtilities.isValidComponent(trimmedShare), !trimmedShare.contains("\\")
         else { throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError() }
 
         self.host = normalizedHost
@@ -169,7 +169,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
     /// Creates a new SMB plugin using an existing session.
     convenience init(session: SmbSession, name: String?) async throws {
         do {
-            let identity = try await BrowsableFileUtilities.resolveIdentity(
+            let identity = try await BrowsablePluginUtilities.resolveIdentity(
                 using: session,
                 invalidPluginError: MankaiErrorCode.browseSmbInvalidPlugin.makeError())
 

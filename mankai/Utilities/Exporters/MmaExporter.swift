@@ -33,7 +33,8 @@ struct MmaExporter: Sendable {
 
         let exportRoot = Exporter.temporaryDirectory.appendingPathComponent(id, isDirectory: true)
         let directory = exportRoot.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let url = directory.appendingPathComponent(Self.filename(for: manga.title ?? manga.id))
+        let url = directory.appendingPathComponent(
+            FileUtilities.filename(for: manga.title ?? manga.id, fileExtension: id))
 
         Logger.mmaExporter.info("Exporting \(chapters.flatMap(\.chapters).count) chapters as MMA")
         let worker = Task.detached(priority: .userInitiated) {
@@ -54,7 +55,7 @@ struct MmaExporter: Sendable {
             Logger.mmaExporter.info("Export completed: \(url.lastPathComponent)")
             return [url]
         } catch {
-            try? FileManager.default.removeItem(at: directory)
+            try? FileUtilities.clearDirectoryIfPresent(at: directory)
             throw error
         }
     }
@@ -229,12 +230,4 @@ struct MmaExporter: Sendable {
         return Content(manga: exportManga, pages: pages, cover: downloadedManga.cover)
     }
 
-    nonisolated private static func filename(for title: String) -> String {
-        let invalidCharacters = CharacterSet(charactersIn: "/\\:\0").union(.controlCharacters)
-        var name = title.components(separatedBy: invalidCharacters).joined(separator: "_")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        while name.utf8.count > 200 { name.removeLast() }
-        if name.isEmpty || name == "." || name == ".." { name = "Export" }
-        return "\(name).mma"
-    }
 }

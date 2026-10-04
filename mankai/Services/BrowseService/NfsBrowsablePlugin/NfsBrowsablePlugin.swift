@@ -19,7 +19,7 @@ struct NfsConnectionConfiguration: Sendable {
 
         guard let normalizedHost = URL.normalizedHost(host),
             URL.serverURL(scheme: "nfs", host: normalizedHost) != nil,
-            BrowsablePathUtilities.isValidAbsolutePath(trimmedExport)
+            PathUtilities.isValidAbsolutePath(trimmedExport)
         else { throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError() }
 
         self.host = normalizedHost
@@ -251,7 +251,7 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
     /// Creates a new NFS plugin after mounting the export and resolving its identity.
     convenience init(session: NfsSession, name: String?) async throws {
         do {
-            let identity = try await BrowsableFileUtilities.resolveIdentity(
+            let identity = try await BrowsablePluginUtilities.resolveIdentity(
                 using: session,
                 invalidPluginError: MankaiErrorCode.browseNfsInvalidPlugin.makeError())
 

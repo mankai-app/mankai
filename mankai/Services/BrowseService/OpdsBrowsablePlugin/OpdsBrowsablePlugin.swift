@@ -149,10 +149,10 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         self.mimeTypes = mimeTypes
 
         super.init()
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
+        try FileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
-    isolated deinit { try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory) }
+    isolated deinit { try? FileUtilities.clearDirectoryIfPresent(at: temporaryDirectory) }
 
     func getEntities(path: String?) async throws -> [Entity] {
         let catalogURL: URL
@@ -266,7 +266,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         }
         _ = try appDb.write { db in try OpdsBrowsablePluginModel.deleteOne(db, key: id) }
 
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
+        try FileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
     override func isOnline() async throws -> Bool {

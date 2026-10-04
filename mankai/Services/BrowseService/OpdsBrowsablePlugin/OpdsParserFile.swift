@@ -34,7 +34,7 @@ struct OpdsParserFile: ParserFile {
     func getUrl() async throws -> URL { try await localURL() }
 
     private func localURL() async throws -> URL {
-        let localURL = BrowsableFileUtilities.parserCacheURL(
+        let localURL = FileUtilities.cacheURL(
             for: "\(cacheKey)/\(fileName)", in: temporaryDirectory)
         return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
             [session, remoteURL] localURL in

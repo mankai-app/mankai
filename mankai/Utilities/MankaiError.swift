@@ -157,6 +157,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case exportChaptersNotDownloaded
     case exportNoFilesCreated
     case exportInvalidSelection
+    case exportFailedToCreatePdf
     case historyFailedToUpdateHistoryRecord
     case libraryFailedToUpdateSavedManga
     case libraryFailedToDeleteSavedManga
@@ -341,6 +342,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .exportNoFilesCreated: .init(domain: .export, code: 3, messageKey: "exportNoFilesCreated"),
         .exportInvalidSelection: .init(
             domain: .export, code: 4, messageKey: "exportInvalidSelection"),
+        .exportFailedToCreatePdf: .init(
+            domain: .export, code: 5, messageKey: "exportFailedToCreatePdf"),
         .historyFailedToUpdateHistoryRecord: .init(
             domain: .history, code: 1, messageKey: "failedToUpdateHistoryRecord"),
         .libraryFailedToUpdateSavedManga: .init(
