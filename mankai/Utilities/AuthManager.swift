@@ -82,6 +82,7 @@ import Foundation
         _accessToken = nil
 
         try await getRefreshToken()
+        try await refreshAccessToken()
         Logger.authManager.info("AuthManager login successful")
 
         postLogin?()

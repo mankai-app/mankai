@@ -11,6 +11,7 @@ struct JsPluginModel {
     var id: String
     var meta: String
     var configValues: String
+    var sourceURL: String? = nil
 
     static func createTable(_ db: Database) throws {
         try db.create(table: JsPluginModel.databaseTableName, ifNotExists: true) {
@@ -18,6 +19,7 @@ struct JsPluginModel {
 
             $0.column("meta", .text).notNull()
             $0.column("configValues", .text).notNull()
+            $0.column("sourceURL", .text)
         }
     }
 }

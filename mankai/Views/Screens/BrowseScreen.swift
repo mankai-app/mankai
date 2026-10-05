@@ -208,7 +208,7 @@ struct BrowseScreen: View {
                     let manga = try await plugin.parseFile(path: filePath, fileType: fileType)
 
                     let isUnread =
-                        HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id) == nil
+                        ProgressService.shared.get(mangaId: manga.id, pluginId: plugin.id) == nil
                     parsedMangas[filePath] = manga
                     if isUnread { unreadMangaPaths.insert(filePath) }
                     parsingPaths.remove(filePath)

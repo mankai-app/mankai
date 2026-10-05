@@ -36,8 +36,9 @@ import GRDB
 
             try dbPool.write { db in
                 try MangaModel.createTable(db)
-                try SavedModel.createTable(db)
-                try RecordModel.createTable(db)
+                try LibraryModel.createTable(db)
+                try ProgressModel.createTable(db)
+                try SyncQueueModel.createTable(db)
 
                 let hasImageProcessorTable = try db.tableExists(
                     ImageProcessorModel.databaseTableName)

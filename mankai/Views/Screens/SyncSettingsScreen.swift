@@ -5,7 +5,6 @@
 //  Created by Travis XU on 10/12/2025.
 //
 
-import Supabase
 import SwiftUI
 
 struct SyncSettingsScreen: View {
@@ -33,8 +32,6 @@ struct SyncSettingsScreen: View {
 
             if let engine = syncService.engine {
                 if engine is HttpEngine { HttpEngineConfigView() }
-
-                if engine is SupabaseEngine { SupabaseEngineConfigView() }
 
                 Section("syncStatus") {
                     LabeledContent("status") {
@@ -258,149 +255,5 @@ struct HttpEngineConfigView: View {
         }
 
         isLoggingIn = false
-    }
-}
-
-struct SupabaseEngineConfigView: View {
-    @ObservedObject private var supabaseEngine = SupabaseEngine.shared
-    @State private var url: String = ""
-    @State private var key: String = ""
-    @State private var showErrorAlert = false
-    @State private var errorMessage: String?
-    @State private var showResetConfirmation = false
-    @State private var showLogoutConfirmation = false
-    @State private var selectedProvider: Provider = .google
-    @State private var isLoggingIn = false
-
-    var body: some View {
-        Group {
-            Section("supabaseSettings") {
-                if supabaseEngine.isConfigured {
-                    LabeledContent("url") {
-                        Text(supabaseEngine.currentUrl ?? "").foregroundColor(.secondary)
-                            .textSelection(.enabled)
-                    }
-
-                    LabeledContent("key") {
-                        Text(supabaseEngine.currentKey ?? "").foregroundColor(.secondary)
-                            .textSelection(.enabled)
-                    }
-
-                    Button(role: .destructive) {
-                        showResetConfirmation = true
-                    } label: {
-                        Text("resetConfigs")
-                    }
-                    .confirmationDialog(
-                        "resetSupabaseConfirmationMessage", isPresented: $showResetConfirmation,
-                        titleVisibility: .visible
-                    ) {
-                        Button("reset", role: .destructive) {
-                            supabaseEngine.resetClient()
-                            url = ""
-                            key = ""
-                        }
-                        Button("cancel", role: .cancel) {}
-                    }
-                } else {
-                    TextField("url", text: $url).textContentType(.URL).keyboardType(.URL)
-                        .autocapitalization(.none)
-
-                    TextField("key", text: $key).keyboardType(.default).autocapitalization(.none)
-
-                    Button {
-                        performConfig()
-                    } label: {
-                        Text("saveConfigs")
-                    }
-                    .disabled(url.isEmpty || key.isEmpty)
-                }
-            }
-
-            if supabaseEngine.isConfigured {
-                Section("credentials") {
-                    if let user = supabaseEngine.currentUser {
-                        HStack(spacing: 8) {
-                            if let avatarUrlString = user.userMetadata["avatar_url"]?.stringValue,
-                                let avatarUrl = URL(string: avatarUrlString)
-                            {
-                                AsyncImage(url: avatarUrl) { image in
-                                    image.resizable().aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                    Image(systemName: "person.circle.fill").resizable()
-                                        .foregroundColor(.gray)
-                                }
-                                .frame(width: 32, height: 32).clipShape(Circle())
-                            } else {
-                                Image(systemName: "person.circle.fill").resizable()
-                                    .foregroundColor(.gray).frame(width: 32, height: 32)
-                            }
-
-                            if let userName = user.userMetadata["preferred_username"]?.stringValue
-                                ?? user.userMetadata["user_name"]?.stringValue
-                            {
-                                VStack(alignment: .leading) {
-                                    Text(userName)
-                                    if let email = user.email {
-                                        Text(email).font(.caption).foregroundColor(.secondary)
-                                    }
-                                }
-                            } else {
-                                Text(user.email ?? "unknown")
-                            }
-                        }
-
-                        Button(role: .destructive) {
-                            showLogoutConfirmation = true
-                        } label: {
-                            Text("logout")
-                        }
-                        .confirmationDialog(
-                            "logoutConfirmationMessage", isPresented: $showLogoutConfirmation,
-                            titleVisibility: .visible
-                        ) {
-                            Button("logout", role: .destructive) {
-                                Task { try? await supabaseEngine.logout() }
-                            }
-                            Button("cancel", role: .cancel) {}
-                        }
-                    } else {
-                        Picker("provider", selection: $selectedProvider) {
-                            ForEach(Provider.allCases, id: \.self) { provider in
-                                Text(provider.rawValue.capitalized).tag(provider)
-                            }
-                        }
-
-                        Button {
-                            isLoggingIn = true
-                            Task {
-                                do {
-                                    try await supabaseEngine.login(provider: selectedProvider)
-                                } catch {
-                                    errorMessage = error.localizedDescription
-                                    showErrorAlert = true
-                                }
-                                isLoggingIn = false
-                            }
-                        } label: {
-                            if isLoggingIn { ProgressView() } else { Text("login") }
-                        }
-                    }
-                }
-            }
-        }
-        .onAppear { url = supabaseEngine.currentUrl ?? "" }
-        .alert("configFailed", isPresented: $showErrorAlert) {
-            Button("ok", role: .cancel) {}
-        } message: {
-            if let errorMessage = errorMessage { Text(errorMessage) }
-        }
-    }
-
-    private func performConfig() {
-        do { try supabaseEngine.configClient(url: url, key: key) } catch {
-            errorMessage = error.localizedDescription
-            showErrorAlert = true
-        }
     }
 }

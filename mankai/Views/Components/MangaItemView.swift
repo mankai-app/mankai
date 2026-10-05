@@ -10,19 +10,19 @@ import SwiftUI
 struct MangaItemView: View {
     let manga: Manga
     let plugin: Plugin
-    var record: RecordModel? = nil
-    var saved: SavedModel? = nil
+    var progress: ProgressModel? = nil
+    var libraryItem: LibraryModel? = nil
     var showsUnreadTag: Bool = false
 
     private var latestChapter: Chapter? {
-        guard let saved else { return manga.latestChapter }
-        return (try? Chapter.decode(saved.latestChapter)) ?? manga.latestChapter
+        guard let libraryItem else { return manga.latestChapter }
+        return libraryItem.latestChapter ?? manga.latestChapter
     }
 
-    private var isUnread: Bool { showsUnreadTag && record == nil }
+    private var isUnread: Bool { showsUnreadTag && progress == nil }
 
     private var coverTag: (text: String, color: Color)? {
-        if saved?.updates == true { return (String(localized: "new"), .green) }
+        if libraryItem?.updates == true { return (String(localized: "new"), .green) }
         if isUnread { return (String(localized: "unread"), .orange) }
         if manga.status == .completed { return (String(localized: "mangaCompleted"), .red) }
         return nil
@@ -45,13 +45,13 @@ struct MangaItemView: View {
 
                 // Latest Chapter
                 HStack(spacing: 4) {
-                    if let record = record {
-                        if let title = record.chapterTitle {
+                    if let progress = progress {
+                        if let title = progress.chapterTitle {
                             Text(title)
                         } else {
                             Text(
-                                String(format: String(localized: "chapterFormat"), record.chapterId)
-                            )
+                                String(
+                                    format: String(localized: "chapterFormat"), progress.chapterId))
                         }
 
                         Text(verbatim: "/")

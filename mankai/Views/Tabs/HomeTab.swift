@@ -23,8 +23,8 @@ private enum HomeDataSource: String, CaseIterable {
 private struct HomeLibraryState {
     var mangas: [String: Manga] = [:]
     var plugins: [String: Plugin] = [:]
-    var records: [String: RecordModel] = [:]
-    var saveds: [String: SavedModel] = [:]
+    var progressEntries: [String: ProgressModel] = [:]
+    var libraryItems: [String: LibraryModel] = [:]
     var orders: [String] = []
     var filteredOrders: [String] = []
 }
@@ -79,7 +79,7 @@ struct HomeTab: View {
         }
 
         let format = String(localized: "titleCountFormat")
-        return Text(verbatim: String(format: format, library.orders.count))
+        return Text(verbatim: String(format: format, library.filteredOrders.count))
     }
 
     private var allPlugins: [String: Plugin] {
@@ -127,8 +127,9 @@ struct HomeTab: View {
                         VStack(spacing: 12) {
                             MangasListView(
                                 mangas: library.mangas, plugins: library.plugins,
-                                keys: library.filteredOrders, records: library.records,
-                                saveds: library.saveds, showsUnreadTag: true,
+                                keys: library.filteredOrders,
+                                progressEntries: library.progressEntries,
+                                libraryItems: library.libraryItems, showsUnreadTag: true,
                                 allowUnsupportedDetailsNavigation: isDownloadsMode)
                         }
                         .padding()
@@ -184,28 +185,28 @@ struct HomeTab: View {
             )
             .onChange(of: searchText) { filterManga() }.onChange(of: status) { filterManga() }
             .onChange(of: dataSource) {
-                Task { if isDownloadsMode { await reloadDownloads() } else { updateSaved() } }
+                Task { if isDownloadsMode { await reloadDownloads() } else { updateLibrary() } }
             }
             .onAppear {
                 initializeShowPlugins()
 
-                if isDownloadsMode { Task { await reloadDownloads() } } else { updateSaved() }
+                if isDownloadsMode { Task { await reloadDownloads() } } else { updateLibrary() }
             }
             .onReceive(pluginService.objectWillChange) {
                 initializeShowPlugins()
-                if !isDownloadsMode { updateSaved() }
+                if !isDownloadsMode { updateLibrary() }
             }
             .onReceive(browseService.objectWillChange) {
                 initializeShowPlugins()
-                if !isDownloadsMode { updateSaved() }
+                if !isDownloadsMode { updateLibrary() }
             }
-            .onReceive(SavedService.shared.changes) { change in
-                if !isDownloadsMode { applySavedChange(change) }
+            .onReceive(LibraryService.shared.changes) { change in
+                if !isDownloadsMode { applyLibraryChange(change) }
             }
             .onReceive(MangaSnapshotService.shared.changes) { change in
                 if !isDownloadsMode { applySnapshotChange(change) }
             }
-            .onReceive(HistoryService.shared.changes) { change in applyHistoryChange(change) }
+            .onReceive(ProgressService.shared.changes) { change in applyProgressChange(change) }
             .onReceive(
                 NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             ) { _ in checkInternetAndPrompt() }
@@ -239,46 +240,46 @@ struct HomeTab: View {
         }
     }
 
-    private func updateSaved() {
+    private func updateLibrary() {
         var next = HomeLibraryState()
 
-        let savedList: [SavedModel] = SavedService.shared.getAll()
-        for saved in savedList {
-            let key = "\(saved.pluginId)+\(saved.mangaId)"
+        let libraryItems: [LibraryModel] = LibraryService.shared.getAll()
+        for libraryItem in libraryItems {
+            let key = "\(libraryItem.pluginId)+\(libraryItem.mangaId)"
 
-            if let plugin = allPlugins[saved.pluginId] { next.plugins[key] = plugin }
+            if let plugin = allPlugins[libraryItem.pluginId] { next.plugins[key] = plugin }
 
             if let manga = MangaSnapshotService.shared.get(
-                mangaId: saved.mangaId, pluginId: saved.pluginId)
+                mangaId: libraryItem.mangaId, pluginId: libraryItem.pluginId)
             {
                 next.mangas[key] = manga
             }
 
-            next.saveds[key] = saved
+            next.libraryItems[key] = libraryItem
         }
 
-        let ids = next.saveds.values.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
-        for record in HistoryService.shared.get(ids: ids) {
-            let key = "\(record.pluginId)+\(record.mangaId)"
-            if next.saveds[key] != nil { next.records[key] = record }
+        let ids = next.libraryItems.values.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
+        for progress in ProgressService.shared.get(ids: ids) {
+            let key = "\(progress.pluginId)+\(progress.mangaId)"
+            if next.libraryItems[key] != nil { next.progressEntries[key] = progress }
         }
 
-        sortSaved(&next)
+        sortLibrary(&next)
         library = next
     }
 
-    private func applySavedChange(_ change: SavedService.Change) {
-        switch change { case .upserted(let changedSaveds, let snapshots):
-            updateSavedItems(changedSaveds, snapshots: snapshots)
+    private func applyLibraryChange(_ change: LibraryService.Change) {
+        switch change { case .upserted(let changedLibraryItems, let snapshots):
+            updateLibraryItems(changedLibraryItems, snapshots: snapshots)
             case .deleted(let mangaId, let pluginId):
-                removeSavedItem(mangaId: mangaId, pluginId: pluginId)
+                removeLibraryItem(mangaId: mangaId, pluginId: pluginId)
         }
     }
 
-    private func updateSavedItems(
-        _ changedSaveds: [SavedModel], snapshots: [MangaSnapshotService.Upsert]
+    private func updateLibraryItems(
+        _ changedLibraryItems: [LibraryModel], snapshots: [MangaSnapshotService.Upsert]
     ) {
-        guard !changedSaveds.isEmpty || !snapshots.isEmpty else { return }
+        guard !changedLibraryItems.isEmpty || !snapshots.isEmpty else { return }
         var next = library
 
         for snapshot in snapshots {
@@ -287,38 +288,38 @@ struct HomeTab: View {
             next.plugins[key] = allPlugins[snapshot.pluginId]
         }
 
-        let changedKeys = changedSaveds.map { saved in
-            let key = "\(saved.pluginId)+\(saved.mangaId)"
+        let changedKeys = changedLibraryItems.map { libraryItem in
+            let key = "\(libraryItem.pluginId)+\(libraryItem.mangaId)"
 
-            next.saveds[key] = saved
-            next.plugins[key] = allPlugins[saved.pluginId]
+            next.libraryItems[key] = libraryItem
+            next.plugins[key] = allPlugins[libraryItem.pluginId]
             if next.mangas[key] == nil {
                 next.mangas[key] = MangaSnapshotService.shared.get(
-                    mangaId: saved.mangaId, pluginId: saved.pluginId)
+                    mangaId: libraryItem.mangaId, pluginId: libraryItem.pluginId)
             }
 
             return key
         }
 
-        let changedIds = changedSaveds.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
-        let changedRecords = Dictionary(
-            uniqueKeysWithValues: HistoryService.shared.get(ids: changedIds)
+        let changedIds = changedLibraryItems.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
+        let changedProgressEntries = Dictionary(
+            uniqueKeysWithValues: ProgressService.shared.get(ids: changedIds)
                 .map { ("\($0.pluginId)+\($0.mangaId)", $0) })
 
-        for key in changedKeys { next.records[key] = changedRecords[key] }
+        for key in changedKeys { next.progressEntries[key] = changedProgressEntries[key] }
 
-        sortSaved(&next)
+        sortLibrary(&next)
         library = next
     }
 
-    private func removeSavedItem(mangaId: String, pluginId: String) {
+    private func removeLibraryItem(mangaId: String, pluginId: String) {
         let key = "\(pluginId)+\(mangaId)"
         var next = library
 
         next.mangas[key] = nil
         next.plugins[key] = nil
-        next.saveds[key] = nil
-        next.records[key] = nil
+        next.libraryItems[key] = nil
+        next.progressEntries[key] = nil
         next.orders.removeAll { $0 == key }
         filterManga(&next)
         library = next
@@ -331,16 +332,16 @@ struct HomeTab: View {
             for snapshot in snapshots {
                 let key = "\(snapshot.pluginId)+\(snapshot.manga.id)"
 
-                if next.saveds[key] == nil {
-                    next.saveds[key] = SavedService.shared.get(
+                if next.libraryItems[key] == nil {
+                    next.libraryItems[key] = LibraryService.shared.get(
                         mangaId: snapshot.manga.id, pluginId: snapshot.pluginId)
                 }
 
-                guard next.saveds[key] != nil else { continue }
+                guard next.libraryItems[key] != nil else { continue }
                 next.mangas[key] = snapshot.manga
                 next.plugins[key] = allPlugins[snapshot.pluginId]
             }
-            sortSaved(&next)
+            sortLibrary(&next)
             case .deleted(let mangaId, let pluginId):
                 let key = "\(pluginId)+\(mangaId)"
                 next.mangas[key] = nil
@@ -350,37 +351,39 @@ struct HomeTab: View {
         library = next
     }
 
-    private func applyHistoryChange(_ change: HistoryService.Change) {
+    private func applyProgressChange(_ change: ProgressService.Change) {
         var next = library
 
-        switch change { case .upserted(let changedRecords):
-            for record in changedRecords {
-                let key = "\(record.pluginId)+\(record.mangaId)"
-                guard next.orders.contains(key) || next.saveds[key] != nil else { continue }
-                next.records[key] = record
+        switch change { case .upserted(let changedProgressEntries):
+            for progress in changedProgressEntries {
+                let key = "\(progress.pluginId)+\(progress.mangaId)"
+                guard next.orders.contains(key) || next.libraryItems[key] != nil else { continue }
+                next.progressEntries[key] = progress
 
                 if !isDownloadsMode {
-                    next.saveds[key] = SavedService.shared.get(
-                        mangaId: record.mangaId, pluginId: record.pluginId)
+                    next.libraryItems[key] = LibraryService.shared.get(
+                        mangaId: progress.mangaId, pluginId: progress.pluginId)
                 }
             }
+            case .deleted(let ids):
+                for id in ids { next.progressEntries["\(id.pluginId)+\(id.mangaId)"] = nil }
         }
 
-        if isDownloadsMode { filterManga(&next) } else { sortSaved(&next) }
+        if isDownloadsMode { filterManga(&next) } else { sortLibrary(&next) }
         library = next
     }
 
-    private func sortSaved(_ state: inout HomeLibraryState) {
+    private func sortLibrary(_ state: inout HomeLibraryState) {
         let keys = state.mangas.keys
 
         let sortedKeys = keys.sorted { key1, key2 in
-            let savedDate1 = state.saveds[key1]?.datetime
-            let recordDate1 = state.records[key1]?.datetime
-            let savedDate2 = state.saveds[key2]?.datetime
-            let recordDate2 = state.records[key2]?.datetime
+            let libraryDate1 = state.libraryItems[key1]?.datetime
+            let progressDate1 = state.progressEntries[key1]?.datetime
+            let libraryDate2 = state.libraryItems[key2]?.datetime
+            let progressDate2 = state.progressEntries[key2]?.datetime
 
-            let newerDate1 = [savedDate1, recordDate1].compactMap { $0 }.max()
-            let newerDate2 = [savedDate2, recordDate2].compactMap { $0 }.max()
+            let newerDate1 = [libraryDate1, progressDate1].compactMap { $0 }.max()
+            let newerDate2 = [libraryDate2, progressDate2].compactMap { $0 }.max()
 
             switch (newerDate1, newerDate2) { case (let date1?, let date2?):
                 if abs(date1.timeIntervalSince(date2)) < 1e-3 { return key1 < key2 }
@@ -414,15 +417,14 @@ struct HomeTab: View {
             // Filter by status
             if status != .all {
                 filtered = filtered.filter { key in
-                    guard let manga = state.mangas[key], let saved = state.saveds[key] else {
-                        return false
-                    }
+                    guard let manga = state.mangas[key], let libraryItem = state.libraryItems[key]
+                    else { return false }
 
                     switch status { case .all: return true case .onGoing:
                         return manga.status == .onGoing
                         case .completed: return manga.status == .completed
-                        case .updated: return saved.updates
-                        case .unread: return state.records[key] == nil
+                        case .updated: return libraryItem.updates
+                        case .unread: return state.progressEntries[key] == nil
                     }
                 }
             }
@@ -480,12 +482,12 @@ struct HomeTab: View {
         }
 
         next.orders = downloadOrders
-        updateDownloadRecords(for: downloadOrders, state: &next)
+        updateDownloadProgress(for: downloadOrders, state: &next)
         filterManga(&next)
         library = next
     }
 
-    private func updateDownloadRecords(for keys: [String], state: inout HomeLibraryState) {
+    private func updateDownloadProgress(for keys: [String], state: inout HomeLibraryState) {
         guard !keys.isEmpty else { return }
 
         let ids = keys.compactMap { key -> (mangaId: String, pluginId: String)? in
@@ -494,13 +496,13 @@ struct HomeTab: View {
             return (mangaId: parts[1], pluginId: parts[0])
         }
 
-        let fetchedRecords = HistoryService.shared.get(ids: ids)
+        let fetchedProgressEntries = ProgressService.shared.get(ids: ids)
 
-        if keys == state.orders { state.records = [:] }
+        if keys == state.orders { state.progressEntries = [:] }
 
-        for record in fetchedRecords {
-            let key = "\(record.pluginId)+\(record.mangaId)"
-            state.records[key] = record
+        for progress in fetchedProgressEntries {
+            let key = "\(progress.pluginId)+\(progress.mangaId)"
+            state.progressEntries[key] = progress
         }
     }
 

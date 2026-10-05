@@ -11,7 +11,7 @@ struct ChaptersModal: View {
     let plugin: Plugin
     let manga: DetailedManga
     let chapterGroupIndex: Int
-    let record: RecordModel?
+    let progress: ProgressModel?
     let downloadChapters: Set<String>?
     let canReadRemotely: Bool
     let allowEditing: Bool
@@ -21,14 +21,15 @@ struct ChaptersModal: View {
     private let chapters: [Chapter]
 
     init(
-        plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int, record: RecordModel? = nil,
-        downloadChapters: Set<String>? = nil, canReadRemotely: Bool = true,
-        allowEditing: Bool = true, onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
+        plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int,
+        progress: ProgressModel? = nil, downloadChapters: Set<String>? = nil,
+        canReadRemotely: Bool = true, allowEditing: Bool = true,
+        onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
     ) {
         self.plugin = plugin
         self.manga = manga
         self.chapterGroupIndex = chapterGroupIndex
-        self.record = record
+        self.progress = progress
         self.downloadChapters = downloadChapters
         self.canReadRemotely = canReadRemotely
         self.allowEditing = allowEditing
@@ -71,7 +72,8 @@ struct ChaptersModal: View {
                                                 .foregroundColor(.secondary)
                                         }
 
-                                        if let record = record, record.chapterId == chapter.id {
+                                        if let progress = progress, progress.chapterId == chapter.id
+                                        {
                                             Image(systemName: "clock.arrow.circlepath")
                                                 .foregroundColor(.accentColor)
                                         }
@@ -117,7 +119,9 @@ struct ChaptersModal: View {
                             String(localized: "chapterCountFormat"), chapters.count))
                 )
                 .onAppear {
-                    if let record = record { proxy.scrollTo(record.chapterId, anchor: .center) }
+                    if let progress = progress {
+                        proxy.scrollTo(progress.chapterId, anchor: .center)
+                    }
                 }
             }
         }

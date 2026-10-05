@@ -13,7 +13,7 @@ import GRDB
     /// The shared singleton instance of SyncService.
     static let shared = SyncService()
     /// The list of available synchronization engines.
-    static let engines: [SyncEngine] = [HttpEngine.shared, SupabaseEngine.shared]
+    static let engines: [SyncEngine] = [HttpEngine.shared]
 
     private init() {
         Logger.syncService.debug("Initializing SyncService")
@@ -39,6 +39,7 @@ import GRDB
         get { _engine }
         set {
             Logger.syncService.debug("Setting sync engine: \(newValue?.id ?? "nil")")
+            syncTask?.cancel()
             _engine = newValue
 
             let defaults = UserDefaults.standard
@@ -64,12 +65,13 @@ import GRDB
     /// - Throws: An error if the new engine cannot be initialized.
     func onEngineChange() async throws {
         Logger.syncService.debug("Handling engine change")
+        syncTask?.cancel()
+        if let current = syncTask { try? await current.value }
         guard let engine = engine else { return }
 
         // Reset last sync time in UserDefaults
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: "SyncService.lastSyncTime")
-        defaults.set(true, forKey: "SyncService.initialSync")
 
         try await engine.onSelected()
         try await sync()
@@ -142,9 +144,13 @@ import GRDB
         }
 
         do { try await task.value } catch {
-            Logger.syncService.error("Sync failed: \(error)")
+            if error is CancellationError || task.isCancelled {
+                Logger.syncService.debug("Sync cancelled")
+            } else {
+                Logger.syncService.error("Sync failed", error: error)
+            }
 
-            if showError, engine != nil, case .online = Reach().connectionStatus() {
+            if showError, engine?.active == true, case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToSyncFormat")
                 NotificationService.shared.showWarning(
                     String(format: message, error.localizedDescription))
@@ -163,41 +169,227 @@ import GRDB
             throw MankaiErrorCode.syncNoEngine.makeError()
         }
 
-        if UserDefaults.standard.bool(forKey: "SyncService.initialSync") {
-            try await engine.initialSync()
-            UserDefaults.standard.set(false, forKey: "SyncService.initialSync")
+        guard engine.active else {
+            Logger.syncService.debug("Cannot sync: engine is inactive")
+            throw MankaiErrorCode.syncEngineInactive.makeError()
         }
 
+        Logger.syncService.debug("Running sync with engine: \(engine.id)")
         try await engine.sync()
+        try Task.checkCancellation()
 
         // Update sync time
         UserDefaults.standard.set(Date(), forKey: "SyncService.lastSyncTime")
 
         objectWillChange.send()
-        Logger.syncService.debug("Sync completed")
+        Logger.syncService.info("Sync completed with engine: \(engine.id)")
     }
 
-    func addSaveds(_ saveds: [SavedModel]) async throws {
-        guard let engine = engine else {
-            Logger.syncService.error("No sync engine available")
-            throw MankaiErrorCode.syncNoEngine.makeError()
+    /// Called after a local transaction; network failures leave its mutations pending.
+    func scheduleSync() {
+        guard engine?.active == true else {
+            Logger.syncService.debug("Skipping scheduled sync: engine is inactive")
+            return
+        }
+        Logger.syncService.debug("Scheduling sync for local changes")
+        Task { try? await sync(showError: false) }
+    }
+
+    func cancelSync() {
+        if syncTask != nil { Logger.syncService.debug("Cancelling current sync") }
+        syncTask?.cancel()
+    }
+
+    /// Bootstrap queues current data as upserts; ordinary uploads read only pending operations.
+    func uploadMutations(bootstrap: Bool, limit: Int) async throws -> [SyncMutation] {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
         }
 
-        try await engine.addSaveds(saveds)
-    }
-
-    func addSaved(_ saved: SavedModel) async throws { try await addSaveds([saved]) }
-
-    func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
-        guard let engine = engine else {
-            Logger.syncService.error("No sync engine available")
-            throw MankaiErrorCode.syncNoEngine.makeError()
+        if !bootstrap {
+            let mutations = try await appDb.read { db in
+                try SyncQueueModel.order(Column("datetime")).limit(limit).fetchAll(db)
+                    .map(\.mutation)
+            }
+            Logger.syncService.debug("Loaded \(mutations.count) pending sync mutations")
+            return mutations
         }
 
-        try await engine.removeSaveds(saveds)
+        Logger.syncService.debug("Preparing bootstrap sync mutations")
+        let plugins = PluginService.shared.plugins.compactMap { plugin -> SyncMutation? in
+            guard let url = plugin.syncURL else { return nil }
+            return SyncMutation(
+                entry: .plugin(key: .init(sourceId: plugin.id), payload: .init(url: url)))
+        }
+
+        let mutations = try await appDb.write { db in
+            var current = plugins
+            current += try LibraryModel.filter(Column("shouldSync") == true).fetchAll(db)
+                .compactMap { SyncMutation(library: $0) }.filter(\.isValid)
+            current += try ProgressModel.filter(Column("shouldSync") == true).fetchAll(db)
+                .map { SyncMutation(progress: $0) }.filter(\.isValid)
+
+            return try current.compactMap { mutation in
+                // A pending local edit already has the state and ID we must retry.
+                if let queued = try SyncQueueModel.request(for: mutation).fetchOne(db) {
+                    return queued.mutation.action == .upsert ? queued.mutation : nil
+                }
+
+                try SyncQueueModel(mutation).save(db)
+                return mutation
+            }
+        }
+        Logger.syncService.debug("Prepared \(mutations.count) bootstrap sync mutations")
+        // Bootstrap queues every current item, including those left for later batches.
+        return Array(mutations.prefix(limit))
     }
 
-    func removeSaved(mangaId: String, pluginId: String) async throws {
-        try await removeSaveds([(mangaId: mangaId, pluginId: pluginId)])
+    /// Delete only the operations sent in this request; newer local edits have different IDs.
+    func acknowledge(_ mutations: [SyncMutation]) async throws {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
+        }
+        let ids = mutations.compactMap(\.operationId)
+        let deleted = try await appDb.write { db in
+            try SyncQueueModel.filter(ids.contains(Column("operationId"))).deleteAll(db)
+        }
+        Logger.syncService.debug(
+            "Acknowledged \(ids.count) sent operations; removed \(deleted) queue entries")
+    }
+
+    /// Services check pending edits inside the same transaction as their remote write.
+    nonisolated static func shouldApply(_ mutation: SyncMutation, in db: Database) throws -> Bool {
+        if let queued = try SyncQueueModel.request(for: mutation).fetchOne(db),
+            !mutation.wins(over: queued.mutation)
+        {
+            Logger.syncService.debug(
+                "Skipping incoming \(mutation.type.rawValue) \(mutation.action.rawValue): a pending local edit wins"
+            )
+            return false
+        }
+        if mutation.type == .progress, mutation.action != .clear,
+            let clear = try SyncQueueModel.progressClear.fetchOne(db),
+            mutation.datetime <= clear.datetime
+        {
+            Logger.syncService.debug("Skipping incoming progress covered by a pending clear")
+            return false
+        }
+        return true
+    }
+
+    nonisolated static func discardProgressMutations(through datetime: Int64, in db: Database)
+        throws
+    {
+        let deleted =
+            try SyncQueueModel.filter(
+                Column("type") == "progress" && Column("sourceId") != ""
+                    && Column("datetime") <= datetime
+            )
+            .deleteAll(db)
+        if deleted > 0 {
+            Logger.syncService.debug(
+                "Removed \(deleted) pending progress operations covered by clear")
+        }
+    }
+
+    /// Keep a local row and its pending operation in one transaction.
+    @discardableResult nonisolated static func enqueue(_ mutation: SyncMutation, in db: Database)
+        throws -> SyncMutation
+    {
+        var mutation = mutation
+        guard mutation.isValid else { throw MankaiErrorCode.syncHttpInvalidResponse.makeError() }
+
+        if let queued = try SyncQueueModel.request(for: mutation).fetchOne(db) {
+            if mutation.datetime <= queued.datetime, mutation.action == queued.mutation.action,
+                mutation.entry == queued.mutation.entry
+            {
+                Logger.syncService.debug(
+                    "Reusing pending \(mutation.type.rawValue) \(mutation.action.rawValue) operation"
+                )
+                return queued.mutation
+            }
+            mutation.datetime = max(mutation.datetime, queued.datetime + 1)
+        }
+
+        // Acknowledged operations leave the queue, so also check the current row's timestamp.
+        switch mutation.entry { case .library(let key, _):
+            if let current = try LibraryModel.fetchOne(
+                db, key: ["mangaId": key.mangaId, "pluginId": key.sourceId])
+            {
+                mutation.datetime = max(
+                    mutation.datetime, SyncMutation.milliseconds(current.datetime) + 1)
+            }
+            case .progress(let key?, _):
+                if let current = try ProgressModel.fetchOne(
+                    db, key: ["mangaId": key.mangaId, "pluginId": key.sourceId])
+                {
+                    mutation.datetime = max(
+                        mutation.datetime, SyncMutation.milliseconds(current.datetime) + 1)
+                }
+                if let clear = try SyncQueueModel.progressClear.fetchOne(db) {
+                    mutation.datetime = max(mutation.datetime, clear.datetime + 1)
+                }
+            default: break
+        }
+
+        Logger.syncService.debug(
+            "Writing \(mutation.type.rawValue) \(mutation.action.rawValue) operation to sync queue")
+        try SyncQueueModel(mutation).save(db)
+        return mutation
+    }
+
+    nonisolated static func enqueue(_ library: LibraryModel, in db: Database) throws -> LibraryModel
+    {
+        var library = library
+        guard library.shouldSync, let mutation = SyncMutation(library: library) else {
+            return library
+        }
+
+        if let current = try LibraryModel.fetchOne(
+            db, key: ["mangaId": library.mangaId, "pluginId": library.pluginId]),
+            current.updates == library.updates, current.latestChapter == library.latestChapter,
+            current.datetime >= library.datetime
+        {
+            Logger.syncService.debug("Skipping unchanged library sync state")
+            library.datetime = current.datetime
+            return library
+        }
+
+        library.datetime = try enqueue(mutation, in: db).date
+        return library
+    }
+
+    nonisolated static func enqueue(_ progress: ProgressModel, in db: Database) throws
+        -> ProgressModel
+    {
+        var progress = progress
+        guard progress.shouldSync else { return progress }
+        progress.datetime = try enqueue(SyncMutation(progress: progress), in: db).date
+        return progress
+    }
+
+    nonisolated static func enqueuePlugin(id: String, url: String?, in db: Database) throws {
+        guard let url else { return }
+        let mutation = SyncMutation(
+            entry: .plugin(key: .init(sourceId: id), payload: .init(url: url)))
+        if let queued = try SyncQueueModel.request(for: mutation).fetchOne(db),
+            queued.mutation.action == .upsert, queued.mutation.entry == mutation.entry
+        {
+            Logger.syncService.debug("Plugin sync state is already queued")
+            return
+        }
+        try enqueue(mutation, in: db)
+    }
+
+    nonisolated static func enqueueClear(in db: Database) throws -> SyncMutation {
+        var mutation = SyncMutation(entry: .progress(key: nil, payload: nil), action: .clear)
+        // Cover all existing progress, including edits whose clock or queue advanced ahead of now.
+        for progress in try ProgressModel.fetchAll(db) {
+            mutation.datetime = max(mutation.datetime, SyncMutation.milliseconds(progress.datetime))
+        }
+        for queued in try SyncQueueModel.filter(Column("type") == "progress").fetchAll(db) {
+            mutation.datetime = max(mutation.datetime, queued.datetime)
+        }
+        return try enqueue(mutation, in: db)
     }
 }

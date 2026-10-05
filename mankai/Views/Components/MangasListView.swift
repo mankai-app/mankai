@@ -15,8 +15,8 @@ struct MangasListView: View {
     let mangasDict: [String: Manga]?
     let pluginsDict: [String: Plugin]?
     let keys: [String]?
-    let records: [String: RecordModel]?
-    let saveds: [String: SavedModel]?
+    let progressEntries: [String: ProgressModel]?
+    let libraryItems: [String: LibraryModel]?
     let showsUnreadTag: Bool
     let allowUnsupportedDetailsNavigation: Bool
 
@@ -27,25 +27,26 @@ struct MangasListView: View {
         mangasDict = nil
         pluginsDict = nil
         keys = nil
-        records = nil
-        saveds = nil
+        progressEntries = nil
+        libraryItems = nil
         showsUnreadTag = false
         allowUnsupportedDetailsNavigation = false
     }
 
-    /// Complex initializer for multiple plugins with records and saved states
+    /// Complex initializer for multiple plugins with progress and library states
     init(
         mangas: [String: Manga], plugins: [String: Plugin], keys: [String],
-        records: [String: RecordModel]? = nil, saveds: [String: SavedModel]? = nil,
-        showsUnreadTag: Bool = false, allowUnsupportedDetailsNavigation: Bool = false
+        progressEntries: [String: ProgressModel]? = nil,
+        libraryItems: [String: LibraryModel]? = nil, showsUnreadTag: Bool = false,
+        allowUnsupportedDetailsNavigation: Bool = false
     ) {
         self.mangas = nil
         plugin = nil
         mangasDict = mangas
         pluginsDict = plugins
         self.keys = keys
-        self.records = records
-        self.saveds = saveds
+        self.progressEntries = progressEntries
+        self.libraryItems = libraryItems
         self.showsUnreadTag = showsUnreadTag
         self.allowUnsupportedDetailsNavigation = allowUnsupportedDetailsNavigation
     }
@@ -78,13 +79,13 @@ struct MangasListView: View {
                                 destination: MangaDetailsScreen(plugin: plugin, manga: manga)
                             ) {
                                 MangaItemView(
-                                    manga: manga, plugin: plugin, record: records?[key],
-                                    saved: saveds?[key], showsUnreadTag: showsUnreadTag)
+                                    manga: manga, plugin: plugin, progress: progressEntries?[key],
+                                    libraryItem: libraryItems?[key], showsUnreadTag: showsUnreadTag)
                             }
                         } else {
                             MangaItemView(
-                                manga: manga, plugin: plugin, record: records?[key],
-                                saved: saveds?[key], showsUnreadTag: showsUnreadTag)
+                                manga: manga, plugin: plugin, progress: progressEntries?[key],
+                                libraryItem: libraryItems?[key], showsUnreadTag: showsUnreadTag)
                         }
                     }
                 }

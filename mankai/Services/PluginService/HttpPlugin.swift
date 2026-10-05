@@ -74,6 +74,9 @@ class HttpPlugin: Plugin, Configurable {
     var authenticationEnabled: Bool { _authenticationEnabled }
 
     private var baseUrl: String
+    override var syncURL: String? {
+        configuredURL(baseUrl, values: configValues).map { "http:\($0)" }
+    }
     lazy var authManager: AuthManager = .init(id: id)
     private var isMetaUpdated: Bool = false
 
@@ -116,7 +119,7 @@ class HttpPlugin: Plugin, Configurable {
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
         objectWillChange.send()
-        try savePlugin()
+        try PluginService.shared.savePlugin(self)
     }
 
     func resetConfigs() throws {
@@ -125,7 +128,7 @@ class HttpPlugin: Plugin, Configurable {
             _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
         objectWillChange.send()
-        try savePlugin()
+        try PluginService.shared.savePlugin(self)
     }
 
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {
@@ -161,7 +164,7 @@ class HttpPlugin: Plugin, Configurable {
             capabilities: metadata.capabilities)
     }
 
-    static func fromUrl(_ urlString: String) async -> HttpPlugin? {
+    static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> HttpPlugin? {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed) else { return nil }
 
@@ -189,6 +192,7 @@ class HttpPlugin: Plugin, Configurable {
         }
 
         if !matchedConfigValues.isEmpty { plugin.setConfigValues(matchedConfigValues) }
+        if let sourceId { plugin._id = sourceId }
 
         return plugin
     }
@@ -202,6 +206,7 @@ class HttpPlugin: Plugin, Configurable {
             .flatMap { try? [ConfigValue].decoded(from: $0) }
 
         let plugin = fromMetadata(baseUrl: httpPluginModel.baseUrl, metadata: metadata)
+        plugin?._id = httpPluginModel.id
 
         // Update config values if they exist
         if let configValues = configValues, let plugin = plugin {
@@ -272,7 +277,7 @@ class HttpPlugin: Plugin, Configurable {
             _authenticationEnabled = metadata.authenticationEnabled ?? false
             _capabilities = metadata.capabilities
 
-            try savePlugin()
+            try PluginService.shared.savePlugin(self)
             isMetaUpdated = true
         }
 
@@ -301,6 +306,11 @@ class HttpPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
+        let model = try databaseModel()
+        try dbPool.write { db in try model.save(db) }
+    }
+
+    func databaseModel() throws -> HttpPluginModel {
         let metadata = HttpPluginMetadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, availableGenres: availableGenres,
@@ -317,12 +327,8 @@ class HttpPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginHttpFailedToEncodeConfigValuesData.makeError()
         }
 
-        // Save to database
-        try dbPool.write { db in
-            let httpPluginModel = HttpPluginModel(
-                id: id, baseUrl: baseUrl, meta: metaString, configValues: configValuesString)
-            try httpPluginModel.save(db)
-        }
+        return HttpPluginModel(
+            id: id, baseUrl: baseUrl, meta: metaString, configValues: configValuesString)
     }
 
     override func deletePlugin() throws {
@@ -331,7 +337,10 @@ class HttpPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
-        try dbPool.write { db in _ = try HttpPluginModel.filter(Column("id") == id).deleteAll(db) }
+        let sourceId = id
+        _ = try dbPool.write { db in
+            try HttpPluginModel.filter(Column("id") == sourceId).deleteAll(db)
+        }
     }
 
     override func isOnline() async throws -> Bool {
@@ -445,7 +454,7 @@ class HttpPlugin: Plugin, Configurable {
                 _capabilities = newPlugin._capabilities
                 _authenticationEnabled = newPlugin._authenticationEnabled
 
-                try savePlugin()
+                try PluginService.shared.savePlugin(self)
                 Logger.httpPlugin.info("Plugin updated successfully: \(id)")
             } catch {
                 Logger.httpPlugin.error("Failed to save updated plugin: \(id)", error: error)

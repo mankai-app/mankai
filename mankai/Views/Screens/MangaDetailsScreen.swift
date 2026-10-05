@@ -36,8 +36,8 @@ struct MangaDetailsScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    @State private var record: RecordModel? = nil
-    @State private var saved: SavedModel? = nil
+    @State private var progress: ProgressModel? = nil
+    @State private var libraryItem: LibraryModel? = nil
 
     /// Offline access
     private var downloadMangaId: String { return "\(plugin.id)+\(manga.id)" }
@@ -69,12 +69,12 @@ struct MangaDetailsScreen: View {
         self.manga = manga
     }
 
-    private func updateRecord() {
-        record = HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id)
+    private func updateProgress() {
+        progress = ProgressService.shared.get(mangaId: manga.id, pluginId: plugin.id)
     }
 
-    private func updateSaved() {
-        saved = SavedService.shared.get(mangaId: manga.id, pluginId: plugin.id)
+    private func updateLibraryItem() {
+        libraryItem = LibraryService.shared.get(mangaId: manga.id, pluginId: plugin.id)
     }
 
     private func navigateToChapter(
@@ -91,29 +91,29 @@ struct MangaDetailsScreen: View {
             chapterGroupIndex: readerChapterGroupIndex, chapter: chapter, initialPage: page)
     }
 
-    private func scrollToRecord(proxy: ScrollViewProxy) {
-        guard let record = record, let mangaData = mangaData else { return }
+    private func scrollToProgress(proxy: ScrollViewProxy) {
+        guard let progress = progress, let mangaData = mangaData else { return }
 
         guard
             let targetIndex = mangaData.chapters.firstIndex(where: { group in
-                group.chapters.contains { $0.id == record.chapterId }
+                group.chapters.contains { $0.id == progress.chapterId }
             })
         else { return }
 
         if selectedChapterGroupIndex == targetIndex {
-            proxy.scrollTo(record.chapterId, anchor: .center)
+            proxy.scrollTo(progress.chapterId, anchor: .center)
         } else {
             selectedChapterGroupIndex = targetIndex
         }
     }
 
     private func handleReadContinueAction() {
-        if let record = record, let mangaData = mangaData {
+        if let progress = progress, let mangaData = mangaData {
             for (groupIndex, group) in mangaData.chapters.enumerated() {
                 if let chapter = group.chapters.first(where: {
-                    $0.id == record.chapterId && canRead($0)
+                    $0.id == progress.chapterId && canRead($0)
                 }) {
-                    navigateToChapter(chapter, page: record.page, chapterGroupIndex: groupIndex)
+                    navigateToChapter(chapter, page: progress.page, chapterGroupIndex: groupIndex)
                     return
                 }
             }
@@ -131,21 +131,21 @@ struct MangaDetailsScreen: View {
     private func handleBookmarkAction() {
         Task {
             do {
-                if saved != nil {
-                    let _ = try await SavedService.shared.remove(
+                if libraryItem != nil {
+                    let _ = try await LibraryService.shared.remove(
                         mangaId: manga.id, pluginId: plugin.id)
                 } else {
-                    let newSaved = SavedModel(
+                    let newLibraryItem = LibraryModel(
                         mangaId: manga.id, pluginId: plugin.id, datetime: Date(), updates: false,
-                        latestChapter: manga.latestChapter?.encode() ?? "",
-                        shouldSync: plugin.shouldSync)
+                        latestChapter: manga.latestChapter, shouldSync: plugin.shouldSync)
 
                     let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
                         for: manga, pluginId: plugin.id)
 
-                    let _ = try await SavedService.shared.add(saved: newSaved, manga: mangaModel)
+                    let _ = try await LibraryService.shared.save(
+                        libraryItem: newLibraryItem, manga: mangaModel)
                 }
-            } catch { Logger.ui.error("Failed to delete or create SavedData") }
+            } catch { Logger.ui.error("Failed to delete or create library item") }
         }
     }
 
@@ -228,7 +228,7 @@ struct MangaDetailsScreen: View {
                         Button(action: handleReadContinueAction) {
                             HStack {
                                 Image(systemName: "book.pages.fill")
-                                Text(record != nil ? "continue" : "read")
+                                Text(progress != nil ? "continue" : "read")
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -238,20 +238,20 @@ struct MangaDetailsScreen: View {
                         Button(action: handleBookmarkAction) {
                             HStack {
                                 Image(
-                                    systemName: saved != nil
+                                    systemName: libraryItem != nil
                                         ? "bookmark.slash.fill" : "bookmark.fill")
-                                Text(saved != nil ? "remove" : "bookmark")
+                                Text(libraryItem != nil ? "remove" : "bookmark")
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered).tint(saved != nil ? nil : Color.accentColor)
+                        .buttonStyle(.bordered).tint(libraryItem != nil ? nil : Color.accentColor)
                         .frame(maxWidth: .infinity)
                     }
 
-                    if let record = record {
+                    if let progress = progress {
                         HStack(spacing: 4) {
                             HStack {
-                                if !record.shouldSync {
+                                if !progress.shouldSync {
                                     Image("custom.arrow.trianglehead.2.clockwise.rotate.90.slash")
                                         .foregroundStyle(.orange)
                                 }
@@ -259,15 +259,15 @@ struct MangaDetailsScreen: View {
                                 Text("lastRead")
                             }
 
-                            if let chapterTitle = record.chapterTitle {
+                            if let chapterTitle = progress.chapterTitle {
                                 Text(verbatim: "•")
                                 Text(chapterTitle).lineLimit(1)
                             } else {
                                 Text(verbatim: "•")
                                 Text(
                                     String(
-                                        format: String(localized: "chapterFormat"), record.chapterId
-                                    )
+                                        format: String(localized: "chapterFormat"),
+                                        progress.chapterId)
                                 )
                                 .lineLimit(1)
                             }
@@ -276,7 +276,7 @@ struct MangaDetailsScreen: View {
                             Text(
                                 String(
                                     format: String(localized: "pageFormat"),
-                                    (record.page + 1).description))
+                                    (progress.page + 1).description))
                         }
                         .font(.caption).foregroundStyle(.secondary)
                     }
@@ -363,7 +363,7 @@ struct MangaDetailsScreen: View {
     private func chapterRow(_ chapter: Chapter) -> some View {
         let chapterTitle = chapter.title ?? chapter.id
         let isDownloaded = downloadedChapterIds?.contains(chapter.id) == true
-        let isCurrentChapter = record?.chapterId == chapter.id
+        let isCurrentChapter = progress?.chapterId == chapter.id
         let isAvailable = canRead(chapter)
         let chapterIcon = isAvailable ? "chevron.right" : "lock.fill"
 
@@ -447,13 +447,13 @@ struct MangaDetailsScreen: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
-                                .onAppear { scrollToRecord(proxy: proxy) }
-                                .onChange(of: record, initial: false) { _, _ in
-                                    scrollToRecord(proxy: proxy)
+                                .onAppear { scrollToProgress(proxy: proxy) }
+                                .onChange(of: progress, initial: false) { _, _ in
+                                    scrollToProgress(proxy: proxy)
                                 }
                                 .onChange(of: selectedChapterGroupIndex) {
-                                    if let record = record {
-                                        proxy.scrollTo(record.chapterId, anchor: .center)
+                                    if let progress = progress {
+                                        proxy.scrollTo(progress.chapterId, anchor: .center)
                                     }
                                 }
                             }
@@ -474,7 +474,7 @@ struct MangaDetailsScreen: View {
             {
                 ChaptersModal(
                     plugin: plugin, manga: mangaData, chapterGroupIndex: selectedChapterGroupIndex,
-                    record: record, downloadChapters: downloadedChapterIds,
+                    progress: progress, downloadChapters: downloadedChapterIds,
                     canReadRemotely: plugin.supportsRemoteReading,
                     onNavigateToChapter: navigateToChapter)
             }
@@ -606,8 +606,8 @@ struct MangaDetailsScreen: View {
                 hasFinishedInitialLoad = true
                 if let cachedError { handleMangaLoadError(cachedError) }
             }
-            updateRecord()
-            updateSaved()
+            updateProgress()
+            updateLibraryItem()
         }
         .onReceive(plugin.objectWillChange) {
             Task { do { try await loadDetailedManga() } catch { handleMangaLoadError(error) } }
@@ -615,8 +615,8 @@ struct MangaDetailsScreen: View {
         .onReceive(DownloadPlugin.shared.objectWillChange) {
             Task { do { try await loadDownloadManga() } catch { handleMangaLoadError(error) } }
         }
-        .onReceive(SavedService.shared.objectWillChange) { updateSaved() }
-        .onReceive(HistoryService.shared.objectWillChange) { updateRecord() }
+        .onReceive(LibraryService.shared.objectWillChange) { updateLibraryItem() }
+        .onReceive(ProgressService.shared.objectWillChange) { updateProgress() }
         .toolbarBackground(
             horizontalSizeClass == .regular ? .visible : .automatic, for: .navigationBar)
     }

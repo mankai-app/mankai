@@ -35,7 +35,6 @@ enum MankaiErrorDomain: String {
     case pluginJavascript = "app.mankai.plugin.javascript"
     case sync = "app.mankai.sync"
     case syncHttp = "app.mankai.sync.http"
-    case syncSupabase = "app.mankai.sync.supabase"
     case update = "app.mankai.update"
 
     var codePrefix: Int {
@@ -65,7 +64,6 @@ enum MankaiErrorDomain: String {
             case .pluginJavascript: return 85
             case .sync: return 90
             case .syncHttp: return 91
-            case .syncSupabase: return 92
             case .update: return 93
         }
     }
@@ -209,10 +207,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case pluginJavascriptMissingPluginId
 
     case syncNoEngine
-    case syncHttpInvalidHashResponse
-    case syncSupabaseInvalidUrl
-    case syncSupabaseNotConfigured
-    case syncSupabaseNotReady
+    case syncEngineInactive
+    case syncHttpInvalidResponse
     case updateSyncFailed
 
     private static let definitions: [MankaiErrorCode: MankaiErrorDefinition] = [
@@ -438,13 +434,9 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .pluginJavascript, code: 16, messageKey: "missingPluginId"),
 
         .syncNoEngine: .init(domain: .sync, code: 1, messageKey: "noSyncEngine"),
-        .syncHttpInvalidHashResponse: .init(
-            domain: .syncHttp, code: 1, messageKey: "invalidHashResponse"),
-        .syncSupabaseInvalidUrl: .init(domain: .syncSupabase, code: 1, messageKey: "invalidUrl"),
-        .syncSupabaseNotConfigured: .init(
-            domain: .syncSupabase, code: 2, messageKey: "supabaseNotConfigured"),
-        .syncSupabaseNotReady: .init(
-            domain: .syncSupabase, code: 3, messageKey: "supabaseNotReady"),
+        .syncEngineInactive: .init(domain: .sync, code: 2, messageKey: "syncEngineInactive"),
+        .syncHttpInvalidResponse: .init(
+            domain: .syncHttp, code: 1, messageKey: "invalidResponseType"),
         .updateSyncFailed: .init(domain: .update, code: 1, messageKey: "syncFailed")
     ]
 

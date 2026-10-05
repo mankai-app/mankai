@@ -67,6 +67,9 @@ enum PluginCapability: String, Codable, CaseIterable {
     /// Whether manga sourced from this plugin should be synced across devices.
     var shouldSync: Bool { true }
 
+    /// A type-prefixed URL used to sync this plugin and its portable configuration.
+    var syncURL: String? { nil }
+
     /// Whether response data from this plugin should be cached.
     var shouldCache: Bool { false }
 
@@ -174,6 +177,19 @@ enum PluginCapability: String, Codable, CaseIterable {
 }
 
 extension Plugin {
+    func configuredURL(_ url: String, values: [ConfigValue]) -> String? {
+        guard var components = URLComponents(string: url) else { return nil }
+        let keys = Set(values.map(\.key))
+        var items = (components.queryItems ?? []).filter { !keys.contains($0.name) }
+        items += values.sorted { $0.key < $1.key }
+            .compactMap { value in
+                guard !(value.value is NSNull) else { return nil }
+                return URLQueryItem(name: value.key, value: String(describing: value.value))
+            }
+        components.queryItems = items.isEmpty ? nil : items
+        return components.string
+    }
+
     /// Returns whether the plugin advertises support for a capability.
     func supports(_ capability: PluginCapability) -> Bool { capabilities.contains(capability) }
 

@@ -12,9 +12,9 @@ import OSLog
 enum LogCategory: String {
     // Services
     case dbService = "DbService"
-    case historyService = "HistoryService"
+    case progressService = "ProgressService"
     case mangaSnapshotService = "MangaSnapshotService"
-    case savedService = "SavedService"
+    case libraryService = "LibraryService"
     case updateService = "UpdateService"
     case pluginService = "PluginService"
     case syncService = "SyncService"
@@ -54,7 +54,6 @@ enum LogCategory: String {
 
     // Sync Engines
     case httpEngine = "HttpEngine"
-    case supabaseEngine = "SupabaseEngine"
     case syncEngine = "SyncEngine"
 
     // General
@@ -178,9 +177,9 @@ final class Logger: Sendable {
 extension Logger {
     // Services
     static let dbService = Logger(category: .dbService)
-    static let historyService = Logger(category: .historyService)
+    static let progressService = Logger(category: .progressService)
     static let mangaSnapshotService = Logger(category: .mangaSnapshotService)
-    static let savedService = Logger(category: .savedService)
+    static let libraryService = Logger(category: .libraryService)
     static let updateService = Logger(category: .updateService)
     static let pluginService = Logger(category: .pluginService)
     static let syncService = Logger(category: .syncService)
@@ -220,7 +219,6 @@ extension Logger {
 
     // Sync Engines
     static let httpEngine = Logger(category: .httpEngine)
-    static let supabaseEngine = Logger(category: .supabaseEngine)
     static let syncEngine = Logger(category: .syncEngine)
 
     // General

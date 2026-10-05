@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HistoryScreen: View {
-    @State private var records: [RecordModel] = []
+    @State private var progressEntries: [ProgressModel] = []
     @State private var isLoading = false
     @State private var hasLoadedAll = false
 
@@ -17,18 +17,19 @@ struct HistoryScreen: View {
     var body: some View {
         NavigationStack {
             Group {
-                if records.isEmpty && !isLoading {
+                if progressEntries.isEmpty && !isLoading {
                     ContentUnavailableView(
                         "noHistory", systemImage: "clock.badge.xmark",
                         description: Text("noHistoryDescription"))
                 } else {
                     List {
                         Section {
-                            ForEach(Array(records.enumerated()), id: \.offset) { index, record in
-                                HistoryItemView(record: record)
+                            ForEach(Array(progressEntries.enumerated()), id: \.offset) {
+                                index, progress in
+                                HistoryItemView(progress: progress)
                                     .onAppear {
-                                        if index == records.count - 1 && !hasLoadedAll {
-                                            loadMoreRecords()
+                                        if index == progressEntries.count - 1 && !hasLoadedAll {
+                                            loadMoreProgress()
                                         }
                                     }
                             }
@@ -41,37 +42,38 @@ struct HistoryScreen: View {
                 }
             }
             .navigationTitle("history").navigationBarTitleDisplayMode(.inline)
-            .onAppear { if records.isEmpty { loadInitialRecords() } }
-            .onReceive(HistoryService.shared.objectWillChange) { refreshRecords() }
+            .onAppear { if progressEntries.isEmpty { loadInitialProgress() } }
+            .onReceive(ProgressService.shared.objectWillChange) { refreshProgress() }
         }
     }
 
-    private func loadInitialRecords() {
-        records = []
+    private func loadInitialProgress() {
+        progressEntries = []
         hasLoadedAll = false
-        loadMoreRecords()
+        loadMoreProgress()
     }
 
-    private func loadMoreRecords() {
+    private func loadMoreProgress() {
         guard !isLoading, !hasLoadedAll else { return }
 
         isLoading = true
 
-        let newRecords = HistoryService.shared.getAll(limit: batchSize, offset: records.count)
+        let newProgressEntries = ProgressService.shared.getAll(
+            limit: batchSize, offset: progressEntries.count)
 
-        records.append(contentsOf: newRecords)
-        hasLoadedAll = newRecords.count < batchSize
+        progressEntries.append(contentsOf: newProgressEntries)
+        hasLoadedAll = newProgressEntries.count < batchSize
         isLoading = false
     }
 
-    private func refreshRecords() {
-        let newRecords = HistoryService.shared.getAll(limit: records.count)
-        records = newRecords
+    private func refreshProgress() {
+        let newProgressEntries = ProgressService.shared.getAll(limit: progressEntries.count)
+        progressEntries = newProgressEntries
     }
 }
 
 struct HistoryItemView: View {
-    var record: RecordModel
+    var progress: ProgressModel
 
     @State private var manga: Manga?
     @State private var plugin: Plugin?
@@ -99,33 +101,33 @@ struct HistoryItemView: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(manga?.title ?? record.mangaId).lineLimit(1)
+                                Text(manga?.title ?? progress.mangaId).lineLimit(1)
 
-                                if !record.shouldSync {
+                                if !progress.shouldSync {
                                     Image("custom.arrow.trianglehead.2.clockwise.rotate.90.slash")
                                         .foregroundStyle(.orange).font(.subheadline)
                                 }
                             }
 
                             HStack(spacing: 4) {
-                                if let chapterTitle = record.chapterTitle {
+                                if let chapterTitle = progress.chapterTitle {
                                     Text(chapterTitle)
                                 } else {
                                     Text(
                                         String(
                                             format: String(localized: "chapterFormat"),
-                                            record.chapterId))
+                                            progress.chapterId))
                                 }
 
                                 Text(verbatim: "•")
                                 Text(
                                     String(
                                         format: String(localized: "historyPageFormat"),
-                                        record.page + 1))
+                                        progress.page + 1))
                             }
                             .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
 
-                            Text(record.datetime.formatted()).font(.caption)
+                            Text(progress.datetime.formatted()).font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
                     }
@@ -137,10 +139,11 @@ struct HistoryItemView: View {
 
     private func loadMangaData() async {
         plugin =
-            PluginService.shared.getPlugin(record.pluginId)
-            ?? BrowseService.shared.getPlugin(record.pluginId)
+            PluginService.shared.getPlugin(progress.pluginId)
+            ?? BrowseService.shared.getPlugin(progress.pluginId)
 
-        manga = MangaSnapshotService.shared.get(mangaId: record.mangaId, pluginId: record.pluginId)
+        manga = MangaSnapshotService.shared.get(
+            mangaId: progress.mangaId, pluginId: progress.pluginId)
 
         // If not found locally, try fetching from plugin
         if manga == nil, let plugin = plugin,
@@ -149,9 +152,9 @@ struct HistoryItemView: View {
             do {
                 let fetchedManga: Manga
                 if plugin.supports(.batchMangas) {
-                    fetchedManga = try await plugin.getManga(id: record.mangaId)
+                    fetchedManga = try await plugin.getManga(id: progress.mangaId)
                 } else {
-                    fetchedManga = try await plugin.getDetailedManga(record.mangaId).toManga()
+                    fetchedManga = try await plugin.getDetailedManga(progress.mangaId).toManga()
                 }
 
                 try Task.checkCancellation()
@@ -163,6 +166,6 @@ struct HistoryItemView: View {
 
         isLoading = false
 
-        if manga == nil { Logger.ui.warning("Failed to load manga for record: \(record)") }
+        if manga == nil { Logger.ui.warning("Failed to load manga for progress: \(progress)") }
     }
 }

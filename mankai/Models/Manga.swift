@@ -44,7 +44,7 @@ enum Genre: String, Codable, CaseIterable {
     }
 }
 
-struct Chapter: Codable {
+struct Chapter: Codable, Equatable {
     var id: String
     var title: String?
     var locked: Bool?

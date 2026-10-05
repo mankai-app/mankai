@@ -20,7 +20,6 @@
 		E464751330239A9C003786FA /* ReerCodable in Frameworks */ = {isa = PBXBuildFile; productRef = E464751230239A9C003786FA /* ReerCodable */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4957CDC304191BB001BC491 /* NFSKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4957CDB304191BB001BC491 /* NFSKit */; };
-		E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E4958E0F2F2FABE1004F2F4D /* Supabase */; };
 		E49598D930458D7B001BC491 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = E49598D830458D7B001BC491 /* Citadel */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
 		E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E4CAEFFB3006797500208FB4 /* ZIPFoundation */; };
@@ -108,7 +107,6 @@
 				E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */,
 				E46469DD302264CA003786FA /* SwiftSMB in Frameworks */,
 				E4643183301F5A40003786FA /* UnrarKit in Frameworks */,
-				E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */,
 				E4957CDC304191BB001BC491 /* NFSKit in Frameworks */,
 				E464751330239A9C003786FA /* ReerCodable in Frameworks */,
 				E4ED565F303371BB00F0499C /* WebDAV in Frameworks */,
@@ -190,7 +188,6 @@
 				E4C616462E0DA05400AC484A /* WrappingHStack */,
 				E42E15022E2A9951006F8B98 /* GRDB */,
 				E4033BA22F1BC53D00A7B886 /* OpenCC */,
-				E4958E0F2F2FABE1004F2F4D /* Supabase */,
 				E4CAEFFB3006797500208FB4 /* ZIPFoundation */,
 				E4643182301F5A40003786FA /* UnrarKit */,
 				E46452933020E344003786FA /* SwiftPackageListUI */,
@@ -264,7 +261,6 @@
 				E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */,
 				E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */,
-				E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */,
 				E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */,
@@ -471,7 +467,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -513,7 +509,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -551,7 +547,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -584,7 +580,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 119;
+				CURRENT_PROJECT_VERSION = 120;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -702,14 +698,6 @@
 				revision = ec63d055b9ee08d609d3c6cb32f42c07edc7bdf7;
 			};
 		};
-		E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift.git";
-			requirement = {
-				kind = upToNextMinorVersion;
-				minimumVersion = 2.41.0;
-			};
-		};
 		E49598D730458D7B001BC491 /* XCRemoteSwiftPackageReference "Citadel" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/orlandos-nl/Citadel";
@@ -802,11 +790,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4957CDA304191BB001BC491 /* XCRemoteSwiftPackageReference "NFSKit" */;
 			productName = NFSKit;
-		};
-		E4958E0F2F2FABE1004F2F4D /* Supabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
 		};
 		E49598D830458D7B001BC491 /* Citadel */ = {
 			isa = XCSwiftPackageProductDependency;

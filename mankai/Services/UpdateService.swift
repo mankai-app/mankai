@@ -19,7 +19,7 @@ import Foundation
     }
 
     private struct Persistence {
-        let saved: SavedModel
+        let libraryItem: LibraryModel
         let manga: MangaModel?
     }
 
@@ -83,8 +83,8 @@ import Foundation
     }
 
     private func internalUpdate() async throws {
-        // Check if sync is needed (only if sync engine is configured)
-        if SyncService.shared.engine != nil {
+        // Check if sync is needed (only if the sync engine is active)
+        if SyncService.shared.engine?.active == true {
             if let lastSyncTime = SyncService.shared.lastSyncTime {
                 // Check if last sync was more than 1 minute ago
                 let timeInterval = Date().timeIntervalSince(lastSyncTime)
@@ -105,39 +105,42 @@ import Foundation
             }
         }
 
-        // Get all saved mangas
-        let saveds = SavedService.shared.getAll()
-        progress = UpdateProgress(completed: 0, total: saveds.count)
-        Logger.updateService.debug("Found \(saveds.count) saved mangas to check for updates")
+        // Get all library mangas
+        let libraryItems = LibraryService.shared.getAll()
+        progress = UpdateProgress(completed: 0, total: libraryItems.count)
+        Logger.updateService.debug(
+            "Found \(libraryItems.count) library mangas to check for updates")
 
-        // Group saveds by pluginId
-        var savedsByPlugin: [String: [SavedModel]] = [:]
-        for saved in saveds {
-            if savedsByPlugin[saved.pluginId] == nil { savedsByPlugin[saved.pluginId] = [] }
-            savedsByPlugin[saved.pluginId]!.append(saved)
+        // Group library items by pluginId
+        var libraryItemsByPlugin: [String: [LibraryModel]] = [:]
+        for libraryItem in libraryItems {
+            if libraryItemsByPlugin[libraryItem.pluginId] == nil {
+                libraryItemsByPlugin[libraryItem.pluginId] = []
+            }
+            libraryItemsByPlugin[libraryItem.pluginId]!.append(libraryItem)
         }
 
-        // Process each plugin's saved mangas
-        var updatedSavedCount = 0
+        // Process each plugin's library mangas
+        var updatedLibraryItemCount = 0
         var updatedMangaCount = 0
 
-        for (pluginId, pluginSaveds) in savedsByPlugin {
+        for (pluginId, pluginLibraryItems) in libraryItemsByPlugin {
             Logger.updateService.debug(
-                "Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)")
+                "Checking updates for plugin: \(pluginId) (\(pluginLibraryItems.count) mangas)")
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
                 Logger.updateService.warning("Plugin not found: \(pluginId)")
-                await advanceProgress(by: pluginSaveds.count)
+                await advanceProgress(by: pluginLibraryItems.count)
                 continue  // Skip if plugin doesn't exist
             }
 
             guard plugin.canUpdate else {
                 Logger.updateService.debug("Skipping plugin without update support: \(pluginId)")
-                await advanceProgress(by: pluginSaveds.count)
+                await advanceProgress(by: pluginLibraryItems.count)
                 continue
             }
 
-            let mangaIds = pluginSaveds.map { $0.mangaId }
+            let mangaIds = pluginLibraryItems.map { $0.mangaId }
 
             let cachedMangas = MangaSnapshotService.shared.get(
                 mangaIds: mangaIds, pluginId: pluginId)
@@ -145,24 +148,25 @@ import Foundation
             var hydrationIds: [String] = []
             var updateRequests: [MangaUpdateRequest] = []
             let usesCustomUpdates = plugin.supports(.mangaUpdates)
-            for saved in pluginSaveds {
-                let latestChapter = try? Chapter.decode(saved.latestChapter)
+            for libraryItem in pluginLibraryItems {
+                let latestChapter = libraryItem.latestChapter
                 if let latestChapter {
                     updateRequests.append(
-                        MangaUpdateRequest(id: saved.mangaId, latestChapter: latestChapter))
+                        MangaUpdateRequest(id: libraryItem.mangaId, latestChapter: latestChapter))
                 }
 
-                if (usesCustomUpdates && cachedMangas[saved.mangaId] == nil) || latestChapter == nil
+                if (usesCustomUpdates && cachedMangas[libraryItem.mangaId] == nil)
+                    || latestChapter == nil
                 {
-                    hydrationIds.append(saved.mangaId)
+                    hydrationIds.append(libraryItem.mangaId)
                 }
             }
 
             var unresolvedHydrationIds = Set(hydrationIds)
             var pluginHadError = false
             var completedMangaIds: Set<String> = []
-            let savedsByMangaId = Dictionary(
-                uniqueKeysWithValues: pluginSaveds.map { ($0.mangaId, $0) })
+            let libraryItemsByMangaId = Dictionary(
+                uniqueKeysWithValues: pluginLibraryItems.map { ($0.mangaId, $0) })
 
             // Let the update result provide the manga snapshot whenever possible.
             if !updateRequests.isEmpty {
@@ -203,14 +207,14 @@ import Foundation
                     manga.updates = nil
                     unresolvedHydrationIds.remove(result.id)
 
-                    guard var saved = savedsByMangaId[result.id] else { continue }
+                    guard var libraryItem = libraryItemsByMangaId[result.id] else { continue }
                     let hasUpdate = result.updates == true
                     if hasUpdate {
                         if let latestChapter = result.latestChapter {
-                            saved.latestChapter = latestChapter.encode()
+                            libraryItem.latestChapter = latestChapter
                         }
-                        saved.datetime = Date()
-                        saved.updates = true
+                        libraryItem.datetime = Date()
+                        libraryItem.updates = true
                         Logger.updateService.info(
                             "Plugin reported an update for manga: \(result.id) (Plugin: \(pluginId))"
                         )
@@ -218,8 +222,9 @@ import Foundation
 
                     persistenceBatch.append(
                         makePersistence(
-                            manga: manga, mangaId: result.id, saved: saved, pluginId: pluginId))
-                    if hasUpdate { updatedSavedCount += 1 }
+                            manga: manga, mangaId: result.id, libraryItem: libraryItem,
+                            pluginId: pluginId))
+                    if hasUpdate { updatedLibraryItemCount += 1 }
                     completedMangaIds.insert(result.id)
                 }
 
@@ -240,10 +245,11 @@ import Foundation
                 let completedBeforeRequest = completedMangaIds.count
                 var persistenceBatch: [Persistence] = []
                 for manga in mangas where unresolvedHydrationIds.contains(manga.id) {
-                    guard let saved = savedsByMangaId[manga.id] else { continue }
+                    guard let libraryItem = libraryItemsByMangaId[manga.id] else { continue }
                     persistenceBatch.append(
                         makePersistence(
-                            manga: manga, mangaId: manga.id, saved: saved, pluginId: pluginId))
+                            manga: manga, mangaId: manga.id, libraryItem: libraryItem,
+                            pluginId: pluginId))
                     unresolvedHydrationIds.remove(manga.id)
                     completedMangaIds.insert(manga.id)
                 }
@@ -264,9 +270,10 @@ import Foundation
                         continue
                     }
 
-                    guard let saved = savedsByMangaId[mangaId] else { continue }
+                    guard let libraryItem = libraryItemsByMangaId[mangaId] else { continue }
                     let persistence = makePersistence(
-                        manga: manga, mangaId: mangaId, saved: saved, pluginId: pluginId)
+                        manga: manga, mangaId: mangaId, libraryItem: libraryItem, pluginId: pluginId
+                    )
                     updatedMangaCount += try await persist([persistence])
                     unresolvedHydrationIds.remove(mangaId)
                     if completedMangaIds.insert(mangaId).inserted { await advanceProgress() }
@@ -279,7 +286,7 @@ import Foundation
                 )
             }
 
-            await advanceProgress(by: pluginSaveds.count - completedMangaIds.count)
+            await advanceProgress(by: pluginLibraryItems.count - completedMangaIds.count)
 
             if pluginHadError, case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToCheckUpdatesForPluginFormat")
@@ -287,11 +294,12 @@ import Foundation
             }
         }
 
-        if updatedSavedCount > 0 || updatedMangaCount > 0 {
+        if updatedLibraryItemCount > 0 || updatedMangaCount > 0 {
             Logger.updateService.info(
-                "Live updated \(updatedSavedCount) saveds and \(updatedMangaCount) mangas")
+                "Live updated \(updatedLibraryItemCount) library items and \(updatedMangaCount) mangas"
+            )
 
-            if updatedSavedCount > 0 {
+            if updatedLibraryItemCount > 0, SyncService.shared.engine?.active == true {
                 do { try await SyncService.shared.sync() } catch {
                     Logger.updateService.error("Sync failed after update", error: error)
                 }
@@ -307,9 +315,14 @@ import Foundation
         Logger.updateService.debug("Update process completed")
     }
 
-    private func makePersistence(manga: Manga, mangaId: String, saved: SavedModel, pluginId: String)
-        -> Persistence
-    {
+    private func makePersistence(
+        manga: Manga, mangaId: String, libraryItem: LibraryModel, pluginId: String
+    ) -> Persistence {
+        var libraryItem = libraryItem
+        if libraryItem.latestChapter == nil, let latestChapter = manga.latestChapter {
+            libraryItem.latestChapter = latestChapter
+            libraryItem.datetime = Date()
+        }
         var mangaModel: MangaModel?
         do {
             mangaModel = try MangaSnapshotService.shared.makeSnapshot(
@@ -320,7 +333,7 @@ import Foundation
             )
         }
 
-        return Persistence(saved: saved, manga: mangaModel)
+        return Persistence(libraryItem: libraryItem, manga: mangaModel)
     }
 
     /// Persists all results produced by one plugin request in one transaction and UI event.
@@ -328,7 +341,8 @@ import Foundation
         guard !batch.isEmpty else { return 0 }
 
         let mangas = batch.compactMap(\.manga)
-        _ = try await SavedService.shared.batchUpdate(saveds: batch.map(\.saved), mangas: mangas)
+        _ = try await LibraryService.shared.batchSave(
+            libraryItems: batch.map(\.libraryItem), mangas: mangas)
         return mangas.count
     }
 

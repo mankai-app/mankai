@@ -84,6 +84,11 @@ final class JsPlugin: Plugin, Configurable {
     private var _getImageHeaders: [String: String]?
     private var _updatesUrl: String?
     var updatesUrl: String? { _updatesUrl }
+    private var sourceURL: String?
+    override var syncURL: String? {
+        (sourceURL ?? updatesUrl).flatMap { configuredURL($0, values: configValues) }
+            .map { "js:\($0)" }
+    }
 
     override var shouldCache: Bool { true }
 
@@ -147,7 +152,7 @@ final class JsPlugin: Plugin, Configurable {
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
         objectWillChange.send()
-        try savePlugin()
+        try PluginService.shared.savePlugin(self)
     }
 
     func resetConfigs() throws {
@@ -156,7 +161,7 @@ final class JsPlugin: Plugin, Configurable {
             _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
         objectWillChange.send()
-        try savePlugin()
+        try PluginService.shared.savePlugin(self)
     }
 
     static func fromJson(_ json: [String: Any]) -> JsPlugin? {
@@ -179,7 +184,7 @@ final class JsPlugin: Plugin, Configurable {
             capabilities: metadata.capabilities)
     }
 
-    static func fromUrl(_ urlString: String) async -> JsPlugin? {
+    static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> JsPlugin? {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed) else { return nil }
 
@@ -201,6 +206,9 @@ final class JsPlugin: Plugin, Configurable {
 
         if !matchedConfigValues.isEmpty { plugin.setConfigValues(matchedConfigValues) }
 
+        plugin.sourceURL = trimmed
+        if let sourceId { plugin._id = sourceId }
+
         return plugin
     }
 
@@ -213,6 +221,8 @@ final class JsPlugin: Plugin, Configurable {
             .flatMap { try? [ConfigValue].decoded(from: $0) }
 
         let plugin = fromMetadata(metadata)
+        plugin?.sourceURL = jsPluginModel.sourceURL
+        plugin?._id = jsPluginModel.id
 
         // Update config values if they exist
         if let configValues = configValues, let plugin = plugin {
@@ -254,6 +264,11 @@ final class JsPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
+        let model = try databaseModel()
+        try dbPool.write { db in try model.save(db) }
+    }
+
+    func databaseModel() throws -> JsPluginModel {
         let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
             dict[pair.key.rawValue] = pair.value
         }
@@ -274,12 +289,8 @@ final class JsPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginJavascriptFailedToEncodeConfigValuesData.makeError()
         }
 
-        // Save to database
-        try dbPool.write { db in
-            let jsPluginModel = JsPluginModel(
-                id: id, meta: metaString, configValues: configValuesString)
-            try jsPluginModel.save(db)
-        }
+        return JsPluginModel(
+            id: id, meta: metaString, configValues: configValuesString, sourceURL: sourceURL)
     }
 
     override func deletePlugin() throws {
@@ -288,7 +299,10 @@ final class JsPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
-        try dbPool.write { db in _ = try JsPluginModel.filter(Column("id") == id).deleteAll(db) }
+        let sourceId = id
+        _ = try dbPool.write { db in
+            try JsPluginModel.filter(Column("id") == sourceId).deleteAll(db)
+        }
     }
 
     override func isOnline() async throws -> Bool {
@@ -515,7 +529,7 @@ final class JsPlugin: Plugin, Configurable {
                 _funcName = newPlugin._funcName
                 _scriptsNoExport = newPlugin._scriptsNoExport
 
-                try savePlugin()
+                try PluginService.shared.savePlugin(self)
                 Logger.jsPlugin.info("Plugin updated successfully: \(id)")
             } catch { Logger.jsPlugin.error("Failed to save updated plugin: \(id)", error: error) }
         } else {
