@@ -185,7 +185,7 @@ import GRDB
         Logger.syncService.info("Sync completed with engine: \(engine.id)")
     }
 
-    /// Called after a local transaction; network failures leave its mutations pending.
+    /// Called after a local transaction, network failures leave its mutations pending.
     func scheduleSync() {
         guard engine?.active == true else {
             Logger.syncService.debug("Skipping scheduled sync: engine is inactive")
@@ -200,7 +200,7 @@ import GRDB
         syncTask?.cancel()
     }
 
-    /// Bootstrap queues current data as upserts; ordinary uploads read only pending operations.
+    /// Bootstrap queues current data as upserts, ordinary uploads read only pending operations.
     func uploadMutations(bootstrap: Bool, limit: Int) async throws -> [SyncMutation] {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
@@ -244,7 +244,7 @@ import GRDB
         return Array(mutations.prefix(limit))
     }
 
-    /// Delete only the operations sent in this request; newer local edits have different IDs.
+    /// Delete only the operations sent in this request, newer local edits have different IDs.
     func acknowledge(_ mutations: [SyncMutation]) async throws {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
@@ -254,7 +254,7 @@ import GRDB
             try SyncQueueModel.filter(ids.contains(Column("operationId"))).deleteAll(db)
         }
         Logger.syncService.debug(
-            "Acknowledged \(ids.count) sent operations; removed \(deleted) queue entries")
+            "Acknowledged \(ids.count) sent operations, removed \(deleted) queue entries")
     }
 
     /// Services check pending edits inside the same transaction as their remote write.

@@ -14819,6 +14819,123 @@
         }
       }
     },
+    "syncMangaAcrossDevices" : {
+      "comment" : "Whether manga library entries and reading progress from this plugin sync across devices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync manga across devices"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイス間で漫画を同期"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨设备同步漫画"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨裝置同步漫畫"
+          }
+        }
+      }
+    },
+    "syncMangaBuiltInDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga in the built-in local folder is specific to this device, so its library entries and reading progress stay on this device."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内蔵のローカルフォルダにある漫画はこのデバイス専用のため、ライブラリの登録情報と読書の進捗はこのデバイスに保存されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内置本地文件夹中的漫画仅属于此设备，因此其书库记录和阅读进度仅保存在此设备上。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建本機資料夾中的漫畫僅屬於此裝置，因此其書庫記錄和閱讀進度僅保存在此裝置上。"
+          }
+        }
+      }
+    },
+    "syncMangaDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs your library entries and reading progress for manga from this plugin."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このプラグインの漫画のライブラリ登録情報と読書の進捗を同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步此插件中漫画的书库记录和阅读进度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步此外掛模組中漫畫的書庫記錄和閱讀進度。"
+          }
+        }
+      }
+    },
+    "syncMangaMissingIDDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai could not save a shared plugin ID in this folder’s .mankai file, so manga records cannot be matched across devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankaiがこのフォルダの「.mankai」ファイルに共通のプラグインIDを保存できなかったため、デバイス間で漫画の記録を一致させることができません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 无法在此文件夹的“.mankai”文件中保存共享插件 ID，因此无法在不同设备之间匹配漫画记录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 無法在此資料夾的「.mankai」檔案中儲存共用外掛模組 ID，因此無法在不同裝置之間對應漫畫記錄。"
+          }
+        }
+      }
+    },
     "syncNow" : {
       "localizations" : {
         "en" : {
@@ -14843,6 +14960,152 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即同步"
+          }
+        }
+      }
+    },
+    "syncPluginAcrossDevices" : {
+      "comment" : "Whether the plugin and its configuration sync across devices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync plugin across devices"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイス間でプラグインを同期"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨设备同步插件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨裝置同步插件"
+          }
+        }
+      }
+    },
+    "syncPluginBuiltInDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This built-in plugin is already included on every device and does not need to sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この内蔵プラグインはすべてのデバイスに含まれているため、同期する必要はありません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此内置插件已包含在每台设备中，无需同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此內建外掛模組已包含在每台裝置中，無需同步。"
+          }
+        }
+      }
+    },
+    "syncPluginDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs this plugin and its settings to your other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このプラグインとその設定を他のデバイスに同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此插件及其设置同步到你的其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將此外掛模組及其設定同步到你的其他裝置。"
+          }
+        }
+      }
+    },
+    "syncPluginFilesystemDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder access must be granted separately on each device. Add this folder on each device to use it there."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダへのアクセスはデバイスごとに許可する必要があります。各デバイスでこのフォルダを追加してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件夹访问权限必须在每台设备上分别授予。请在各设备上添加此文件夹以使用它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾存取權限必須在每台裝置上分別授予。請在各裝置上加入此資料夾以使用它。"
+          }
+        }
+      }
+    },
+    "syncPluginMissingURLDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This plugin has no usable download URL, so it cannot be installed automatically on other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このプラグインには利用可能なダウンロードURLがないため、他のデバイスに自動でインストールできません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此插件没有可用的下载网址，因此无法自动安装到其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此外掛模組沒有可用的下載網址，因此無法自動安裝到其他裝置。"
           }
         }
       }

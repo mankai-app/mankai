@@ -26,6 +26,17 @@ struct PluginInfoScreen: View {
         PluginCapability.allCases.filter(plugin.supports)
     }
 
+    private var pluginSyncDisabledReason: LocalizedStringKey {
+        if plugin is AppDirPlugin { return "syncPluginBuiltInDescription" }
+        if plugin is ReadFsPlugin { return "syncPluginFilesystemDescription" }
+        return "syncPluginMissingURLDescription"
+    }
+
+    private var mangaSyncDisabledReason: LocalizedStringKey {
+        if plugin is AppDirPlugin { return "syncMangaBuiltInDescription" }
+        return "syncMangaMissingIDDescription"
+    }
+
     var body: some View {
         Group {
             List {
@@ -78,12 +89,38 @@ struct PluginInfoScreen: View {
                 }
 
                 Section("sync") {
-                    LabeledContent("syncAcrossDevices") {
-                        HStack(spacing: 8) {
-                            Circle().fill(plugin.shouldSync ? Color.green : Color.red)
-                                .frame(width: 8, height: 8)
-                            Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
-                                .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        LabeledContent("syncPluginAcrossDevices") {
+                            HStack(spacing: 8) {
+                                Circle().fill(plugin.syncURL != nil ? Color.green : Color.red)
+                                    .frame(width: 8, height: 8)
+                                Text(plugin.syncURL != nil ? "syncEnabled" : "syncDisabled")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        if plugin.syncURL == nil {
+                            Text(pluginSyncDisabledReason).font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("syncPluginDescription").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        LabeledContent("syncMangaAcrossDevices") {
+                            HStack(spacing: 8) {
+                                Circle().fill(plugin.shouldSync ? Color.green : Color.red)
+                                    .frame(width: 8, height: 8)
+                                Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        if !plugin.shouldSync {
+                            Text(mangaSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Text("syncMangaDescription").font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }

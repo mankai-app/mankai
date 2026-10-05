@@ -86,7 +86,7 @@ final class HttpEngine: SyncEngine {
             let url = newValue?.trimmingCharacters(in: .whitespacesAndNewlines)
                 .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             guard url != authManager.serverUrl else { return }
-            Logger.httpEngine.debug("HTTP sync server changed; resetting authentication")
+            Logger.httpEngine.debug("HTTP sync server changed, resetting authentication")
             logout()
             authManager.serverUrl = url
         }
@@ -138,7 +138,7 @@ final class HttpEngine: SyncEngine {
                     (error as NSError).userInfo[MankaiErrorUserInfoKey.httpStatusCode] as? Int
                 guard status == 400, cursor != nil, !recoveredCursor else { throw error }
 
-                Logger.httpEngine.warning("Sync cursor rejected; retrying with bootstrap")
+                Logger.httpEngine.warning("Sync cursor rejected, retrying with bootstrap")
                 defaults.removeObject(forKey: cursorKey)
                 cursor = nil
                 mutations = try await SyncService.shared.uploadMutations(
@@ -148,7 +148,7 @@ final class HttpEngine: SyncEngine {
             }
 
             try Task.checkCancellation()
-            Logger.httpEngine.debug("Received sync response \(requestCount); validating")
+            Logger.httpEngine.debug("Received sync response \(requestCount), validating")
             let page = try JSONDecoder().decode(SyncResponse.self, from: data)
             try page.validate(mutations: mutations, cursor: cursor)
 
@@ -169,7 +169,7 @@ final class HttpEngine: SyncEngine {
             // Services have committed every change. A failed page replays from the old cursor.
             defaults.set(page.nextCursor, forKey: cursorKey)
             cursor = page.nextCursor
-            Logger.httpEngine.debug("Sync response \(requestCount) committed; cursor saved")
+            Logger.httpEngine.debug("Sync response \(requestCount) committed, cursor saved")
             if invalidCount > 0 {
                 Logger.httpEngine.warning("Server rejected \(invalidCount) invalid sync mutations")
             }
