@@ -92,14 +92,15 @@ struct PluginInfoScreen: View {
                     VStack(alignment: .leading, spacing: 4) {
                         LabeledContent("syncPluginAcrossDevices") {
                             HStack(spacing: 8) {
-                                Circle().fill(plugin.syncURL != nil ? Color.green : Color.red)
+                                Circle()
+                                    .fill(plugin.supports(.urlEncoding) ? Color.green : Color.red)
                                     .frame(width: 8, height: 8)
-                                Text(plugin.syncURL != nil ? "syncEnabled" : "syncDisabled")
+                                Text(plugin.supports(.urlEncoding) ? "syncEnabled" : "syncDisabled")
                                     .foregroundColor(.secondary)
                             }
                         }
 
-                        if plugin.syncURL == nil {
+                        if !plugin.supports(.urlEncoding) {
                             Text(pluginSyncDisabledReason).font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
@@ -110,14 +111,14 @@ struct PluginInfoScreen: View {
                     VStack(alignment: .leading, spacing: 4) {
                         LabeledContent("syncMangaAcrossDevices") {
                             HStack(spacing: 8) {
-                                Circle().fill(plugin.shouldSync ? Color.green : Color.red)
+                                Circle().fill(plugin.supports(.sync) ? Color.green : Color.red)
                                     .frame(width: 8, height: 8)
-                                Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
+                                Text(plugin.supports(.sync) ? "syncEnabled" : "syncDisabled")
                                     .foregroundColor(.secondary)
                             }
                         }
 
-                        if !plugin.shouldSync {
+                        if !plugin.supports(.sync) {
                             Text(mangaSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
                         } else {
                             Text("syncMangaDescription").font(.caption).foregroundStyle(.secondary)

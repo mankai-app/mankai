@@ -19,7 +19,7 @@ import Foundation
     }
 
     private struct Persistence {
-        let libraryItem: LibraryModel
+        let libraryItem: LibraryModel?
         let manga: MangaModel?
     }
 
@@ -134,7 +134,7 @@ import Foundation
                 continue  // Skip if plugin doesn't exist
             }
 
-            guard plugin.canUpdate else {
+            guard plugin.supportsUpdates else {
                 Logger.updateService.debug("Skipping plugin without update support: \(pluginId)")
                 await advanceProgress(by: pluginLibraryItems.count)
                 continue
@@ -223,7 +223,7 @@ import Foundation
                     persistenceBatch.append(
                         makePersistence(
                             manga: manga, mangaId: result.id, libraryItem: libraryItem,
-                            pluginId: pluginId))
+                            pluginId: pluginId, hasUpdate: hasUpdate))
                     if hasUpdate { updatedLibraryItemCount += 1 }
                     completedMangaIds.insert(result.id)
                 }
@@ -316,12 +316,15 @@ import Foundation
     }
 
     private func makePersistence(
-        manga: Manga, mangaId: String, libraryItem: LibraryModel, pluginId: String
+        manga: Manga, mangaId: String, libraryItem: LibraryModel, pluginId: String,
+        hasUpdate: Bool = false
     ) -> Persistence {
         var libraryItem = libraryItem
+        var libraryItemChanged = hasUpdate
         if libraryItem.latestChapter == nil, let latestChapter = manga.latestChapter {
             libraryItem.latestChapter = latestChapter
             libraryItem.datetime = Date()
+            libraryItemChanged = true
         }
         var mangaModel: MangaModel?
         do {
@@ -333,16 +336,21 @@ import Foundation
             )
         }
 
-        return Persistence(libraryItem: libraryItem, manga: mangaModel)
+        return Persistence(libraryItem: libraryItemChanged ? libraryItem : nil, manga: mangaModel)
     }
 
-    /// Persists all results produced by one plugin request in one transaction and UI event.
+    /// Refreshes snapshots and saves only library entries changed by an update or hydration.
     private func persist(_ batch: [Persistence]) async throws -> Int {
         guard !batch.isEmpty else { return 0 }
 
         let mangas = batch.compactMap(\.manga)
-        _ = try await LibraryService.shared.batchSave(
-            libraryItems: batch.map(\.libraryItem), mangas: mangas)
+        if !mangas.isEmpty { try await MangaSnapshotService.shared.batchUpsert(mangas) }
+
+        let libraryItems = batch.compactMap(\.libraryItem)
+        if !libraryItems.isEmpty {
+            _ = try await LibraryService.shared.batchSave(libraryItems: libraryItems)
+        }
+
         return mangas.count
     }
 

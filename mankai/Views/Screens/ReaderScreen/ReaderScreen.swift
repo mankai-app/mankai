@@ -1135,12 +1135,13 @@ struct ReaderScreen: View {
 
         let progress = ProgressModel(
             mangaId: manga.id, pluginId: plugin.id, datetime: Date(), chapterId: chapter.id,
-            chapterTitle: chapter.title, page: page, shouldSync: plugin.shouldSync)
+            chapterTitle: chapter.title, page: page, shouldSync: plugin.supports(.sync))
 
         do {
             let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
                 for: manga.toManga(), pluginId: plugin.id)
-            _ = try await ProgressService.shared.save(progress: progress, manga: mangaModel)
+            _ = try? await MangaSnapshotService.shared.upsert(mangaModel)
+            _ = try await ProgressService.shared.save(progress: progress)
             lastSavedPosition = position
         } catch { Logger.ui.error("Failed to save reader position", error: error) }
     }

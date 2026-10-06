@@ -45,8 +45,8 @@ import GRDB
     }
 
     /// Saves and queues a local edit, then lets LibraryService clear the update badge.
-    func save(progress: ProgressModel, manga: MangaModel? = nil) async throws -> Bool {
-        let result = try await update(progress: progress, manga: manga, queueSync: true)
+    func save(progress: ProgressModel) async throws -> Bool {
+        let result = try await update(progress: progress, queueSync: true)
         if var libraryItem = LibraryService.shared.get(
             mangaId: progress.mangaId, pluginId: progress.pluginId), libraryItem.updates
         {
@@ -58,27 +58,19 @@ import GRDB
     }
 
     /// Updates local data only when newer, without queueing sync.
-    func batchUpdateLocal(progressEntries: [ProgressModel], mangas: [MangaModel]? = nil)
-        async throws -> Bool
-    { try await batchUpdate(progressEntries: progressEntries, mangas: mangas, queueSync: false) }
-
-    private func update(progress: ProgressModel, manga: MangaModel?, queueSync: Bool) async throws
-        -> Bool
-    {
-        try await batchUpdate(
-            progressEntries: [progress], mangas: manga.map { [$0] }, queueSync: queueSync)
+    func batchUpdateLocal(progressEntries: [ProgressModel]) async throws -> Bool {
+        try await batchUpdate(progressEntries: progressEntries, queueSync: false)
     }
 
-    private func batchUpdate(
-        progressEntries: [ProgressModel], mangas: [MangaModel]?, queueSync: Bool
-    ) async throws -> Bool {
+    private func update(progress: ProgressModel, queueSync: Bool) async throws -> Bool {
+        try await batchUpdate(progressEntries: [progress], queueSync: queueSync)
+    }
+
+    private func batchUpdate(progressEntries: [ProgressModel], queueSync: Bool) async throws -> Bool
+    {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
-        if let mangas {
-            for manga in mangas { _ = try? await MangaSnapshotService.shared.update(manga) }
-        }
-
         let updated = try await appDb.write { db in
             var updated: [ProgressModel] = []
             for var progress in progressEntries {

@@ -137,13 +137,13 @@ struct MangaDetailsScreen: View {
                 } else {
                     let newLibraryItem = LibraryModel(
                         mangaId: manga.id, pluginId: plugin.id, datetime: Date(), updates: false,
-                        latestChapter: manga.latestChapter, shouldSync: plugin.shouldSync)
+                        latestChapter: manga.latestChapter, shouldSync: plugin.supports(.sync))
 
                     let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
                         for: manga, pluginId: plugin.id)
 
-                    let _ = try await LibraryService.shared.save(
-                        libraryItem: newLibraryItem, manga: mangaModel)
+                    try await MangaSnapshotService.shared.upsert(mangaModel)
+                    let _ = try await LibraryService.shared.save(libraryItem: newLibraryItem)
                 }
             } catch { Logger.ui.error("Failed to delete or create library item") }
         }

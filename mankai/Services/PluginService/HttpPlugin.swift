@@ -25,6 +25,10 @@ import ReerCodable
 }
 
 class HttpPlugin: Plugin, Configurable {
+    override class var typeCapabilities: [PluginTypeCapability] {
+        [.urlDecoding, .cache, .download]
+    }
+
     private var _id: String
     private var _name: String?
     private var _version: String?
@@ -51,7 +55,10 @@ class HttpPlugin: Plugin, Configurable {
 
     override var cooldown: Cooldown? { _cooldown }
 
-    override var capabilities: [PluginCapability] { _capabilities }
+    override var capabilities: [PluginCapability] {
+        _capabilities.filter { $0 != .sync && $0 != .urlEncoding } + [.sync]
+            + (encodedURL != nil ? [.urlEncoding] : [])
+    }
 
     var configs: [Config] {
         [
@@ -74,9 +81,11 @@ class HttpPlugin: Plugin, Configurable {
     var authenticationEnabled: Bool { _authenticationEnabled }
 
     private var baseUrl: String
-    override var syncURL: String? {
+    private var encodedURL: String? {
         configuredURL(baseUrl, values: configValues).map { "http:\($0)" }
     }
+
+    override func encodeURL() -> String { encodedURL! }
     lazy var authManager: AuthManager = .init(id: id)
     private var isMetaUpdated: Bool = false
 
@@ -84,8 +93,6 @@ class HttpPlugin: Plugin, Configurable {
     private let setupLock = NSLock()
 
     override var tags: [String] { [String(localized: "http")] }
-
-    override var shouldCache: Bool { true }
 
     // MARK: - Init
 
@@ -164,6 +171,12 @@ class HttpPlugin: Plugin, Configurable {
             capabilities: metadata.capabilities)
     }
 
+    override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
+        let url = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard url.hasPrefix("http:") else { return nil }
+        return await fromUrl(String(url.dropFirst("http:".count)), sourceId: sourceId)
+    }
+
     static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> HttpPlugin? {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed) else { return nil }
@@ -216,7 +229,16 @@ class HttpPlugin: Plugin, Configurable {
         return plugin
     }
 
-    static func loadPlugins() -> [HttpPlugin] {
+    override class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? {
+        guard let model = try HttpPluginModel.fetchOne(db, key: id) else { return nil }
+        return fromDataModel(model)
+    }
+
+    override class func deleteStoredPlugin(_ id: String, in db: Database) throws {
+        _ = try HttpPluginModel.filter(Column("id") == id).deleteAll(db)
+    }
+
+    override class func loadPlugins() -> [Plugin] {
         Logger.httpPlugin.debug("Loading HTTP plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.httpPlugin.error("Database not available")
@@ -237,6 +259,7 @@ class HttpPlugin: Plugin, Configurable {
             }
         } catch { Logger.httpPlugin.error("Failed to load plugins from GRDB", error: error) }
 
+        Task { for plugin in results { await plugin.checkForUpdates() } }
         return results
     }
 
@@ -310,12 +333,13 @@ class HttpPlugin: Plugin, Configurable {
         try dbPool.write { db in try model.save(db) }
     }
 
-    func databaseModel() throws -> HttpPluginModel {
+    override func databaseModel() throws -> any PersistableRecord {
         let metadata = HttpPluginMetadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, availableGenres: availableGenres,
             authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
-            configs: configs, cooldown: cooldown, capabilities: capabilities)
+            configs: configs, cooldown: cooldown,
+            capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginHttpFailedToEncodeMetaData.makeError()
@@ -338,9 +362,7 @@ class HttpPlugin: Plugin, Configurable {
         }
 
         let sourceId = id
-        _ = try dbPool.write { db in
-            try HttpPluginModel.filter(Column("id") == sourceId).deleteAll(db)
-        }
+        try dbPool.write { db in try Self.deleteStoredPlugin(sourceId, in: db) }
     }
 
     override func isOnline() async throws -> Bool {

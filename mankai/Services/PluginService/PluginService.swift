@@ -17,20 +17,15 @@ enum PluginAddConflictResolution: Equatable {
     /// The shared singleton instance of `PluginService`.
     static let shared = PluginService()
 
+    /// Each loader owns its stored instances, including any editable variants.
+    private static let pluginTypes: [Plugin.Type] = [
+        AppDirPlugin.self, JsPlugin.self, ReadFsPlugin.self, HttpPlugin.self
+    ]
+
     private init() {
         Logger.pluginService.debug("Initializing PluginService")
 
-        // Add built-in plugins
-        _plugins[AppDirPlugin.shared.id] = AppDirPlugin.shared
-
-        // Load JS plugins
-        loadJsPlugins()
-
-        // Load FS plugins
-        loadFsPlugins()
-
-        // Load HTTP plugins
-        loadHttpPlugins()
+        loadPlugins()
     }
 
     private var _plugins: [String: Plugin] = [:]
@@ -38,9 +33,25 @@ enum PluginAddConflictResolution: Equatable {
     /// A list of all available plugins.
     var plugins: [Plugin] { return Array(_plugins.values) }
 
+    /// Tries each registered URL-capable type until one recognizes and decodes the URL.
+    func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
+        for pluginType in Self.pluginTypes where pluginType.typeCapabilities.contains(.urlDecoding)
+        {
+            guard !Task.isCancelled else { return nil }
+            guard let plugin = await pluginType.decodeURL(url, sourceId: sourceId) else { continue }
+            guard !Task.isCancelled else { return nil }
+
+            return plugin
+        }
+        return nil
+    }
+
     /// Reconstruct and save a downloaded plugin without queueing it again.
     func updatePlugin(url: String, sourceId: String, datetime: Date) async throws {
-        if _plugins[sourceId]?.syncURL == url { return }
+        if let plugin = _plugins[sourceId], plugin.supports(.urlEncoding), plugin.encodeURL() == url
+        {
+            return
+        }
         let mutation = SyncMutation(
             entry: .plugin(key: .init(sourceId: sourceId), payload: .init(url: url)), date: datetime
         )
@@ -50,25 +61,13 @@ enum PluginAddConflictResolution: Equatable {
         let shouldApply = try await appDb.read { try SyncService.shouldApply(mutation, in: $0) }
         guard shouldApply else { return }
 
-        if url.hasPrefix("http:") {
-            guard
-                let plugin = await HttpPlugin.fromUrl(
-                    String(url.dropFirst("http:".count)), sourceId: sourceId)
-            else { throw MankaiErrorCode.browseInvalidPlugin.makeError() }
-            try Task.checkCancellation()
-
-            try update(try plugin.databaseModel(), plugin: plugin, mutation: mutation)
-        } else if url.hasPrefix("js:") {
-            guard
-                let plugin = await JsPlugin.fromUrl(
-                    String(url.dropFirst("js:".count)), sourceId: sourceId)
-            else { throw MankaiErrorCode.browseInvalidPlugin.makeError() }
-            try Task.checkCancellation()
-
-            try update(try plugin.databaseModel(), plugin: plugin, mutation: mutation)
-        } else {
+        let decodedPlugin = await decodeURL(url, sourceId: sourceId)
+        try Task.checkCancellation()
+        guard let plugin = decodedPlugin, plugin.typeCapabilities.contains(.urlDecoding) else {
             throw MankaiErrorCode.browseInvalidPlugin.makeError()
         }
+
+        try update(try plugin.databaseModel(), plugin: plugin, mutation: mutation)
     }
 
     private func update<Model: PersistableRecord>(
@@ -80,8 +79,7 @@ enum PluginAddConflictResolution: Equatable {
         let sourceId = plugin.id
         let updated = try appDb.write { db in
             guard try SyncService.shouldApply(mutation, in: db) else { return false }
-            try JsPluginModel.filter(Column("id") == sourceId).deleteAll(db)
-            try HttpPluginModel.filter(Column("id") == sourceId).deleteAll(db)
+            try deleteStoredPlugins(sourceId, in: db)
             try model.save(db)
             return true
         }
@@ -102,8 +100,7 @@ enum PluginAddConflictResolution: Equatable {
             date: datetime)
         let deleted = try appDb.write { db in
             guard try SyncService.shouldApply(mutation, in: db) else { return false }
-            try JsPluginModel.filter(Column("id") == sourceId).deleteAll(db)
-            try HttpPluginModel.filter(Column("id") == sourceId).deleteAll(db)
+            try deleteStoredPlugins(sourceId, in: db)
             return true
         }
         if deleted {
@@ -112,32 +109,17 @@ enum PluginAddConflictResolution: Equatable {
         }
     }
 
-    private func loadJsPlugins() {
-        Logger.pluginService.debug("Loading JS plugins")
-        let jsPlugins = JsPlugin.loadPlugins()
-        Logger.pluginService.info("Loaded \(jsPlugins.count) JS plugins")
-
-        for jsPlugin in jsPlugins { _plugins[jsPlugin.id] = wrap(jsPlugin) }
-
-        Task { for jsPlugin in jsPlugins { await jsPlugin.checkForUpdates() } }
+    private func deleteStoredPlugins(_ sourceId: String, in db: Database) throws {
+        for pluginType in Self.pluginTypes where pluginType.typeCapabilities.contains(.urlDecoding)
+        { try pluginType.deleteStoredPlugin(sourceId, in: db) }
     }
 
-    private func loadFsPlugins() {
-        Logger.pluginService.debug("Loading FS plugins")
-        let fsPlugins = ReadFsPlugin.loadPlugins()
-        Logger.pluginService.info("Loaded \(fsPlugins.count) FS plugins")
-
-        for fsPlugin in fsPlugins { _plugins[fsPlugin.id] = wrap(fsPlugin) }
-    }
-
-    private func loadHttpPlugins() {
-        Logger.pluginService.debug("Loading HTTP plugins")
-        let httpPlugins = HttpPlugin.loadPlugins()
-        Logger.pluginService.info("Loaded \(httpPlugins.count) HTTP plugins")
-
-        for httpPlugin in httpPlugins { _plugins[httpPlugin.id] = wrap(httpPlugin) }
-
-        Task { for httpPlugin in httpPlugins { await httpPlugin.checkForUpdates() } }
+    private func loadPlugins() {
+        for pluginType in Self.pluginTypes {
+            let plugins = pluginType.loadPlugins()
+            Logger.pluginService.info("Loaded \(plugins.count) plugins from \(pluginType)")
+            for plugin in plugins { _plugins[plugin.id] = wrap(plugin) }
+        }
     }
 
     private func wrap(_ plugin: Plugin) -> Plugin {
@@ -145,7 +127,9 @@ enum PluginAddConflictResolution: Equatable {
 
         if plugin.cooldown != nil { wrappedPlugin = CooldownWrapper.wrapping(wrappedPlugin) }
 
-        if plugin.shouldCache { wrappedPlugin = CacheWrapper.wrapping(wrappedPlugin) }
+        if plugin.typeCapabilities.contains(.cache) {
+            wrappedPlugin = CacheWrapper.wrapping(wrappedPlugin)
+        }
 
         return wrappedPlugin
     }
@@ -155,14 +139,39 @@ enum PluginAddConflictResolution: Equatable {
     /// - Returns: The `Plugin` instance if found, otherwise `nil`.
     func getPlugin(_ id: String) -> Plugin? { return _plugins[id] }
 
-    /// Saves local plugin state, then queues it when it has a portable URL.
+    /// Saves local plugin state and queues changes to its portable URL and configuration.
     func savePlugin(_ plugin: Plugin) throws {
+        let sourceId = plugin.id
+        let previousURL: String?
+        if plugin.supports(.urlEncoding) {
+            previousURL = try DbService.shared.appDb?
+                .read { db -> String? in
+                    for pluginType in Self.pluginTypes
+                    where pluginType.typeCapabilities.contains(.urlDecoding) {
+                        guard let storedPlugin = try pluginType.loadStoredPlugin(sourceId, in: db),
+                            storedPlugin.supports(.urlEncoding)
+                        else { continue }
+                        return storedPlugin.encodeURL()
+                    }
+                    return nil
+                }
+        } else {
+            previousURL = nil
+        }
+
         try plugin.savePlugin()
-        guard let url = plugin.syncURL else { return }
+
+        guard plugin.supports(.urlEncoding) else { return }
+        let url = plugin.encodeURL()
+
+        guard url != previousURL else {
+            Logger.pluginService.debug("Skipping unchanged plugin sync state: \(sourceId)")
+            return
+        }
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
         }
-        let sourceId = plugin.id
+
         try appDb.write { db in try SyncService.enqueuePlugin(id: sourceId, url: url, in: db) }
         SyncService.shared.scheduleSync()
     }
@@ -217,7 +226,7 @@ enum PluginAddConflictResolution: Equatable {
         if let plugin = _plugins[id] {
             do {
                 try plugin.deletePlugin()
-                if plugin.syncURL != nil {
+                if plugin.supports(.urlEncoding) {
                     guard let appDb = DbService.shared.appDb else {
                         throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
                     }

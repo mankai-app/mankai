@@ -192,7 +192,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin<
 
     override var icon: AnyView { AnyView(LabeledFolderIcon(label: "DAV", color: color)) }
 
-    static func loadPlugins() -> [WebDavBrowsablePlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.webDavBrowsablePlugin.debug("Loading WebDAV browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.webDavBrowsablePlugin.error("Database not available")
@@ -232,7 +232,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin<
 
         let model = WebDavBrowsablePluginModel(
             id: id, name: displayName, baseURL: baseURL.absoluteString, username: username,
-            password: password, shouldSync: shouldSync)
+            password: password, shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 struct Cooldown: Codable {
     var `default`: Int?
@@ -13,7 +14,7 @@ struct Cooldown: Codable {
     var getImageConcurrency: Int?
 }
 
-/// Features that a plugin can support.
+/// Features supported by a plugin instance.
 enum PluginCapability: String, Codable, CaseIterable {
     case onlineCheck
     case suggestions
@@ -30,11 +31,46 @@ enum PluginCapability: String, Codable, CaseIterable {
     case chapter
     case image
 
-    static var defaultCapabilities: [PluginCapability] { allCases.filter { $0 != .mangaUpdates } }
+    /// This instance can encode its portable configuration as a URL.
+    case urlEncoding
+
+    /// Manga and reading progress from this source can be synced across devices.
+    case sync
+
+    static var defaultCapabilities: [PluginCapability] {
+        allCases.filter { $0 != .mangaUpdates && $0 != .urlEncoding }
+    }
+}
+
+/// Behaviors supplied by a plugin type, separate from its instance capabilities.
+enum PluginTypeCapability: String, Codable, CaseIterable {
+    /// This type can restore a plugin from a supported URL.
+    case urlDecoding
+
+    /// Responses from this type should be cached.
+    case cache
+
+    /// Manga from this type can be downloaded for offline access.
+    case download
 }
 
 @MainActor class Plugin: Identifiable, ObservableObject {
     init() {}
+
+    /// Capabilities available before an instance has been loaded or decoded.
+    class var typeCapabilities: [PluginTypeCapability] { [.download] }
+
+    /// Restores the saved instances owned by this plugin type.
+    class func loadPlugins() -> [Plugin] { [] }
+
+    /// Restores one saved instance within the caller's database transaction.
+    class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? { nil }
+
+    /// Deletes only this type's saved configuration within the caller's transaction.
+    class func deleteStoredPlugin(_ id: String, in db: Database) throws {}
+
+    /// Decodes a supported URL, or returns `nil` when this type does not recognize it.
+    class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? { nil }
 
     // MARK: - Metadata
 
@@ -58,34 +94,27 @@ enum PluginCapability: String, Codable, CaseIterable {
 
     var cooldown: Cooldown? { nil }
 
-    /// Operations supported by the plugin.
+    /// Features supported by this plugin instance.
     ///
     /// Plugins that do not provide capability metadata support every non-opt-in operation.
     /// Plugins can override this with a smaller list.
     var capabilities: [PluginCapability] { PluginCapability.defaultCapabilities }
 
-    /// Whether manga sourced from this plugin should be synced across devices.
-    var shouldSync: Bool { true }
+    /// Type capabilities exposed by this instance, including through wrappers.
+    var typeCapabilities: [PluginTypeCapability] { type(of: self).typeCapabilities }
 
-    /// A type-prefixed URL used to sync this plugin and its portable configuration.
-    var syncURL: String? { nil }
-
-    /// Whether response data from this plugin should be cached.
-    var shouldCache: Bool { false }
-
-    /// Whether manga sourced from this plugin can be downloaded for offline access.
-    var canDownload: Bool { true }
-
-    /// Whether this plugin can check saved manga for updates.
-    var canUpdate: Bool {
-        capabilities.contains(.batchMangas) || capabilities.contains(.mangaUpdates)
-    }
+    /// Encodes this plugin and its portable configuration.
+    /// Requires the `urlEncoding` capability.
+    func encodeURL() -> String { fatalError("Not Implemented") }
 
     // MARK: - Abstract Methods
 
     /// Saves the plugin configuration or state.
     /// - Throws: An error if saving fails.
     func savePlugin() throws { fatalError("Not Implemented") }
+
+    /// Returns the local record for a decoded plugin before it is saved in a sync transaction.
+    func databaseModel() throws -> any PersistableRecord { fatalError("Not Implemented") }
 
     /// Deletes the plugin and cleans up resources.
     /// - Throws: An error if deletion fails.
@@ -217,11 +246,16 @@ extension Plugin {
         return true
     }
 
+    /// Whether this plugin can check saved manga for updates.
+    var supportsUpdates: Bool {
+        capabilities.contains(.batchMangas) || capabilities.contains(.mangaUpdates)
+    }
+
     /// Whether the source can resolve chapters and fetch their images.
     var supportsRemoteReading: Bool { supports(.chapter) && supports(.image) }
 
     /// Whether new offline downloads can be created from this source.
-    var supportsDownloads: Bool { canDownload && supportsRemoteReading }
+    var supportsDownloads: Bool { typeCapabilities.contains(.download) && supportsRemoteReading }
 
     func getManga(id: String) async throws -> Manga {
         let mangas = try await getMangas([id])

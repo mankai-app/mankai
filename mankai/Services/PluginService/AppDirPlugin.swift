@@ -10,6 +10,8 @@ import Foundation
 final class AppDirPlugin: ReadWriteFsPlugin {
     static let shared = AppDirPlugin()
 
+    override class func loadPlugins() -> [Plugin] { [shared] }
+
     private init() {
         let fileManager = FileManager.default
         let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -37,7 +39,7 @@ final class AppDirPlugin: ReadWriteFsPlugin {
 
     override var name: String? { String(localized: "appName") }
 
-    override var shouldSync: Bool { false }
+    override var capabilities: [PluginCapability] { super.capabilities.filter { $0 != .sync } }
 
     /// Built-in plugin, do nothing
     override func savePlugin() throws {}

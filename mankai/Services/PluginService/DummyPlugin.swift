@@ -12,7 +12,7 @@ final class DummyPlugin: Plugin {
 
     override var id: String { _id }
 
-    override var capabilities: [PluginCapability] { [] }
+    override var capabilities: [PluginCapability] { [.sync] }
 
     init(_ id: String) { _id = id }
 

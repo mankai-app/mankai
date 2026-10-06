@@ -94,8 +94,6 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         displayName ?? configuration.catalogURL.host ?? configuration.catalogURL.absoluteString
     }
 
-    override var shouldSync: Bool { _shouldSync }
-
     func convertToLocalPlugin() {
         _id = UUID().uuidString
         _shouldSync = false
@@ -104,10 +102,10 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
     override var availableGenres: [Genre] { Genre.allCases }
 
     override var capabilities: [PluginCapability] {
-        [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image]
+        [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image] + (_shouldSync ? [.sync] : [])
     }
 
-    override var canDownload: Bool { false }
+    override class var typeCapabilities: [PluginTypeCapability] { [] }
 
     var icon: AnyView { AnyView(Image(systemName: "books.vertical.fill")) }
 
@@ -210,7 +208,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     func absoluteURL(for path: String?) -> URL? { nil }
 
-    static func loadPlugins() -> [OpdsBrowsablePlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.opdsBrowsablePlugin.debug("Loading OPDS browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.opdsBrowsablePlugin.error("Database not available")
@@ -251,7 +249,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         let model = OpdsBrowsablePluginModel(
             id: id, name: displayName, catalogURL: configuration.catalogURL.absoluteString,
             username: configuration.username, password: configuration.password,
-            shouldSync: _shouldSync)
+            shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

@@ -123,7 +123,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         if isAccessingSecurityScopedResource { url.stopAccessingSecurityScopedResource() }
     }
 
-    static func loadPlugins() -> [FsBrowsablePlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.fsBrowsablePlugin.debug("Loading book plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.fsBrowsablePlugin.error("Database not available")
@@ -183,7 +183,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
             options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
         try db.write { db in
             try FsBrowsablePluginModel(
-                id: id, name: displayName, bookmarkData: bookmarkData, shouldSync: shouldSync
+                id: id, name: displayName, bookmarkData: bookmarkData, shouldSync: supports(.sync)
             )
             .save(db)
         }

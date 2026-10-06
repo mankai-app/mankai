@@ -23,7 +23,7 @@ final class DownloadPlugin: Plugin {
 
     override var name: String? { "Downloaded" }
 
-    override var shouldSync: Bool { false }
+    override var capabilities: [PluginCapability] { super.capabilities.filter { $0 != .sync } }
 
     override var availableGenres: [Genre] { Genre.allCases }
 

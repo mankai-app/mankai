@@ -115,7 +115,8 @@ import GRDB
     /// Triggers a synchronization process.
     /// - Parameter wait: If true, waits for an ongoing sync to complete before proceeding (or skipping).
     /// - Throws: An error if the synchronization fails.
-    func sync(wait: Bool = false, showError: Bool = true) async throws {
+    func sync(wait: Bool = false, showError: Bool = true, caller: String = #function) async throws {
+        Logger.syncService.debug("Sync requested by \(caller)")
         let task: Task<Void, Error>
         let wasAlreadyRunning: Bool
         if let current = syncTask {
@@ -217,7 +218,8 @@ import GRDB
 
         Logger.syncService.debug("Preparing bootstrap sync mutations")
         let plugins = PluginService.shared.plugins.compactMap { plugin -> SyncMutation? in
-            guard let url = plugin.syncURL else { return nil }
+            guard plugin.supports(.urlEncoding) else { return nil }
+            let url = plugin.encodeURL()
             return SyncMutation(
                 entry: .plugin(key: .init(sourceId: plugin.id), payload: .init(url: url)))
         }

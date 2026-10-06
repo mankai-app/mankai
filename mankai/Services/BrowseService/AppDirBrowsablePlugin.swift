@@ -11,6 +11,8 @@ import SwiftUI
 final class AppDirBrowsablePlugin: FsBrowsablePlugin {
     static let shared = try! AppDirBrowsablePlugin()
 
+    override class func loadPlugins() -> [Plugin] { [shared] }
+
     private init() throws {
         let fileManager = FileManager.default
         let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!

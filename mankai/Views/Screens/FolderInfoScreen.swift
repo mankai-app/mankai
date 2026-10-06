@@ -73,9 +73,9 @@ struct FolderInfoScreen: View {
 
                 LabeledContent("syncAcrossDevices") {
                     HStack(spacing: 8) {
-                        Circle().fill(plugin.shouldSync ? Color.green : Color.red)
+                        Circle().fill(plugin.supports(.sync) ? Color.green : Color.red)
                             .frame(width: 8, height: 8)
-                        Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
+                        Text(plugin.supports(.sync) ? "syncEnabled" : "syncDisabled")
                             .foregroundStyle(.secondary)
                     }
                 }

@@ -38,6 +38,10 @@ enum ScriptType: String {
 }
 
 final class JsPlugin: Plugin, Configurable {
+    override class var typeCapabilities: [PluginTypeCapability] {
+        [.urlDecoding, .cache, .download]
+    }
+
     // MARK: - Metadata
 
     private var _id: String
@@ -79,18 +83,21 @@ final class JsPlugin: Plugin, Configurable {
 
     override var cooldown: Cooldown? { _cooldown }
 
-    override var capabilities: [PluginCapability] { _capabilities }
+    override var capabilities: [PluginCapability] {
+        _capabilities.filter { $0 != .sync && $0 != .urlEncoding } + [.sync]
+            + (encodedURL != nil ? [.urlEncoding] : [])
+    }
 
     private var _getImageHeaders: [String: String]?
     private var _updatesUrl: String?
     var updatesUrl: String? { _updatesUrl }
     private var sourceURL: String?
-    override var syncURL: String? {
+    private var encodedURL: String? {
         (sourceURL ?? updatesUrl).flatMap { configuredURL($0, values: configValues) }
             .map { "js:\($0)" }
     }
 
-    override var shouldCache: Bool { true }
+    override func encodeURL() -> String { encodedURL! }
 
     // MARK: - Methods Scripts
 
@@ -184,6 +191,12 @@ final class JsPlugin: Plugin, Configurable {
             capabilities: metadata.capabilities)
     }
 
+    override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
+        let url = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard url.hasPrefix("js:") else { return nil }
+        return await fromUrl(String(url.dropFirst("js:".count)), sourceId: sourceId)
+    }
+
     static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> JsPlugin? {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed) else { return nil }
@@ -232,7 +245,16 @@ final class JsPlugin: Plugin, Configurable {
         return plugin
     }
 
-    static func loadPlugins() -> [JsPlugin] {
+    override class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? {
+        guard let model = try JsPluginModel.fetchOne(db, key: id) else { return nil }
+        return fromDataModel(model)
+    }
+
+    override class func deleteStoredPlugin(_ id: String, in db: Database) throws {
+        _ = try JsPluginModel.filter(Column("id") == id).deleteAll(db)
+    }
+
+    override class func loadPlugins() -> [Plugin] {
         Logger.jsPlugin.debug("Loading JS plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.jsPlugin.error("Database not available")
@@ -253,6 +275,7 @@ final class JsPlugin: Plugin, Configurable {
             }
         } catch { Logger.jsPlugin.error("Failed to load plugins from GRDB", error: error) }
 
+        Task { for plugin in results { await plugin.checkForUpdates() } }
         return results
     }
 
@@ -268,7 +291,7 @@ final class JsPlugin: Plugin, Configurable {
         try dbPool.write { db in try model.save(db) }
     }
 
-    func databaseModel() throws -> JsPluginModel {
+    override func databaseModel() throws -> any PersistableRecord {
         let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
             dict[pair.key.rawValue] = pair.value
         }
@@ -277,7 +300,8 @@ final class JsPlugin: Plugin, Configurable {
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, updatesUrl: updatesUrl, availableGenres: availableGenres,
             scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
-            cooldown: cooldown, capabilities: capabilities)
+            cooldown: cooldown,
+            capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginJavascriptFailedToEncodeMetaData.makeError()
@@ -300,9 +324,7 @@ final class JsPlugin: Plugin, Configurable {
         }
 
         let sourceId = id
-        _ = try dbPool.write { db in
-            try JsPluginModel.filter(Column("id") == sourceId).deleteAll(db)
-        }
+        try dbPool.write { db in try Self.deleteStoredPlugin(sourceId, in: db) }
     }
 
     override func isOnline() async throws -> Bool {

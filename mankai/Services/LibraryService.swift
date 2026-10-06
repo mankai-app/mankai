@@ -11,7 +11,7 @@ import GRDB
 
 @MainActor final class LibraryService: ObservableObject {
     enum Change {
-        case upserted(libraryItems: [LibraryModel], snapshots: [MangaSnapshotService.Upsert])
+        case upserted([LibraryModel])
         case deleted(mangaId: String, pluginId: String)
     }
 
@@ -34,37 +34,26 @@ import GRDB
     }
 
     /// Saves a local edit and queues it for sync in the same transaction.
-    func save(libraryItem: LibraryModel, manga: MangaModel? = nil) async throws -> Bool {
-        try await update(libraryItem: libraryItem, manga: manga, queueSync: true)
+    func save(libraryItem: LibraryModel) async throws -> Bool {
+        try await update(libraryItem: libraryItem, queueSync: true)
     }
 
-    func batchSave(libraryItems: [LibraryModel], mangas: [MangaModel]? = nil) async throws -> Bool {
-        try await batchUpdate(libraryItems: libraryItems, mangas: mangas, queueSync: true)
+    func batchSave(libraryItems: [LibraryModel]) async throws -> Bool {
+        try await batchUpdate(libraryItems: libraryItems, queueSync: true)
     }
 
     /// Updates local data only when newer, without queueing sync.
-    func batchUpdateLocal(libraryItems: [LibraryModel], mangas: [MangaModel]? = nil) async throws
-        -> Bool
-    { try await batchUpdate(libraryItems: libraryItems, mangas: mangas, queueSync: false) }
-
-    private func update(libraryItem: LibraryModel, manga: MangaModel?, queueSync: Bool) async throws
-        -> Bool
-    {
-        try await batchUpdate(
-            libraryItems: [libraryItem], mangas: manga.map { [$0] }, queueSync: queueSync)
+    func batchUpdateLocal(libraryItems: [LibraryModel]) async throws -> Bool {
+        try await batchUpdate(libraryItems: libraryItems, queueSync: false)
     }
 
-    private func batchUpdate(libraryItems: [LibraryModel], mangas: [MangaModel]?, queueSync: Bool)
-        async throws -> Bool
-    {
+    private func update(libraryItem: LibraryModel, queueSync: Bool) async throws -> Bool {
+        try await batchUpdate(libraryItems: [libraryItem], queueSync: queueSync)
+    }
+
+    private func batchUpdate(libraryItems: [LibraryModel], queueSync: Bool) async throws -> Bool {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
-        }
-        let snapshots: [MangaSnapshotService.Upsert]
-        if let mangas {
-            snapshots = try await MangaSnapshotService.shared.batchUpsert(mangas)
-        } else {
-            snapshots = []
         }
         let updated = try await appDb.write { db in
             var updated: [LibraryModel] = []
@@ -88,7 +77,7 @@ import GRDB
             return updated
         }
 
-        if !updated.isEmpty { publish(.upserted(libraryItems: updated, snapshots: snapshots)) }
+        if !updated.isEmpty { publish(.upserted(updated)) }
         if queueSync { SyncService.shared.scheduleSync() }
         return !updated.isEmpty
     }

@@ -101,14 +101,9 @@ class CacheWrapper: Plugin {
 
     override var capabilities: [PluginCapability] { plugin.capabilities }
 
-    override var shouldSync: Bool { plugin.shouldSync }
-    override var syncURL: String? { plugin.syncURL }
+    override var typeCapabilities: [PluginTypeCapability] { plugin.typeCapabilities }
 
-    override var shouldCache: Bool { plugin.shouldCache }
-
-    override var canDownload: Bool { plugin.canDownload }
-
-    override var canUpdate: Bool { plugin.canUpdate }
+    override func encodeURL() -> String { plugin.encodeURL() }
 
     // MARK: - Configs Delegation
 

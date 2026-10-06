@@ -213,7 +213,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
 
     override var icon: AnyView { AnyView(LabeledFolderIcon(label: "SMB", color: color)) }
 
-    static func loadPlugins() -> [SmbBrowsablePlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.smbBrowsablePlugin.debug("Loading SMB browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.smbBrowsablePlugin.error("Database not available")
@@ -253,7 +253,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
 
         let model = SmbBrowsablePluginModel(
             id: id, name: displayName, host: host, port: port, share: share, username: username,
-            password: password, shouldSync: shouldSync)
+            password: password, shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

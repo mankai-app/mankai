@@ -16384,6 +16384,36 @@
         }
       }
     },
+    "urlEncoding" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shareable URL"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有用URL"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可分享的 URL"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可分享的 URL"
+          }
+        }
+      }
+    },
     "urls" : {
       "localizations" : {
         "en" : {

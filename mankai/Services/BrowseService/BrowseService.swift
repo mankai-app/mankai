@@ -86,19 +86,17 @@ enum BrowsePluginAddConflictResolution {
 @MainActor final class BrowseService: ObservableObject {
     static let shared = BrowseService()
 
+    /// Each type loads its saved instances, including the built-in folder.
+    private static let pluginTypes: [Plugin.Type] = [
+        AppDirBrowsablePlugin.self, FsBrowsablePlugin.self, SmbBrowsablePlugin.self,
+        SftpBrowsablePlugin.self, NfsBrowsablePlugin.self, WebDavBrowsablePlugin.self,
+        OpdsBrowsablePlugin.self
+    ]
+
     private init() {
         Logger.browseService.debug("Initializing BrowseService")
 
-        // Add built-in plugins
-        _plugins[AppDirBrowsablePlugin.shared.id] = AppDirBrowsablePlugin.shared
-
-        // Load plugins from db
-        loadFsBrowablePlugins()
-        loadSmbBrowsablePlugins()
-        loadSftpBrowsablePlugins()
-        loadNfsBrowsablePlugins()
-        loadWebDavBrowsablePlugins()
-        loadOpdsBrowsablePlugins()
+        loadPlugins()
     }
 
     private var _plugins: [String: BrowsablePlugin] = [:]
@@ -115,52 +113,13 @@ enum BrowsePluginAddConflictResolution {
         plugins.compactMap { $0 as? ImportableBrowsablePlugin }
     }
 
-    private func loadFsBrowablePlugins() {
-        Logger.browseService.debug("Loading fs browsable plugins")
-        let fsBrowsablePlugins = FsBrowsablePlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(fsBrowsablePlugins.count) fs browsable plugins")
-
-        for plugin in fsBrowsablePlugins { _plugins[plugin.id] = plugin }
-    }
-
-    private func loadSmbBrowsablePlugins() {
-        Logger.browseService.debug("Loading SMB browsable plugins")
-        let smbBrowsablePlugins = SmbBrowsablePlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(smbBrowsablePlugins.count) SMB browsable plugins")
-
-        for plugin in smbBrowsablePlugins { _plugins[plugin.id] = plugin }
-    }
-
-    private func loadSftpBrowsablePlugins() {
-        Logger.browseService.debug("Loading SFTP browsable plugins")
-        let sftpBrowsablePlugins = SftpBrowsablePlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(sftpBrowsablePlugins.count) SFTP browsable plugins")
-
-        for plugin in sftpBrowsablePlugins { _plugins[plugin.id] = plugin }
-    }
-
-    private func loadNfsBrowsablePlugins() {
-        Logger.browseService.debug("Loading NFS browsable plugins")
-        let nfsBrowsablePlugins = NfsBrowsablePlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(nfsBrowsablePlugins.count) NFS browsable plugins")
-
-        for plugin in nfsBrowsablePlugins { _plugins[plugin.id] = plugin }
-    }
-
-    private func loadWebDavBrowsablePlugins() {
-        Logger.browseService.debug("Loading WebDAV browsable plugins")
-        let webDavBrowsablePlugins = WebDavBrowsablePlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(webDavBrowsablePlugins.count) WebDAV browsable plugins")
-
-        for plugin in webDavBrowsablePlugins { _plugins[plugin.id] = plugin }
-    }
-
-    private func loadOpdsBrowsablePlugins() {
-        Logger.browseService.debug("Loading OPDS browsable plugins")
-        let opdsBrowsablePlugins = OpdsBrowsablePlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(opdsBrowsablePlugins.count) OPDS browsable plugins")
-
-        for plugin in opdsBrowsablePlugins { _plugins[plugin.id] = plugin }
+    private func loadPlugins() {
+        for pluginType in Self.pluginTypes {
+            let plugins = pluginType.loadPlugins().compactMap { $0 as? BrowsablePlugin }
+            Logger.browseService.info(
+                "Loaded \(plugins.count) browsable plugins from \(pluginType)")
+            for plugin in plugins { _plugins[plugin.id] = plugin }
+        }
     }
 
     /// Retrieves a plugin by its identifier.

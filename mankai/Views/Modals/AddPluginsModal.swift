@@ -143,11 +143,8 @@ struct AddPluginsModal: View {
         await withTaskGroup(of: (Int, Plugin?).self) { group in
             for (index, source) in sources.enumerated() {
                 group.addTask {
-                    let plugin: Plugin?
-                    switch source.kind { case .js:
-                        plugin = await JsPlugin.fromUrl(source.url.absoluteString)
-                        case .http: plugin = await HttpPlugin.fromUrl(source.url.absoluteString)
-                    }
+                    let plugin = await PluginService.shared.decodeURL(
+                        "\(source.kind.rawValue):\(source.url.absoluteString)")
 
                     return (index, plugin)
                 }

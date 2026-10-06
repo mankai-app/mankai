@@ -248,7 +248,7 @@ final class SftpBrowsablePlugin: GenericBrowsablePlugin<SftpConnectionConfigurat
 
     override var icon: AnyView { AnyView(LabeledFolderIcon(label: "SSH", color: color)) }
 
-    static func loadPlugins() -> [SftpBrowsablePlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.sftpBrowsablePlugin.debug("Loading SFTP browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.sftpBrowsablePlugin.error("Database not available")
@@ -288,7 +288,7 @@ final class SftpBrowsablePlugin: GenericBrowsablePlugin<SftpConnectionConfigurat
 
         let model = SftpBrowsablePluginModel(
             id: id, name: displayName, host: host, port: port, username: username,
-            password: password, shouldSync: shouldSync)
+            password: password, shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

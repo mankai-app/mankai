@@ -287,7 +287,7 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
 
     override var icon: AnyView { AnyView(LabeledFolderIcon(label: "NFS", color: color)) }
 
-    static func loadPlugins() -> [NfsBrowsablePlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.nfsBrowsablePlugin.debug("Loading NFS browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.nfsBrowsablePlugin.error("Database not available")
@@ -325,7 +325,7 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
         }
 
         let model = NfsBrowsablePluginModel(
-            id: id, name: displayName, host: host, export: export, shouldSync: shouldSync)
+            id: id, name: displayName, host: host, export: export, shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

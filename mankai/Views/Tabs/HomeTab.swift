@@ -269,24 +269,16 @@ struct HomeTab: View {
     }
 
     private func applyLibraryChange(_ change: LibraryService.Change) {
-        switch change { case .upserted(let changedLibraryItems, let snapshots):
-            updateLibraryItems(changedLibraryItems, snapshots: snapshots)
+        switch change { case .upserted(let changedLibraryItems):
+            updateLibraryItems(changedLibraryItems)
             case .deleted(let mangaId, let pluginId):
                 removeLibraryItem(mangaId: mangaId, pluginId: pluginId)
         }
     }
 
-    private func updateLibraryItems(
-        _ changedLibraryItems: [LibraryModel], snapshots: [MangaSnapshotService.Upsert]
-    ) {
-        guard !changedLibraryItems.isEmpty || !snapshots.isEmpty else { return }
+    private func updateLibraryItems(_ changedLibraryItems: [LibraryModel]) {
+        guard !changedLibraryItems.isEmpty else { return }
         var next = library
-
-        for snapshot in snapshots {
-            let key = "\(snapshot.pluginId)+\(snapshot.manga.id)"
-            next.mangas[key] = snapshot.manga
-            next.plugins[key] = allPlugins[snapshot.pluginId]
-        }
 
         let changedKeys = changedLibraryItems.map { libraryItem in
             let key = "\(libraryItem.pluginId)+\(libraryItem.mangaId)"

@@ -82,7 +82,7 @@ class ReadFsPlugin: Plugin {
 
     isolated deinit { if _isAccessing { url.stopAccessingSecurityScopedResource() } }
 
-    static func loadPlugins() -> [ReadFsPlugin] {
+    override class func loadPlugins() -> [Plugin] {
         Logger.fsPlugin.debug("Loading FS plugins")
         guard let dbPool = DbService.shared.appDb else {
             Logger.fsPlugin.error("Database not available")
@@ -150,7 +150,9 @@ class ReadFsPlugin: Plugin {
 
     override var id: String { _id }
 
-    override var shouldSync: Bool { _shouldSync }
+    override var capabilities: [PluginCapability] {
+        _shouldSync ? super.capabilities : super.capabilities.filter { $0 != .sync }
+    }
 
     override var tags: [String] { [String(localized: "fs")] }
 
@@ -158,7 +160,7 @@ class ReadFsPlugin: Plugin {
 
     override var availableGenres: [Genre] { Genre.allCases }
 
-    override var canDownload: Bool { false }
+    override class var typeCapabilities: [PluginTypeCapability] { [] }
 
     // MARK: - Override Methods
 
@@ -174,7 +176,8 @@ class ReadFsPlugin: Plugin {
         let isWriteable = self is Editable
 
         let pluginModel = FsPluginModel(
-            id: id, isWriteable: isWriteable, bookmarkData: bookmarkData, shouldSync: shouldSync)
+            id: id, isWriteable: isWriteable, bookmarkData: bookmarkData,
+            shouldSync: supports(.sync))
 
         try db.write { db in try pluginModel.save(db) }
     }

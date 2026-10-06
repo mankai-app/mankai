@@ -124,10 +124,10 @@ where Session: BrowsableSession, Session.Config == Config {
     override var availableGenres: [Genre] { Genre.allCases }
 
     override var capabilities: [PluginCapability] {
-        [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image]
+        [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image] + (_shouldSync ? [.sync] : [])
     }
 
-    override var canDownload: Bool { false }
+    override class var typeCapabilities: [PluginTypeCapability] { [] }
 
     var color: Color { BrowsablePluginStyle.color(for: _id) }
 
@@ -161,8 +161,6 @@ where Session: BrowsableSession, Session.Config == Config {
     private let temporaryDirectoryName: String?
     private var sessionNeedsCleanup = true
     let parsers: [String: Parser]
-
-    override var shouldSync: Bool { _shouldSync }
 
     func convertToLocalPlugin() {
         _id = UUID().uuidString
