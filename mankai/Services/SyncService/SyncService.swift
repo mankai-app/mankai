@@ -13,7 +13,7 @@ import GRDB
     /// The shared singleton instance of SyncService.
     static let shared = SyncService()
     /// The list of available synchronization engines.
-    static let engines: [SyncEngine] = [HttpEngine.shared]
+    static let engines: [SyncEngine] = [HttpEngine.shared, SupabaseEngine.shared]
 
     private init() {
         Logger.syncService.debug("Initializing SyncService")

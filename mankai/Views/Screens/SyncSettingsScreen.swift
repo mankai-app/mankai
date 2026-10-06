@@ -5,6 +5,7 @@
 //  Created by Travis XU on 10/12/2025.
 //
 
+import Supabase
 import SwiftUI
 
 struct SyncSettingsScreen: View {
@@ -32,6 +33,7 @@ struct SyncSettingsScreen: View {
 
             if let engine = syncService.engine {
                 if engine is HttpEngine { HttpEngineConfigView() }
+                if engine is SupabaseEngine { SupabaseEngineConfigView() }
 
                 Section("syncStatus") {
                     LabeledContent("status") {
@@ -255,5 +257,213 @@ struct HttpEngineConfigView: View {
         }
 
         isLoggingIn = false
+    }
+}
+
+struct SupabaseEngineConfigView: View {
+    @ObservedObject private var supabaseEngine = SupabaseEngine.shared
+    @State private var url: String = ""
+    @State private var key: String = ""
+    @State private var showErrorAlert = false
+    @State private var errorMessage: String?
+    @State private var showResetConfirmation = false
+    @State private var showLogoutConfirmation = false
+    @State private var selectedProvider: Provider?
+    @State private var authSettings: SupabaseEngine.AuthSettings?
+    @State private var authSettingsError: String?
+    @State private var isLoadingAuthSettings = false
+    @State private var authSettingsRetryCount = 0
+    @State private var loadedAuthSettingsRequestID: [String?]?
+    @State private var isLoggingIn = false
+    @State private var isLoggingOut = false
+
+    private var authSettingsRequestID: [String?] {
+        [supabaseEngine.currentUrl, supabaseEngine.currentKey, String(authSettingsRetryCount)]
+    }
+
+    var body: some View {
+        Group {
+            Section("supabaseSettings") {
+                if supabaseEngine.isConfigured {
+                    LabeledContent("url") {
+                        Text(supabaseEngine.currentUrl ?? "").foregroundColor(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    LabeledContent("key") {
+                        Text(supabaseEngine.currentKey ?? "").foregroundColor(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Text("resetConfigs")
+                    }
+                    .confirmationDialog(
+                        "resetSupabaseConfirmationMessage", isPresented: $showResetConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("reset", role: .destructive) {
+                            supabaseEngine.resetClient()
+                            url = ""
+                            key = ""
+                        }
+                        Button("cancel", role: .cancel) {}
+                    }
+                } else {
+                    TextField("url", text: $url).textContentType(.URL).keyboardType(.URL)
+                        .autocapitalization(.none)
+
+                    TextField("key", text: $key).keyboardType(.default).autocapitalization(.none)
+
+                    Button {
+                        performConfig()
+                    } label: {
+                        Text("saveConfigs")
+                    }
+                    .disabled(url.isEmpty || key.isEmpty)
+                }
+            }
+
+            if supabaseEngine.isConfigured {
+                Section("credentials") {
+                    if let user = supabaseEngine.currentUser {
+                        HStack(spacing: 8) {
+                            if let avatarUrlString = user.userMetadata["avatar_url"]?.stringValue,
+                                let avatarUrl = URL(string: avatarUrlString)
+                            {
+                                AsyncImage(url: avatarUrl) { image in
+                                    image.resizable().aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    Image(systemName: "person.circle.fill").resizable()
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(width: 32, height: 32).clipShape(Circle())
+                            } else {
+                                Image(systemName: "person.circle.fill").resizable()
+                                    .foregroundColor(.gray).frame(width: 32, height: 32)
+                            }
+
+                            if let userName = user.userMetadata["name"]?.stringValue
+                                ?? user.userMetadata["user_name"]?.stringValue
+                                ?? user.userMetadata["full_name"]?.stringValue
+                            {
+                                VStack(alignment: .leading) {
+                                    Text(userName)
+                                    if let email = user.email {
+                                        Text(email).font(.caption).foregroundColor(.secondary)
+                                    }
+                                }
+                            } else {
+                                Text(user.email ?? String(localized: "unknown"))
+                            }
+                        }
+
+                        Button(role: .destructive) {
+                            showLogoutConfirmation = true
+                        } label: {
+                            Text("logout")
+                        }
+                        .confirmationDialog(
+                            "logoutConfirmationMessage", isPresented: $showLogoutConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("logout", role: .destructive) {
+                                Task {
+                                    isLoggingOut = true
+                                    defer { isLoggingOut = false }
+                                    do { try await supabaseEngine.logout() } catch {
+                                        errorMessage = error.localizedDescription
+                                        showErrorAlert = true
+                                    }
+                                }
+                            }
+                            Button("cancel", role: .cancel) {}
+                        }
+                    } else {
+                        loginControls
+                    }
+                }
+            }
+        }
+        .disabled(isLoggingIn || isLoggingOut).onAppear { url = supabaseEngine.currentUrl ?? "" }
+        .alert("configFailed", isPresented: $showErrorAlert) {
+            Button("ok", role: .cancel) {}
+        } message: {
+            if let errorMessage = errorMessage { Text(errorMessage) }
+        }
+    }
+
+    private var loginControls: some View {
+        Group {
+            if isLoadingAuthSettings || loadedAuthSettingsRequestID != authSettingsRequestID {
+                ProgressView("loadingSignInMethods")
+            } else if let authSettingsError {
+                Text(authSettingsError).foregroundColor(.secondary)
+                Button("retry") { authSettingsRetryCount += 1 }
+            } else if let providers = authSettings?.enabledOAuthProviders, !providers.isEmpty {
+                Picker("provider", selection: $selectedProvider) {
+                    ForEach(providers, id: \.self) { provider in
+                        Text(provider.rawValue.capitalized).tag(provider as Provider?)
+                    }
+                }
+
+                Button {
+                    guard let selectedProvider else { return }
+                    isLoggingIn = true
+                    Task {
+                        do { try await supabaseEngine.login(provider: selectedProvider) } catch {
+                            errorMessage = error.localizedDescription
+                            showErrorAlert = true
+                        }
+                        isLoggingIn = false
+                    }
+                } label: {
+                    if isLoggingIn { ProgressView() } else { Text("login") }
+                }
+                .disabled(selectedProvider == nil)
+            } else {
+                Text("noEnabledOAuthProviders").foregroundColor(.secondary)
+                Button("retry") { authSettingsRetryCount += 1 }
+            }
+        }
+        .task(id: authSettingsRequestID) { await loadAuthSettings() }
+    }
+
+    private func loadAuthSettings() async {
+        guard !Task.isCancelled, supabaseEngine.isConfigured, supabaseEngine.currentUser == nil
+        else { return }
+        let requestID = authSettingsRequestID
+        guard loadedAuthSettingsRequestID != requestID else { return }
+        let previousProvider = selectedProvider ?? .google
+        authSettings = nil
+        authSettingsError = nil
+        selectedProvider = nil
+        isLoadingAuthSettings = true
+        defer { if requestID == authSettingsRequestID { isLoadingAuthSettings = false } }
+        do {
+            let settings = try await supabaseEngine.fetchAuthSettings()
+            try Task.checkCancellation()
+            guard requestID == authSettingsRequestID else { return }
+            let providers = settings.enabledOAuthProviders
+            selectedProvider =
+                providers.contains(previousProvider) ? previousProvider : providers.first
+            authSettings = settings
+            loadedAuthSettingsRequestID = requestID
+        } catch {
+            guard !Task.isCancelled, !(error is CancellationError),
+                requestID == authSettingsRequestID
+            else { return }
+            authSettingsError = error.localizedDescription
+            loadedAuthSettingsRequestID = requestID
+        }
+    }
+
+    private func performConfig() {
+        do { try supabaseEngine.configClient(url: url, key: key) } catch {
+            errorMessage = error.localizedDescription
+            showErrorAlert = true
+        }
     }
 }

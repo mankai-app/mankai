@@ -12,6 +12,7 @@
 		E427B7843007F96E003649A2 /* mankaiThumbnail.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E427B8733007F9E2003649A2 /* ZIPFoundation */; };
 		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
+		E435942E3074B91000D2CB2C /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E435942D3074B91000D2CB2C /* Supabase */; };
 		E4643183301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643182301F5A40003786FA /* UnrarKit */; };
 		E4643185301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643184301F5A40003786FA /* UnrarKit */; };
 		E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */ = {isa = PBXBuildFile; productRef = E46452933020E344003786FA /* SwiftPackageListUI */; };
@@ -115,6 +116,7 @@
 				E49598D930458D7B001BC491 /* Citadel in Frameworks */,
 				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
 				E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */,
+				E435942E3074B91000D2CB2C /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,6 +199,7 @@
 				E4ED56633033720700F0499C /* SWXMLHash */,
 				E4957CDB304191BB001BC491 /* NFSKit */,
 				E49598D830458D7B001BC491 /* Citadel */,
+				E435942D3074B91000D2CB2C /* Supabase */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -270,6 +273,7 @@
 				E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */,
 				E4957CDA304191BB001BC491 /* XCRemoteSwiftPackageReference "NFSKit" */,
 				E49598D730458D7B001BC491 /* XCRemoteSwiftPackageReference "Citadel" */,
+				E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -467,7 +471,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 121;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -487,7 +491,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.8.1;
+				MARKETING_VERSION = 0.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -509,7 +513,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 121;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -529,7 +533,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.8.1;
+				MARKETING_VERSION = 0.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -547,7 +551,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 121;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -559,7 +563,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.8.1;
+				MARKETING_VERSION = 0.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.thumbnail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -580,7 +584,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 121;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -592,7 +596,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.8.1;
+				MARKETING_VERSION = 0.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.thumbnail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -656,6 +660,14 @@
 			requirement = {
 				kind = revision;
 				revision = aa0079aeb82a4bf00324561a40bffe68c6fe1c26;
+			};
+		};
+		E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 2.55.0;
 			};
 		};
 		E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */ = {
@@ -755,6 +767,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
+		};
+		E435942D3074B91000D2CB2C /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 		E4643182301F5A40003786FA /* UnrarKit */ = {
 			isa = XCSwiftPackageProductDependency;

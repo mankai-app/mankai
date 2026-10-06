@@ -35,6 +35,7 @@ enum MankaiErrorDomain: String {
     case pluginJavascript = "app.mankai.plugin.javascript"
     case sync = "app.mankai.sync"
     case syncHttp = "app.mankai.sync.http"
+    case syncSupabase = "app.mankai.sync.supabase"
     case update = "app.mankai.update"
 
     var codePrefix: Int {
@@ -64,6 +65,7 @@ enum MankaiErrorDomain: String {
             case .pluginJavascript: return 85
             case .sync: return 90
             case .syncHttp: return 91
+            case .syncSupabase: return 92
             case .update: return 93
         }
     }
@@ -208,6 +210,11 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
     case syncNoEngine
     case syncEngineInactive
+    case syncInvalidResponse
+    case syncSupabaseInvalidUrl
+    case syncSupabaseNotConfigured
+    case syncSupabaseNotReady
+    case syncSupabaseAuthSettingsFailed
     case syncHttpInvalidResponse
     case updateSyncFailed
 
@@ -435,6 +442,14 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
         .syncNoEngine: .init(domain: .sync, code: 1, messageKey: "noSyncEngine"),
         .syncEngineInactive: .init(domain: .sync, code: 2, messageKey: "syncEngineInactive"),
+        .syncInvalidResponse: .init(domain: .sync, code: 3, messageKey: "invalidResponseType"),
+        .syncSupabaseInvalidUrl: .init(domain: .syncSupabase, code: 1, messageKey: "invalidUrl"),
+        .syncSupabaseNotConfigured: .init(
+            domain: .syncSupabase, code: 2, messageKey: "supabaseNotConfigured"),
+        .syncSupabaseNotReady: .init(
+            domain: .syncSupabase, code: 3, messageKey: "supabaseNotReady"),
+        .syncSupabaseAuthSettingsFailed: .init(
+            domain: .syncSupabase, code: 4, messageKey: "failedToLoadSignInMethods"),
         .syncHttpInvalidResponse: .init(
             domain: .syncHttp, code: 1, messageKey: "invalidResponseType"),
         .updateSyncFailed: .init(domain: .update, code: 1, messageKey: "syncFailed")
