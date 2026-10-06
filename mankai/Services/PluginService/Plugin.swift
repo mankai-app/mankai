@@ -16,25 +16,52 @@ struct Cooldown: Codable {
 
 /// Features supported by a plugin instance.
 enum PluginCapability: String, Codable, CaseIterable {
+    /// Requires `isOnline()`.
     case onlineCheck
+
+    /// Requires `getSuggestions(_:)`.
     case suggestions
+
+    /// Requires `getList(page:genre:status:)`.
     case list
+
+    /// Requires `list` and genre filtering in `getList(page:genre:status:)`.
     case listByGenre
+
+    /// Requires `list` and status filtering in `getList(page:genre:status:)`.
     case listByStatus
+
+    /// Requires `search(_:page:genre:status:isAuthor:)`.
     case search
+
+    /// Requires `search` and genre filtering in `search(_:page:genre:status:isAuthor:)`.
     case searchByGenre
+
+    /// Requires `search` and status filtering in `search(_:page:genre:status:isAuthor:)`.
     case searchByStatus
+
+    /// Requires `search` and author searches with `isAuthor == true`.
     case searchByAuthor
+
+    /// Requires `getDetailedManga(_:)`.
     case mangaDetails
+
+    /// Requires `getMangas(_:)`, also supplies the default `getMangaUpdates(_:)` implementation.
     case batchMangas
+
+    /// Requires `getMangaUpdates(_:)`, its default implementation requires `batchMangas`.
     case mangaUpdates
+
+    /// Requires `getChapter(manga:chapter:)`.
     case chapter
+
+    /// Requires `getImage(_:)`.
     case image
 
-    /// This instance can encode its portable configuration as a URL.
+    /// Requires `encodeURL()` to return the instance's portable configuration as a URL.
     case urlEncoding
 
-    /// Manga and reading progress from this source can be synced across devices.
+    /// Enables manga and reading progress synchronization, requires no additional plugin methods.
     case sync
 
     static var defaultCapabilities: [PluginCapability] {
@@ -44,13 +71,15 @@ enum PluginCapability: String, Codable, CaseIterable {
 
 /// Behaviors supplied by a plugin type, separate from its instance capabilities.
 enum PluginTypeCapability: String, Codable, CaseIterable {
-    /// This type can restore a plugin from a supported URL.
+    /// Requires `decodeURL(_:sourceId:)`, `loadStoredPlugin(_:in:)`, and `deleteStoredPlugin(_:in:)`.
+    /// Decoded instances must implement `databaseModel()` for sync transactions.
     case urlDecoding
 
-    /// Responses from this type should be cached.
+    /// Caches responses from supported operations, requires no additional plugin methods.
     case cache
 
-    /// Manga from this type can be downloaded for offline access.
+    /// Requires `PluginCapability.chapter` and `PluginCapability.image` for offline downloads.
+    /// These capabilities require `getChapter(manga:chapter:)` and `getImage(_:)`.
     case download
 }
 
@@ -61,20 +90,25 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     class var typeCapabilities: [PluginTypeCapability] { [.download] }
 
     /// Restores the saved instances owned by this plugin type.
+    /// Required for registered plugin types, independent of capabilities.
     class func loadPlugins() -> [Plugin] { [] }
 
     /// Restores one saved instance within the caller's database transaction.
+    /// Required by `PluginTypeCapability.urlDecoding` to compare saved URLs before syncing changes.
     class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? { nil }
 
     /// Deletes only this type's saved configuration within the caller's transaction.
+    /// Required by `PluginTypeCapability.urlDecoding` for synced replacements and deletions.
     class func deleteStoredPlugin(_ id: String, in db: Database) throws {}
 
     /// Decodes a supported URL, or returns `nil` when this type does not recognize it.
+    /// Required by `PluginTypeCapability.urlDecoding`.
     class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? { nil }
 
     // MARK: - Metadata
 
     /// The unique identifier of the plugin.
+    /// Required for all registered plugins, independent of capabilities.
     /// - Returns: A unique string identifier.
     var id: String { fatalError("Not Implemented") }
 
@@ -97,41 +131,49 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// Features supported by this plugin instance.
     ///
     /// Plugins that do not provide capability metadata support every non-opt-in operation.
-    /// Plugins can override this with a smaller list.
+    /// Advertise a capability only when its required methods are implemented and available.
+    /// Filter capabilities also require their base `list` or `search` capability.
     var capabilities: [PluginCapability] { PluginCapability.defaultCapabilities }
 
     /// Type capabilities exposed by this instance, including through wrappers.
     var typeCapabilities: [PluginTypeCapability] { type(of: self).typeCapabilities }
 
     /// Encodes this plugin and its portable configuration.
-    /// Requires the `urlEncoding` capability.
+    /// Required by `PluginCapability.urlEncoding`, callers must check that capability first.
     func encodeURL() -> String { fatalError("Not Implemented") }
 
     // MARK: - Abstract Methods
 
     /// Saves the plugin configuration or state.
+    /// Required for all registered plugins, independent of capabilities, built-in plugins may do nothing.
     /// - Throws: An error if saving fails.
     func savePlugin() throws { fatalError("Not Implemented") }
 
     /// Returns the local record for a decoded plugin before it is saved in a sync transaction.
+    /// Required on instances decoded by a `PluginTypeCapability.urlDecoding` plugin type.
     func databaseModel() throws -> any PersistableRecord { fatalError("Not Implemented") }
 
     /// Deletes the plugin and cleans up resources.
+    /// Required for all registered plugins, independent of capabilities, built-in plugins may do nothing.
     /// - Throws: An error if deletion fails.
     func deletePlugin() throws { fatalError("Not Implemented") }
 
     /// Checks if the plugin is currently online and reachable.
+    /// Required by `PluginCapability.onlineCheck`.
     /// - Returns: `true` if online, `false` otherwise.
     /// - Throws: An error if the check fails.
     func isOnline() async throws -> Bool { fatalError("Not Implemented") }
 
     /// Gets search suggestions based on a query.
+    /// Required by `PluginCapability.suggestions`.
     /// - Parameter query: The search query string.
     /// - Returns: A list of suggested search terms.
     /// - Throws: An error if the request fails.
     func getSuggestions(_: String) async throws -> [String] { fatalError("Not Implemented") }
 
     /// Searches for manga based on a query.
+    /// Required by `PluginCapability.search`.
+    /// `searchByGenre`, `searchByStatus`, and `searchByAuthor` require handling the corresponding filters.
     /// - Parameters:
     ///   - query: The search query string.
     ///   - page: The page number for pagination.
@@ -145,6 +187,8 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     { fatalError("Not Implemented") }
 
     /// Retrieves a list of manga based on optional filters.
+    /// Required by `PluginCapability.list`.
+    /// `listByGenre` and `listByStatus` require handling the corresponding filters.
     /// - Parameters:
     ///   - page: The page number for pagination.
     ///   - genre: The genre to filter by.
@@ -156,12 +200,16 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     }
 
     /// Retrieves details for multiple mangas by their IDs.
+    /// Required by `PluginCapability.batchMangas` and used by the default `getMangaUpdates(_:)`.
     /// - Parameter ids: A list of manga IDs.
     /// - Returns: A list of `Manga` objects.
     /// - Throws: An error if the request fails.
     func getMangas(_: [String]) async throws -> [Manga] { fatalError("Not Implemented") }
 
     /// Retrieves current manga metadata and whether each manga should be marked as updated.
+    /// Called for `PluginCapability.mangaUpdates` or the `batchMangas` update fallback.
+    /// The default implementation delegates to `getMangas(_:)`.
+    /// Plugins advertising `mangaUpdates` without `batchMangas` must override this method.
     /// - Parameter mangas: Manga IDs paired with their last known latest chapters.
     /// - Returns: Manga values whose `updates` flag is always populated.
     /// - Throws: An error if the request fails.
@@ -183,12 +231,14 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     }
 
     /// Retrieves detailed information for a specific manga.
+    /// Required by `PluginCapability.mangaDetails`.
     /// - Parameter id: The ID of the manga.
     /// - Returns: A `DetailedManga` object.
     /// - Throws: An error if the request fails.
     func getDetailedManga(_: String) async throws -> DetailedManga { fatalError("Not Implemented") }
 
     /// Retrieves the list of image URLs for a specific chapter.
+    /// Required by `PluginCapability.chapter` and used for `PluginTypeCapability.download`.
     /// - Parameters:
     ///   - manga: The manga containing the chapter.
     ///   - chapter: The chapter to retrieve images for.
@@ -199,6 +249,7 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     }
 
     /// Retrieves image data from a URL.
+    /// Required by `PluginCapability.image` and used for `PluginTypeCapability.download`.
     /// - Parameter url: The URL of the image.
     /// - Returns: The image data.
     /// - Throws: An error if the request fails.
@@ -247,6 +298,7 @@ extension Plugin {
     }
 
     /// Whether this plugin can check saved manga for updates.
+    /// Requires `mangaUpdates` or `batchMangas`, batch support uses the default update implementation.
     var supportsUpdates: Bool {
         capabilities.contains(.batchMangas) || capabilities.contains(.mangaUpdates)
     }
@@ -255,8 +307,10 @@ extension Plugin {
     var supportsRemoteReading: Bool { supports(.chapter) && supports(.image) }
 
     /// Whether new offline downloads can be created from this source.
+    /// Requires `PluginTypeCapability.download` plus the instance's `chapter` and `image` capabilities.
     var supportsDownloads: Bool { typeCapabilities.contains(.download) && supportsRemoteReading }
 
+    /// Retrieves one manga through `getMangas(_:)`, requires `PluginCapability.batchMangas`.
     func getManga(id: String) async throws -> Manga {
         let mangas = try await getMangas([id])
 
