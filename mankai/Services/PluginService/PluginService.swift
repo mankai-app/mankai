@@ -33,35 +33,34 @@ enum PluginAddConflictResolution: Equatable {
     /// A list of all available plugins.
     var plugins: [Plugin] { return Array(_plugins.values) }
 
-    /// Tries each registered URL-capable type until one recognizes and decodes the URL.
-    func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
-        for pluginType in Self.pluginTypes where pluginType.typeCapabilities.contains(.urlDecoding)
-        {
-            guard !Task.isCancelled else { return nil }
-            guard let plugin = await pluginType.decodeURL(url, sourceId: sourceId) else { continue }
-            guard !Task.isCancelled else { return nil }
-
-            return plugin
-        }
-        return nil
+    /// Selects the registered decoder using the explicit plugin type.
+    func decodeURL(_ url: String, type: String, sourceId: String? = nil) async -> Plugin? {
+        guard !Task.isCancelled,
+            let pluginType = Self.pluginTypes.first(where: {
+                $0.syncType == type && $0.typeCapabilities.contains(.urlDecoding)
+            })
+        else { return nil }
+        let plugin = await pluginType.decodeURL(url, sourceId: sourceId)
+        return Task.isCancelled ? nil : plugin
     }
 
     /// Reconstruct and save a downloaded plugin without queueing it again.
-    func updatePlugin(url: String, sourceId: String, datetime: Date) async throws {
-        if let plugin = _plugins[sourceId], plugin.supports(.urlEncoding), plugin.encodeURL() == url
+    func updatePlugin(url: String, type: String, sourceId: String, datetime: Date) async throws {
+        if let plugin = _plugins[sourceId], plugin.syncType == type, plugin.supports(.urlEncoding),
+            plugin.encodeURL() == url
         {
             return
         }
         let mutation = SyncMutation(
-            entry: .plugin(key: .init(sourceId: sourceId), payload: .init(url: url)), date: datetime
-        )
+            entry: .plugin(key: .init(sourceId: sourceId), payload: .init(url: url, type: type)),
+            date: datetime)
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
         }
         let shouldApply = try await appDb.read { try SyncService.shouldApply(mutation, in: $0) }
         guard shouldApply else { return }
 
-        let decodedPlugin = await decodeURL(url, sourceId: sourceId)
+        let decodedPlugin = await decodeURL(url, type: type, sourceId: sourceId)
         try Task.checkCancellation()
         guard let plugin = decodedPlugin, plugin.typeCapabilities.contains(.urlDecoding) else {
             throw MankaiErrorCode.browseInvalidPlugin.makeError()
@@ -139,41 +138,33 @@ enum PluginAddConflictResolution: Equatable {
     /// - Returns: The `Plugin` instance if found, otherwise `nil`.
     func getPlugin(_ id: String) -> Plugin? { return _plugins[id] }
 
-    /// Saves local plugin state and queues changes to its portable URL and configuration.
+    /// Saves portable settings and their pending mutation in the same transaction.
     func savePlugin(_ plugin: Plugin) throws {
-        let sourceId = plugin.id
-        let previousURL: String?
-        if plugin.supports(.urlEncoding) {
-            previousURL = try DbService.shared.appDb?
-                .read { db -> String? in
-                    for pluginType in Self.pluginTypes
-                    where pluginType.typeCapabilities.contains(.urlDecoding) {
-                        guard let storedPlugin = try pluginType.loadStoredPlugin(sourceId, in: db),
-                            storedPlugin.supports(.urlEncoding)
-                        else { continue }
-                        return storedPlugin.encodeURL()
-                    }
-                    return nil
-                }
-        } else {
-            previousURL = nil
-        }
-
-        try plugin.savePlugin()
-
-        guard plugin.supports(.urlEncoding) else { return }
-        let url = plugin.encodeURL()
-
-        guard url != previousURL else {
-            Logger.pluginService.debug("Skipping unchanged plugin sync state: \(sourceId)")
+        guard plugin.supports(.urlEncoding), let type = plugin.syncType else {
+            try plugin.savePlugin()
             return
         }
-        guard let appDb = DbService.shared.appDb else {
-            throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
-        }
 
-        try appDb.write { db in try SyncService.enqueuePlugin(id: sourceId, url: url, in: db) }
+        try save(try plugin.databaseModel(), plugin: plugin, type: type)
         SyncService.shared.scheduleSync()
+    }
+
+    private func save<Model: PersistableRecord>(_ model: Model, plugin: Plugin, type: String) throws
+    {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncInvalidResponse.makeError()
+        }
+        let url = plugin.encodeURL()
+        try appDb.write { db in
+            let storedURL = try Self.pluginTypes.first(where: { $0.syncType == type })?
+                .loadStoredURL(plugin.id, in: db)
+
+            if storedURL != url {
+                try SyncService.enqueuePlugin(id: plugin.id, url: url, type: type, in: db)
+            }
+
+            try model.save(db)
+        }
     }
 
     /// Adds a new plugin to the service.

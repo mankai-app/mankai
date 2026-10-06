@@ -9,7 +9,7 @@ import Foundation
 import ReerCodable
 
 @Codable struct SyncMutation: Equatable {
-    enum Kind: String, Codable { case plugin, library, progress }
+    enum Kind: String, Codable { case plugin, browsableplugin, library, progress }
     enum Action: String, Codable { case upsert, delete, clear }
 
     struct SourceKey: Codable, Equatable { var sourceId: String }
@@ -19,7 +19,10 @@ import ReerCodable
         var mangaId: String
     }
 
-    struct PluginPayload: Codable, Equatable { var url: String }
+    struct PluginPayload: Codable, Equatable {
+        var url: String
+        var type: String
+    }
 
     struct LibraryPayload: Codable, Equatable {
         var updates: Bool
@@ -36,6 +39,9 @@ import ReerCodable
 
     @Decodable enum Entry: Equatable {
         @CodingCase(match: .string("plugin", at: "type")) case plugin(
+            key: SourceKey, payload: PluginPayload?)
+
+        @CodingCase(match: .string("browsableplugin", at: "type")) case browsableplugin(
             key: SourceKey, payload: PluginPayload?)
 
         @CodingCase(match: .string("library", at: "type")) case library(
@@ -58,6 +64,10 @@ import ReerCodable
                 try encoder.set("plugin", forKey: "type")
                 try encoder.set(key, forKey: "key")
                 try encoder.set(payload, forKey: "payload")
+                case .browsableplugin(let key, let payload):
+                    try encoder.set("browsableplugin", forKey: "type")
+                    try encoder.set(key, forKey: "key")
+                    try encoder.set(payload, forKey: "payload")
                 case .library(let key, let payload):
                     try encoder.set("library", forKey: "type")
                     try encoder.set(key, forKey: "key")
@@ -85,6 +95,16 @@ import ReerCodable
             date: library.datetime)
     }
 
+    @MainActor init?(plugin: Plugin, browsable: Bool = false) {
+        guard plugin.supports(.urlEncoding), let type = plugin.syncType else { return nil }
+        let key = SourceKey(sourceId: plugin.id)
+        let payload = PluginPayload(url: plugin.encodeURL(), type: type)
+        self.init(
+            entry: browsable
+                ? .browsableplugin(key: key, payload: payload) : .plugin(key: key, payload: payload)
+        )
+    }
+
     init(progress: ProgressModel) {
         self.init(
             entry: .progress(
@@ -102,20 +122,22 @@ import ReerCodable
     var date: Date { Date(timeIntervalSince1970: Double(datetime) / 1000) }
 
     var type: Kind {
-        switch entry { case .plugin: return .plugin case .library: return .library case .progress:
-            return .progress
+        switch entry { case .plugin: return .plugin case .browsableplugin: return .browsableplugin
+            case .library: return .library
+            case .progress: return .progress
         }
     }
 
     var sourceId: String? {
-        switch entry { case .plugin(let key, _): return key.sourceId case .library(let key, _):
-            return key.sourceId
+        switch entry { case .plugin(let key, _), .browsableplugin(let key, _): return key.sourceId
+            case .library(let key, _): return key.sourceId
             case .progress(let key, _): return key?.sourceId
         }
     }
 
     var mangaId: String? {
-        switch entry { case .plugin: return nil case .library(let key, _): return key.mangaId
+        switch entry { case .plugin, .browsableplugin: return nil case .library(let key, _):
+            return key.mangaId
             case .progress(let key, _): return key?.mangaId
         }
     }
@@ -129,16 +151,20 @@ import ReerCodable
 
     var isValid: Bool {
         guard (0...9_007_199_254_740_991).contains(datetime) else { return false }
-        switch entry { case .plugin(let key, let payload):
+        switch entry { case .plugin(let key, let payload), .browsableplugin(let key, let payload):
             guard !key.sourceId.isEmpty else { return false }
             return action == .delete
-                ? payload == nil : action == .upsert && payload?.url.isEmpty == false
+                ? payload == nil
+                : action == .upsert && payload?.url.isEmpty == false
+                    && (payload?.type.utf16.count ?? 65) <= 64
+                    && (payload?.url.utf16.count ?? 16385) <= 16384
 
             case .library(let key, let payload):
                 guard !key.sourceId.isEmpty, !key.mangaId.isEmpty else { return false }
                 return action == .delete
                     ? payload == nil
                     : action == .upsert && payload?.latestChapter.id.isEmpty == false
+                        && (payload?.latestChapter.title?.utf16.count ?? 0) <= 1024
 
             case .progress(let key, let payload):
                 if action == .clear { return key == nil && payload == nil }
@@ -146,6 +172,7 @@ import ReerCodable
                 if action == .delete { return payload == nil }
                 guard let payload else { return false }
                 return !payload.chapterId.isEmpty && payload.page >= 0
+                    && (payload.chapterTitle?.utf16.count ?? 0) <= 1024
         }
     }
 }

@@ -14904,6 +14904,7 @@
       }
     },
     "syncAcrossDevices" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15095,6 +15096,181 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同步失敗"
+          }
+        }
+      }
+    },
+    "syncFolderAcrossDevices" : {
+      "comment" : "Whether this folder's connection settings sync across devices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync folder across devices"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイス間でフォルダを同期"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨设备同步文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨裝置同步資料夾"
+          }
+        }
+      }
+    },
+    "syncFolderBuiltInDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This built-in folder is already included on every device and does not need to sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この内蔵フォルダはすべてのデバイスに含まれているため、同期する必要はありません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此内置文件夹已包含在每台设备中，无需同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此內建資料夾已包含在每台裝置中，無需同步。"
+          }
+        }
+      }
+    },
+    "syncFolderDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs this folder’s connection settings to your other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このフォルダの接続設定を他のデバイスに同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此文件夹的连接设置同步到你的其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將此資料夾的連線設定同步到你的其他裝置。"
+          }
+        }
+      }
+    },
+    "syncFolderMangaDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs your library entries and reading progress for manga in this folder."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このフォルダ内の漫画のライブラリ登録情報と読書の進捗を同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步此文件夹中漫画的书库记录和阅读进度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步此資料夾中漫畫的書庫記錄和閱讀進度。"
+          }
+        }
+      }
+    },
+    "syncFolderMangaLocalIDDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder uses a local ID, so its manga records cannot be matched across devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このフォルダはローカルIDを使用しているため、デバイス間で漫画の記録を一致させることができません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此文件夹使用本地 ID，因此无法在不同设备之间匹配漫画记录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此資料夾使用本機 ID，因此無法在不同裝置之間對應漫畫記錄。"
+          }
+        }
+      }
+    },
+    "syncFolderUnsupportedDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder’s connection settings cannot be synced to other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このフォルダの接続設定は他のデバイスに同期できません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此文件夹的连接设置无法同步到其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此資料夾的連線設定無法同步到其他裝置。"
           }
         }
       }

@@ -144,7 +144,7 @@ struct AddPluginsModal: View {
             for (index, source) in sources.enumerated() {
                 group.addTask {
                     let plugin = await PluginService.shared.decodeURL(
-                        "\(source.kind.rawValue):\(source.url.absoluteString)")
+                        source.url.absoluteString, type: source.kind.rawValue)
 
                     return (index, plugin)
                 }

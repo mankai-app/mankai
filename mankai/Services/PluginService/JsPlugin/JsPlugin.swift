@@ -38,6 +38,8 @@ enum ScriptType: String {
 }
 
 final class JsPlugin: Plugin, Configurable {
+    override class var syncType: String? { "js" }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -94,7 +96,6 @@ final class JsPlugin: Plugin, Configurable {
     private var sourceURL: String?
     private var encodedURL: String? {
         (sourceURL ?? updatesUrl).flatMap { configuredURL($0, values: configValues) }
-            .map { "js:\($0)" }
     }
 
     override func encodeURL() -> String { encodedURL! }
@@ -192,9 +193,7 @@ final class JsPlugin: Plugin, Configurable {
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
-        let url = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard url.hasPrefix("js:") else { return nil }
-        return await fromUrl(String(url.dropFirst("js:".count)), sourceId: sourceId)
+        await fromUrl(url, sourceId: sourceId)
     }
 
     static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> JsPlugin? {
@@ -245,9 +244,9 @@ final class JsPlugin: Plugin, Configurable {
         return plugin
     }
 
-    override class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? {
+    override class func loadStoredURL(_ id: String, in db: Database) throws -> String? {
         guard let model = try JsPluginModel.fetchOne(db, key: id) else { return nil }
-        return fromDataModel(model)
+        return fromDataModel(model)?.encodedURL
     }
 
     override class func deleteStoredPlugin(_ id: String, in db: Database) throws {

@@ -217,15 +217,12 @@ import GRDB
         }
 
         Logger.syncService.debug("Preparing bootstrap sync mutations")
-        let plugins = PluginService.shared.plugins.compactMap { plugin -> SyncMutation? in
-            guard plugin.supports(.urlEncoding) else { return nil }
-            let url = plugin.encodeURL()
-            return SyncMutation(
-                entry: .plugin(key: .init(sourceId: plugin.id), payload: .init(url: url)))
-        }
+        let plugins =
+            PluginService.shared.plugins.compactMap { SyncMutation(plugin: $0) }
+            + BrowseService.shared.plugins.compactMap { SyncMutation(plugin: $0, browsable: true) }
 
         let mutations = try await appDb.write { db in
-            var current = plugins
+            var current = plugins.filter(\.isValid)
             current += try LibraryModel.filter(Column("shouldSync") == true).fetchAll(db)
                 .compactMap { SyncMutation(library: $0) }.filter(\.isValid)
             current += try ProgressModel.filter(Column("shouldSync") == true).fetchAll(db)
@@ -370,10 +367,16 @@ import GRDB
         return progress
     }
 
-    nonisolated static func enqueuePlugin(id: String, url: String?, in db: Database) throws {
+    nonisolated static func enqueuePlugin(
+        id: String, url: String?, type: String, browsable: Bool = false, in db: Database
+    ) throws {
         guard let url else { return }
+        let key = SyncMutation.SourceKey(sourceId: id)
+        let payload = SyncMutation.PluginPayload(url: url, type: type)
         let mutation = SyncMutation(
-            entry: .plugin(key: .init(sourceId: id), payload: .init(url: url)))
+            entry: browsable
+                ? .browsableplugin(key: key, payload: payload) : .plugin(key: key, payload: payload)
+        )
         if let queued = try SyncQueueModel.request(for: mutation).fetchOne(db),
             queued.mutation.action == .upsert, queued.mutation.entry == mutation.entry
         {

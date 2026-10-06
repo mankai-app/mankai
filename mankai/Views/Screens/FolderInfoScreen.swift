@@ -51,6 +51,17 @@ struct FolderInfoScreen: View {
 
     private var isEditable: Bool { !(plugin is AppDirBrowsablePlugin) }
 
+    private var folderSyncDisabledReason: LocalizedStringKey {
+        if plugin is AppDirBrowsablePlugin { return "syncFolderBuiltInDescription" }
+        if plugin is FsBrowsablePlugin { return "syncPluginFilesystemDescription" }
+        return "syncFolderUnsupportedDescription"
+    }
+
+    private var mangaSyncDisabledReason: LocalizedStringKey {
+        if plugin is AppDirBrowsablePlugin { return "syncMangaBuiltInDescription" }
+        return "syncFolderMangaLocalIDDescription"
+    }
+
     private var errorIsPresented: Binding<Bool> {
         Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
     }
@@ -70,12 +81,40 @@ struct FolderInfoScreen: View {
                 LabeledContent("id") { Text(plugin.id).lineLimit(1).truncationMode(.middle) }
 
                 LabeledContent("folderType") { Text(folderTypeName) }
+            }
 
-                LabeledContent("syncAcrossDevices") {
-                    HStack(spacing: 8) {
-                        Circle().fill(plugin.supports(.sync) ? Color.green : Color.red)
-                            .frame(width: 8, height: 8)
-                        Text(plugin.supports(.sync) ? "syncEnabled" : "syncDisabled")
+            Section("sync") {
+                VStack(alignment: .leading, spacing: 4) {
+                    LabeledContent("syncFolderAcrossDevices") {
+                        HStack(spacing: 8) {
+                            Circle().fill(plugin.supports(.urlEncoding) ? Color.green : Color.red)
+                                .frame(width: 8, height: 8)
+                            Text(plugin.supports(.urlEncoding) ? "syncEnabled" : "syncDisabled")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if !plugin.supports(.urlEncoding) {
+                        Text(folderSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("syncFolderDescription").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    LabeledContent("syncMangaAcrossDevices") {
+                        HStack(spacing: 8) {
+                            Circle().fill(plugin.supports(.sync) ? Color.green : Color.red)
+                                .frame(width: 8, height: 8)
+                            Text(plugin.supports(.sync) ? "syncEnabled" : "syncDisabled")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if !plugin.supports(.sync) {
+                        Text(mangaSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("syncFolderMangaDescription").font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -190,7 +229,7 @@ struct FolderInfoScreen: View {
                 default: break
             }
 
-            try plugin.savePlugin()
+            try browseService.savePlugin(plugin)
         } catch { presentError(error) }
     }
 

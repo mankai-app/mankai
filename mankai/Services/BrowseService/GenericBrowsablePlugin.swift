@@ -125,6 +125,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     override var capabilities: [PluginCapability] {
         [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image] + (_shouldSync ? [.sync] : [])
+            + (syncType != nil ? [.urlEncoding] : [])
     }
 
     override class var typeCapabilities: [PluginTypeCapability] { [] }

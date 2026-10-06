@@ -41,6 +41,23 @@ final class ParserFileDownloadRegistry: @unchecked Sendable {
 }
 
 enum BrowsablePluginUtilities {
+    private static let prefix = "data:application/json;base64,"
+
+    static func encode<Model: Encodable>(_ model: Model) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        // Folder models contain only strings, integers, and booleans.
+        let data = try! encoder.encode(model)
+        return prefix + data.base64EncodedString()
+    }
+
+    static func decode<Model: Decodable>(_ url: String) -> Model? {
+        guard url.hasPrefix(prefix),
+            let data = Data(base64Encoded: String(url.dropFirst(prefix.count)))
+        else { return nil }
+        return try? JSONDecoder().decode(Model.self, from: data)
+    }
+
     static func resolveIdentity<Session: BrowsableSession>(
         using session: Session, invalidPluginError: @autoclosure () -> Error
     ) async throws -> (id: String, shouldSync: Bool) {

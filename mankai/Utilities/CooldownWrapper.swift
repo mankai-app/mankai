@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 private actor CooldownScheduler {
     private struct Waiter {
@@ -220,6 +221,8 @@ class CooldownWrapper: Plugin {
 
     override var typeCapabilities: [PluginTypeCapability] { plugin.typeCapabilities }
 
+    override var syncType: String? { plugin.syncType }
+
     override func encodeURL() -> String { plugin.encodeURL() }
 
     // MARK: - Config Delegation
@@ -241,6 +244,8 @@ class CooldownWrapper: Plugin {
     // MARK: - Method Delegation
 
     override func savePlugin() throws { try plugin.savePlugin() }
+
+    override func databaseModel() throws -> any PersistableRecord { try plugin.databaseModel() }
 
     override func deletePlugin() throws { try plugin.deletePlugin() }
 

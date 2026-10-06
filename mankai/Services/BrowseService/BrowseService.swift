@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 import SwiftUI
 
 struct Entity {
@@ -132,6 +133,105 @@ enum BrowsePluginAddConflictResolution {
         _plugins[id] as? ImportableBrowsablePlugin
     }
 
+    /// Reconstructs a downloaded folder configuration without contacting its server or requeueing it.
+    func updatePlugin(url: String, type: String, sourceId: String, datetime: Date) async throws {
+        if let plugin = _plugins[sourceId] {
+            guard plugin.supports(.urlEncoding) else {
+                throw MankaiErrorCode.browseInvalidPlugin.makeError()
+            }
+            if plugin.syncType == type, plugin.encodeURL() == url { return }
+        }
+        let mutation = SyncMutation(
+            entry: .browsableplugin(
+                key: .init(sourceId: sourceId), payload: .init(url: url, type: type)),
+            date: datetime)
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncInvalidResponse.makeError()
+        }
+        guard try await appDb.read({ try SyncService.shouldApply(mutation, in: $0) }) else {
+            return
+        }
+        guard
+            let pluginType = Self.pluginTypes.first(where: {
+                $0.syncType == type && $0.typeCapabilities.contains(.urlDecoding)
+            }), let plugin = await pluginType.decodeURL(url, sourceId: sourceId) as? BrowsablePlugin
+        else { throw MankaiErrorCode.browseInvalidPlugin.makeError() }
+        try Task.checkCancellation()
+        try update(try plugin.databaseModel(), plugin: plugin, mutation: mutation)
+    }
+
+    private func update<Model: PersistableRecord>(
+        _ model: Model, plugin: BrowsablePlugin, mutation: SyncMutation
+    ) throws {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncInvalidResponse.makeError()
+        }
+        let updated = try appDb.write { db in
+            guard try SyncService.shouldApply(mutation, in: db) else { return false }
+            try deleteStoredPlugins(plugin.id, in: db)
+            try model.save(db)
+            return true
+        }
+        if updated {
+            _plugins[plugin.id] = plugin
+            objectWillChange.send()
+        }
+    }
+
+    /// Remote deletions retain library, progress, and local filesystem folders.
+    func deletePlugin(_ sourceId: String, datetime: Date) throws {
+        if let plugin = _plugins[sourceId], !plugin.supports(.urlEncoding) { return }
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncInvalidResponse.makeError()
+        }
+        let mutation = SyncMutation(
+            entry: .browsableplugin(key: .init(sourceId: sourceId), payload: nil), action: .delete,
+            date: datetime)
+        let deleted = try appDb.write { db in
+            guard try SyncService.shouldApply(mutation, in: db) else { return false }
+            try deleteStoredPlugins(sourceId, in: db)
+            return true
+        }
+        if deleted {
+            _plugins[sourceId] = nil
+            objectWillChange.send()
+        }
+    }
+
+    private func deleteStoredPlugins(_ sourceId: String, in db: Database) throws {
+        for pluginType in Self.pluginTypes where pluginType.typeCapabilities.contains(.urlDecoding)
+        { try pluginType.deleteStoredPlugin(sourceId, in: db) }
+    }
+
+    /// Saves portable settings and their pending mutation in the same transaction.
+    func savePlugin(_ plugin: BrowsablePlugin) throws {
+        guard plugin.supports(.urlEncoding), let type = plugin.syncType else {
+            try plugin.savePlugin()
+            return
+        }
+
+        try save(try plugin.databaseModel(), plugin: plugin, type: type)
+        SyncService.shared.scheduleSync()
+    }
+
+    private func save<Model: PersistableRecord>(
+        _ model: Model, plugin: BrowsablePlugin, type: String
+    ) throws {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.syncInvalidResponse.makeError()
+        }
+        let url = plugin.encodeURL()
+        try appDb.write { db in
+            let storedURL = try Self.pluginTypes.first(where: { $0.syncType == type })?
+                .loadStoredURL(plugin.id, in: db)
+            if storedURL != url {
+                try SyncService.enqueuePlugin(
+                    id: plugin.id, url: url, type: type, browsable: true, in: db)
+            }
+            try model.save(db)
+        }
+    }
+
     /// Adds a new plugin to the service.
     /// - Parameters:
     ///   - plugin: The `BrowsablePlugin` instance to add.
@@ -169,7 +269,7 @@ enum BrowsePluginAddConflictResolution {
         Logger.browseService.debug("Adding plugin: \(plugin.id)")
         do {
             if shouldOverwriteExisting, let existingPlugin { try existingPlugin.deletePlugin() }
-            try plugin.savePlugin()
+            try savePlugin(plugin)
             _plugins[plugin.id] = plugin
 
             objectWillChange.send()
@@ -177,7 +277,7 @@ enum BrowsePluginAddConflictResolution {
             Logger.browseService.info("Plugin added successfully: \(plugin.id)")
         } catch {
             if shouldOverwriteExisting, let existingPlugin {
-                do { try existingPlugin.savePlugin() } catch {
+                do { try savePlugin(existingPlugin) } catch {
                     Logger.browseService.error(
                         "Failed to restore overwritten plugin: \(originalPluginID)", error: error)
                 }
@@ -192,11 +292,23 @@ enum BrowsePluginAddConflictResolution {
     /// - Throws: An error if deleting the plugin fails.
     func removePlugin(_ id: String) throws {
         Logger.browseService.debug("Removing plugin: \(id)")
-        if let plugin = _plugins.removeValue(forKey: id) {
-            objectWillChange.send()
-
+        if let plugin = _plugins[id] {
             do {
                 try plugin.deletePlugin()
+
+                if plugin.supports(.urlEncoding) {
+                    guard let appDb = DbService.shared.appDb else {
+                        throw MankaiErrorCode.syncInvalidResponse.makeError()
+                    }
+                    let mutation = SyncMutation(
+                        entry: .browsableplugin(key: .init(sourceId: id), payload: nil),
+                        action: .delete)
+                    _ = try appDb.write { try SyncService.enqueue(mutation, in: $0) }
+                    SyncService.shared.scheduleSync()
+                }
+
+                _plugins[id] = nil
+                objectWillChange.send()
                 Logger.browseService.info("Plugin removed successfully: \(id)")
             } catch {
                 Logger.browseService.error("Failed to delete plugin: \(id)", error: error)

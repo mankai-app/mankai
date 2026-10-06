@@ -25,6 +25,8 @@ import ReerCodable
 }
 
 class HttpPlugin: Plugin, Configurable {
+    override class var syncType: String? { "http" }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -81,9 +83,7 @@ class HttpPlugin: Plugin, Configurable {
     var authenticationEnabled: Bool { _authenticationEnabled }
 
     private var baseUrl: String
-    private var encodedURL: String? {
-        configuredURL(baseUrl, values: configValues).map { "http:\($0)" }
-    }
+    private var encodedURL: String? { configuredURL(baseUrl, values: configValues) }
 
     override func encodeURL() -> String { encodedURL! }
     lazy var authManager: AuthManager = .init(id: id)
@@ -172,9 +172,7 @@ class HttpPlugin: Plugin, Configurable {
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
-        let url = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard url.hasPrefix("http:") else { return nil }
-        return await fromUrl(String(url.dropFirst("http:".count)), sourceId: sourceId)
+        await fromUrl(url, sourceId: sourceId)
     }
 
     static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> HttpPlugin? {
@@ -229,9 +227,9 @@ class HttpPlugin: Plugin, Configurable {
         return plugin
     }
 
-    override class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? {
+    override class func loadStoredURL(_ id: String, in db: Database) throws -> String? {
         guard let model = try HttpPluginModel.fetchOne(db, key: id) else { return nil }
-        return fromDataModel(model)
+        return fromDataModel(model)?.encodedURL
     }
 
     override class func deleteStoredPlugin(_ id: String, in db: Database) throws {

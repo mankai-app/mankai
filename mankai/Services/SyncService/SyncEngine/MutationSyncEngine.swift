@@ -156,8 +156,19 @@ class MutationSyncEngine: SyncEngine {
                     try PluginService.shared.deletePlugin(key.sourceId, datetime: change.date)
                 } else if let payload {
                     try await PluginService.shared.updatePlugin(
-                        url: payload.url, sourceId: key.sourceId, datetime: change.date)
+                        url: payload.url, type: payload.type, sourceId: key.sourceId,
+                        datetime: change.date)
                 }
+
+                case .browsableplugin(let key, let payload):
+                    Logger.syncEngine.debug("Applying browsable plugin \(change.action.rawValue)")
+                    if change.action == .delete {
+                        try BrowseService.shared.deletePlugin(key.sourceId, datetime: change.date)
+                    } else if let payload {
+                        try await BrowseService.shared.updatePlugin(
+                            url: payload.url, type: payload.type, sourceId: key.sourceId,
+                            datetime: change.date)
+                    }
 
                 case .library(let key, let payload):
                     if change.action == .delete {

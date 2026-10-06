@@ -58,7 +58,8 @@ enum PluginCapability: String, Codable, CaseIterable {
     /// Requires `getImage(_:)`.
     case image
 
-    /// Requires `encodeURL()` to return the instance's portable configuration as a URL.
+    /// Requires `encodeURL()` to return the instance's portable configuration as a URL,
+    /// a stable `syncType` to identify its decoder, and `databaseModel()` for sync transactions.
     case urlEncoding
 
     /// Enables manga and reading progress synchronization, requires no additional plugin methods.
@@ -71,7 +72,7 @@ enum PluginCapability: String, Codable, CaseIterable {
 
 /// Behaviors supplied by a plugin type, separate from its instance capabilities.
 enum PluginTypeCapability: String, Codable, CaseIterable {
-    /// Requires `decodeURL(_:sourceId:)`, `loadStoredPlugin(_:in:)`, and `deleteStoredPlugin(_:in:)`.
+    /// Requires `decodeURL(_:sourceId:)`, `loadStoredURL(_:in:)`, and `deleteStoredPlugin(_:in:)`.
     /// Decoded instances must implement `databaseModel()` for sync transactions.
     case urlDecoding
 
@@ -89,13 +90,18 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// Capabilities available before an instance has been loaded or decoded.
     class var typeCapabilities: [PluginTypeCapability] { [.download] }
 
+    /// Stable type identifier carried in portable sync payloads.
+    class var syncType: String? { nil }
+
+    var syncType: String? { type(of: self).syncType }
+
     /// Restores the saved instances owned by this plugin type.
     /// Required for registered plugin types, independent of capabilities.
     class func loadPlugins() -> [Plugin] { [] }
 
-    /// Restores one saved instance within the caller's database transaction.
+    /// Reads the saved portable URL within the caller's database transaction.
     /// Required by `PluginTypeCapability.urlDecoding` to compare saved URLs before syncing changes.
-    class func loadStoredPlugin(_ id: String, in db: Database) throws -> Plugin? { nil }
+    class func loadStoredURL(_ id: String, in db: Database) throws -> String? { nil }
 
     /// Deletes only this type's saved configuration within the caller's transaction.
     /// Required by `PluginTypeCapability.urlDecoding` for synced replacements and deletions.
@@ -149,7 +155,7 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// - Throws: An error if saving fails.
     func savePlugin() throws { fatalError("Not Implemented") }
 
-    /// Returns the local record for a decoded plugin before it is saved in a sync transaction.
+    /// Returns the local record before it is saved in a sync transaction.
     /// Required on instances decoded by a `PluginTypeCapability.urlDecoding` plugin type.
     func databaseModel() throws -> any PersistableRecord { fatalError("Not Implemented") }
 

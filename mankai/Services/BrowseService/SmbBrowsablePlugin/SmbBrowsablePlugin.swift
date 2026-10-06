@@ -213,6 +213,47 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
 
     override var icon: AnyView { AnyView(LabeledFolderIcon(label: "SMB", color: color)) }
 
+    override class var syncType: String? { "smb" }
+
+    override class var typeCapabilities: [PluginTypeCapability] { [.urlDecoding] }
+
+    override func encodeURL() -> String { BrowsablePluginUtilities.encode(model) }
+
+    override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
+        guard var model: SmbBrowsablePluginModel = BrowsablePluginUtilities.decode(url) else {
+            return nil
+        }
+        if let sourceId { model.id = sourceId }
+        return try? fromDataModel(model)
+    }
+
+    private static func fromDataModel(_ model: SmbBrowsablePluginModel) throws -> SmbBrowsablePlugin
+    {
+        let configuration = try SmbConnectionConfiguration(
+            host: model.host, port: model.port, share: model.share, username: model.username,
+            password: model.password)
+        return try SmbBrowsablePlugin(
+            id: model.id, name: model.name, configuration: configuration,
+            shouldSync: model.shouldSync)
+    }
+
+    override class func loadStoredURL(_ id: String, in db: Database) throws -> String? {
+        try SmbBrowsablePluginModel.fetchOne(db, key: id)
+            .map { BrowsablePluginUtilities.encode($0) }
+    }
+
+    override class func deleteStoredPlugin(_ id: String, in db: Database) throws {
+        _ = try SmbBrowsablePluginModel.deleteOne(db, key: id)
+    }
+
+    private var model: SmbBrowsablePluginModel {
+        SmbBrowsablePluginModel(
+            id: id, name: displayName, host: host, port: port, share: share, username: username,
+            password: password, shouldSync: supports(.sync))
+    }
+
+    override func databaseModel() throws -> any PersistableRecord { model }
+
     override class func loadPlugins() -> [Plugin] {
         Logger.smbBrowsablePlugin.debug("Loading SMB browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
@@ -251,9 +292,6 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
-        let model = SmbBrowsablePluginModel(
-            id: id, name: displayName, host: host, port: port, share: share, username: username,
-            password: password, shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

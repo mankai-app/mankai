@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 enum CacheDirectory {
     static let regular = "regular"
@@ -103,6 +104,8 @@ class CacheWrapper: Plugin {
 
     override var typeCapabilities: [PluginTypeCapability] { plugin.typeCapabilities }
 
+    override var syncType: String? { plugin.syncType }
+
     override func encodeURL() -> String { plugin.encodeURL() }
 
     // MARK: - Configs Delegation
@@ -124,6 +127,8 @@ class CacheWrapper: Plugin {
     // MARK: - Methods Delegation (Non-cached)
 
     override func savePlugin() throws { try plugin.savePlugin() }
+
+    override func databaseModel() throws -> any PersistableRecord { try plugin.databaseModel() }
 
     override func deletePlugin() throws { try plugin.deletePlugin() }
 

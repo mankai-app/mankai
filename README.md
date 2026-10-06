@@ -40,7 +40,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 - **Reader controls** — Paged and continuous layouts, horizontal and vertical navigation, and page-curl transitions.
 - **Image processing** — [Automatic spread grouping](#smart-grouping), optional [on-device 4× AI upscaling](#real-esrgan-upscaling), and configurable remote image processors.
 - **Collections and downloads** — Bookmark titles, track reading history, and download chapters for offline reading.
-- **Optional sync** — Keep your collection, reading progress, and URL-backed plugins in sync through an HTTP server or Supabase.
+- **Optional sync** — Keep your collection, reading progress, URL-backed plugins, and remote folder settings in sync through an HTTP server or Supabase.
 
 ## Road to 1.0.0
 

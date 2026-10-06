@@ -103,9 +103,10 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     override var capabilities: [PluginCapability] {
         [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image] + (_shouldSync ? [.sync] : [])
+            + [.urlEncoding]
     }
 
-    override class var typeCapabilities: [PluginTypeCapability] { [] }
+    override class var typeCapabilities: [PluginTypeCapability] { [.urlDecoding] }
 
     var icon: AnyView { AnyView(Image(systemName: "books.vertical.fill")) }
 
@@ -208,6 +209,46 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     func absoluteURL(for path: String?) -> URL? { nil }
 
+    override class var syncType: String? { "opds" }
+
+    override func encodeURL() -> String { BrowsablePluginUtilities.encode(model) }
+
+    override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
+        guard var model: OpdsBrowsablePluginModel = BrowsablePluginUtilities.decode(url) else {
+            return nil
+        }
+        if let sourceId { model.id = sourceId }
+        return try? fromDataModel(model)
+    }
+
+    private static func fromDataModel(_ model: OpdsBrowsablePluginModel) throws
+        -> OpdsBrowsablePlugin
+    {
+        let configuration = try OpdsConnectionConfiguration(
+            catalogURL: model.catalogURL, username: model.username, password: model.password)
+        return try OpdsBrowsablePlugin(
+            id: model.id, name: model.name, configuration: configuration,
+            shouldSync: model.shouldSync)
+    }
+
+    override class func loadStoredURL(_ id: String, in db: Database) throws -> String? {
+        try OpdsBrowsablePluginModel.fetchOne(db, key: id)
+            .map { BrowsablePluginUtilities.encode($0) }
+    }
+
+    override class func deleteStoredPlugin(_ id: String, in db: Database) throws {
+        _ = try OpdsBrowsablePluginModel.deleteOne(db, key: id)
+    }
+
+    private var model: OpdsBrowsablePluginModel {
+        OpdsBrowsablePluginModel(
+            id: id, name: displayName, catalogURL: configuration.catalogURL.absoluteString,
+            username: configuration.username, password: configuration.password,
+            shouldSync: supports(.sync))
+    }
+
+    override func databaseModel() throws -> any PersistableRecord { model }
+
     override class func loadPlugins() -> [Plugin] {
         Logger.opdsBrowsablePlugin.debug("Loading OPDS browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
@@ -246,10 +287,6 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
-        let model = OpdsBrowsablePluginModel(
-            id: id, name: displayName, catalogURL: configuration.catalogURL.absoluteString,
-            username: configuration.username, password: configuration.password,
-            shouldSync: supports(.sync))
         try db.write { db in try model.save(db) }
     }
 

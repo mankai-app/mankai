@@ -112,7 +112,7 @@ struct AddPluginModal: View {
                                         .flatMap { JsPlugin.fromJson($0) }
                                 } else {
                                     plugin =
-                                        await PluginService.shared.decodeURL("js:\(urlInput)")
+                                        await PluginService.shared.decodeURL(urlInput, type: "js")
                                         as? JsPlugin
                                 }
 
@@ -155,7 +155,7 @@ struct AddPluginModal: View {
                                 case .httpPlugin:
                                     guard
                                         let plugin = await PluginService.shared.decodeURL(
-                                            "http:\(urlInput)")
+                                            urlInput, type: "http")
                                     else {
                                         errorMessage = String(localized: "failedToParsePlugin")
                                         showError = true
