@@ -61,7 +61,7 @@ enum OpdsParser {
             localName(feed.name) == "feed"
         else { throw MankaiErrorCode.browseOpdsInvalidDocument.makeError() }
 
-        let feedChildren = feed.children.compactMap { $0 as? XMLElement }
+        let feedChildren = feed.children.compactMap { $0 as? SWXMLHash.XMLElement }
         let feedTitleValue = feedChildren.first(where: { localName($0.name) == "title" })?
             .recursiveText.trimmingCharacters(in: .whitespacesAndNewlines)
         let feedTitle = feedTitleValue?.isEmpty == false ? feedTitleValue : nil
@@ -138,7 +138,7 @@ enum OpdsParser {
                 var authors: [String] = []
                 for author in children where localName(author.name) == "author" {
                     guard
-                        let name = author.children.compactMap({ $0 as? XMLElement })
+                        let name = author.children.compactMap({ $0 as? SWXMLHash.XMLElement })
                             .first(where: { localName($0.name) == "name" })
                     else { continue }
                     let value = name.recursiveText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -221,7 +221,7 @@ enum OpdsParser {
         return OpdsFeed(metadata: feedEntry, entries: entries)
     }
 
-    private static func relation(of element: XMLElement) -> String? {
+    private static func relation(of element: SWXMLHash.XMLElement) -> String? {
         attribute(element, named: "rel")?.trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
     }
@@ -230,19 +230,20 @@ enum OpdsParser {
         String(name.split(separator: ":").last ?? Substring(name)).lowercased()
     }
 
-    private static func attribute(_ element: XMLElement, named name: String) -> String? {
+    private static func attribute(_ element: SWXMLHash.XMLElement, named name: String) -> String? {
         if let value = element.attribute(by: name)?.text { return value }
 
         return element.allAttributes.values.first { localName($0.name) == name.lowercased() }?.text
     }
 
-    private static func resolvedURL(_ value: String, for element: XMLElement, baseURL: URL?) -> URL?
-    {
+    private static func resolvedURL(
+        _ value: String, for element: SWXMLHash.XMLElement, baseURL: URL?
+    ) -> URL? {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return nil }
 
         var xmlBases: [String] = []
-        var currentElement: XMLElement? = element
+        var currentElement: SWXMLHash.XMLElement? = element
         while let current = currentElement {
             if let xmlBase = attribute(current, named: "base")?
                 .trimmingCharacters(in: .whitespacesAndNewlines), !xmlBase.isEmpty

@@ -153,16 +153,20 @@ private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
     let plugin: Plugin
 
     @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 27.0, *) {
-            content.sceneAccessory {
-                ExternalNonInteractiveAccessory(isEnabled: $isEnabled) {
-                    MangaCoverView(coverUrl: coverURL, plugin: plugin, cornerRadius: 0)
-                        .ignoresSafeArea()
-                }
-            }
-        } else {
+        #if targetEnvironment(macCatalyst)
             content
-        }
+        #else
+            if #available(iOS 27.0, *) {
+                content.sceneAccessory {
+                    ExternalNonInteractiveAccessory(isEnabled: $isEnabled) {
+                        MangaCoverView(coverUrl: coverURL, plugin: plugin, cornerRadius: 0)
+                            .ignoresSafeArea()
+                    }
+                }
+            } else {
+                content
+            }
+        #endif
     }
 }
 
