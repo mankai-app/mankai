@@ -423,30 +423,30 @@
         }
       }
     },
-    "addAsLocalPlugin" : {
+    "addAsLocalShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add as Local Plugin"
+            "value" : "Add as Local Share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ローカルプラグインとして追加"
+            "value" : "ローカル共有として追加"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加为本地插件"
+            "value" : "添加为本地共享"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加入為本機外掛模組"
+            "value" : "加入為本機共用"
           }
         }
       }
@@ -563,30 +563,30 @@
         }
       }
     },
-    "addFolder" : {
+    "addFiles" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add Folder"
+            "value" : "Add Files"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "フォルダを追加"
+            "value" : "ファイルを追加"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加文件夹"
+            "value" : "添加文件"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加入資料夾"
+            "value" : "加入檔案"
           }
         }
       }
@@ -1183,62 +1183,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "耽美"
-          }
-        }
-      }
-    },
-    "browse" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ブラウズ"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽"
-          }
-        }
-      }
-    },
-    "browseScreenLoadingHint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remote resources, such as files in iCloud, may take a while to load. To speed things up, download them first."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloudなどのリモートリソースは、読み込みに時間がかかる場合があります。高速化するには、先にダウンロードしてください。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "远程资源（例如 iCloud 中的资源）可能需要较长时间才能加载。建议先下载以提升速度。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "遠端資源（如 iCloud）載入可能較慢，建議先下載以加快速度。"
           }
         }
       }
@@ -3775,34 +3719,6 @@
         }
       }
     },
-    "duplicateBrowsablePluginIdMessageFormat" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A plugin with the ID “%@” already exists. You can overwrite it or add the new plugin as a local plugin that does not sync across devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ID「%@」のプラグインはすでに存在します。上書きするか、デバイス間で同期されないローカルプラグインとして追加できます。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ID 为“%@”的插件已存在。你可以覆盖它，或将新插件添加为不会跨设备同步的本地插件。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ID 為「%@」的外掛模組已存在。你可以覆寫該外掛模組，或將新外掛模組加入為不跨裝置同步的本機外掛模組。"
-          }
-        }
-      }
-    },
     "duplicatePluginIdMessageFormat" : {
       "localizations" : {
         "en" : {
@@ -3855,6 +3771,90 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外掛模組 ID 重複"
+          }
+        }
+      }
+    },
+    "duplicateShareIdMessageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A share with the ID “%@” already exists. Do you want to overwrite it?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID「%@」の共有はすでに存在します。上書きしますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID 为“%@”的共享已存在。你要覆盖它吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID 為「%@」的共用已存在。你要覆寫它嗎？"
+          }
+        }
+      }
+    },
+    "duplicateShareIdOptionsMessageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A share with the ID “%@” already exists. You can overwrite it or add the new share as a local share that does not sync across devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID「%@」の共有はすでに存在します。上書きするか、デバイス間で同期されないローカル共有として追加できます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID 为“%@”的共享已存在。你可以覆盖它，或将新共享添加为不会跨设备同步的本地共享。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID 為「%@」的共用已存在。你可以覆寫該共用，或將新共用加入為不跨裝置同步的本機共用。"
+          }
+        }
+      }
+    },
+    "duplicateShareTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate Share ID"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有IDが重複しています"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享 ID 重复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共用 ID 重複"
           }
         }
       }
@@ -4757,30 +4757,30 @@
         }
       }
     },
-    "failedToAddFolder" : {
+    "failedToAddFiles" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Add Folder"
+            "value" : "Failed to Add Files"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "フォルダを追加できませんでした"
+            "value" : "ファイルを追加できませんでした"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加文件夹失败"
+            "value" : "添加文件失败"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加入資料夾失敗"
+            "value" : "加入檔案失敗"
           }
         }
       }
@@ -5485,6 +5485,34 @@
         }
       }
     },
+    "failedToRemoveShare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Remove Share"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有を削除できませんでした"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除共享失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除共用失敗"
+          }
+        }
+      }
+    },
     "failedToRenderImage" : {
       "localizations" : {
         "en" : {
@@ -5597,34 +5625,6 @@
         }
       }
     },
-    "failedToSaveFolder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to Save Folder"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダを保存できませんでした"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存文件夹失败"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "儲存資料夾失敗"
-          }
-        }
-      }
-    },
     "failedToSaveImageProcessor" : {
       "localizations" : {
         "en" : {
@@ -5649,6 +5649,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法儲存圖片處理器。"
+          }
+        }
+      }
+    },
+    "failedToSaveShare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Save Share"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有を保存できませんでした"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存共享失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存共用失敗"
           }
         }
       }
@@ -5919,6 +5947,62 @@
         }
       }
     },
+    "files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案"
+          }
+        }
+      }
+    },
+    "filesScreenLoadingHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote resources, such as files in iCloud, may take a while to load. To speed things up, download them first."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudなどのリモートリソースは、読み込みに時間がかかる場合があります。高速化するには、先にダウンロードしてください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "远程资源（例如 iCloud 中的资源）可能需要较长时间才能加载。建议先下载以提升速度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遠端資源（如 iCloud）載入可能較慢，建議先下載以加快速度。"
+          }
+        }
+      }
+    },
     "filesystemSettings" : {
       "localizations" : {
         "en" : {
@@ -5999,90 +6083,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "資料夾"
-          }
-        }
-      }
-    },
-    "folders" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folders"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダ"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料夾"
-          }
-        }
-      }
-    },
-    "foldersDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage the folders and catalogs available in Browse, including adding new locations, configuring existing ones, removing locations, and more."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ブラウズで使用できるフォルダやカタログを管理します。新しい場所の追加、既存の場所の設定、場所の削除などを行えます。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理“浏览”中可用的文件夹和目录，包括添加新位置、配置现有位置和移除不再需要的位置等。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理「瀏覽」中可用的資料夾和目錄，包括新增位置、設定現有位置、移除不再需要的位置等操作。"
-          }
-        }
-      }
-    },
-    "folderType" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folder Type"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダの種類"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹类型"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料夾類型"
           }
         }
       }
@@ -7353,34 +7353,6 @@
         }
       }
     },
-    "invalidBrowsablePlugin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid Browsable Plugin"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ブラウズプラグインが無効です"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览插件无效"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "瀏覽外掛模組無效"
-          }
-        }
-      }
-    },
     "invalidCredentials" : {
       "localizations" : {
         "en" : {
@@ -7661,30 +7633,30 @@
         }
       }
     },
-    "invalidNfsPlugin" : {
+    "invalidNfsShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid NFS Folder"
+            "value" : "Invalid NFS Share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "NFSフォルダが無効です"
+            "value" : "NFS共有が無効です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "NFS 文件夹无效"
+            "value" : "NFS 共享无效"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的 NFS 資料夾"
+            "value" : "NFS 共用無效"
           }
         }
       }
@@ -7717,30 +7689,30 @@
         }
       }
     },
-    "invalidOpdsPlugin" : {
+    "invalidOpdsShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid OPDS Plugin"
+            "value" : "Invalid OPDS Share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OPDSプラグインが無効です"
+            "value" : "OPDS共有が無効です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OPDS 插件无效"
+            "value" : "OPDS 共享无效"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OPDS 外掛模組無效"
+            "value" : "OPDS 共用無效"
           }
         }
       }
@@ -8053,30 +8025,58 @@
         }
       }
     },
-    "invalidSftpPlugin" : {
+    "invalidSftpShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid SFTP Plugin"
+            "value" : "Invalid SFTP Share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SFTPプラグインが無効です"
+            "value" : "SFTP共有が無効です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SFTP 插件无效"
+            "value" : "SFTP 共享无效"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SFTP 外掛模組無效"
+            "value" : "SFTP 共用無效"
+          }
+        }
+      }
+    },
+    "invalidShare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Share"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有が無効です"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享无效"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共用無效"
           }
         }
       }
@@ -8109,30 +8109,30 @@
         }
       }
     },
-    "invalidSmbPlugin" : {
+    "invalidSmbShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid SMB Plugin"
+            "value" : "Invalid SMB Share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SMBプラグインが無効です"
+            "value" : "SMB共有が無効です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SMB 插件无效"
+            "value" : "SMB 共享无效"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SMB 外掛模組無效"
+            "value" : "SMB 共用無效"
           }
         }
       }
@@ -8221,30 +8221,30 @@
         }
       }
     },
-    "invalidWebDavPlugin" : {
+    "invalidWebDavShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid WebDAV Plugin"
+            "value" : "Invalid WebDAV Share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAVプラグインが無効です"
+            "value" : "WebDAV共有が無効です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAV 插件无效"
+            "value" : "WebDAV 共享无效"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAV 外掛模組無效"
+            "value" : "WebDAV 共用無效"
           }
         }
       }
@@ -11183,34 +11183,6 @@
         }
       }
     },
-    "opdsPluginIdSyncHint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The OPDS catalog's ID is used to keep the plugin ID consistent across devices. If the catalog does not provide an ID, this plugin will use a local ID and its records will not sync."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OPDSカタログのIDは、デバイス間でプラグインIDを一致させるために使用されます。カタログにIDがない場合、このプラグインはローカルIDを使用し、その記録は同期されません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件会使用 OPDS 目录提供的 ID，以确保插件 ID 在不同设备上保持一致。如果目录未提供 ID，插件将使用本地 ID，相关记录也不会同步。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外掛模組會使用 OPDS 目錄提供的 ID，確保在不同裝置間保持一致。若目錄未提供 ID，外掛模組會使用僅限本機的 ID，相關記錄將不會同步。"
-          }
-        }
-      }
-    },
     "opdsSettings" : {
       "localizations" : {
         "en" : {
@@ -11263,6 +11235,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "輸入 OPDS 目錄的完整 HTTP 或 HTTPS 網址。用戶名稱和密碼並非必填。"
+          }
+        }
+      }
+    },
+    "opdsShareIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The OPDS catalog's ID is used to keep the share ID consistent across devices. If the catalog does not provide an ID, this share will use a local ID and its records will not sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPDSカタログのIDは、デバイス間で共有IDを一致させるために使用されます。カタログにIDがない場合、この共有はローカルIDを使用し、その記録は同期されません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享会使用 OPDS 目录提供的 ID，以确保共享 ID 在不同设备上保持一致。如果目录未提供 ID，共享将使用本地 ID，相关记录也不会同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共用會使用 OPDS 目錄提供的 ID，確保在不同裝置間保持一致。若目錄未提供 ID，共用會使用僅限本機的 ID，相關記錄將不會同步。"
           }
         }
       }
@@ -12585,90 +12585,6 @@
         }
       }
     },
-    "removeFolder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove Folder"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダを削除"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除文件夹"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除資料夾"
-          }
-        }
-      }
-    },
-    "removeFolderConfirmation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to remove this folder?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このフォルダを削除してもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你确定要移除这个文件夹吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你確定要移除這個資料夾嗎？"
-          }
-        }
-      }
-    },
-    "removeFoldersConfirmation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to remove the selected folders?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選択したフォルダを削除してもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你确定要移除所选文件夹吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你確定要移除所選資料夾嗎？"
-          }
-        }
-      }
-    },
     "removeGenresConfirmation" : {
       "localizations" : {
         "en" : {
@@ -12805,6 +12721,90 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你確定要移除所選外掛模組嗎？"
+          }
+        }
+      }
+    },
+    "removeShare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Share"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有を削除"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除共享"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除共用"
+          }
+        }
+      }
+    },
+    "removeShareConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove this share?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この共有を削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确定要移除这个共享吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除這個共用嗎？"
+          }
+        }
+      }
+    },
+    "removeSharesConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove the selected shares?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した共有を削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确定要移除所选共享吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除所選共用嗎？"
           }
         }
       }
@@ -13734,7 +13734,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择共享文件夹"
+            "value" : "选择共享"
           }
         },
         "zh-Hant" : {
@@ -13988,13 +13988,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共享文件夹"
+            "value" : "共享"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共用資料夾"
+            "value" : "共用"
           }
         }
       }
@@ -14023,6 +14023,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分享"
+          }
+        }
+      }
+    },
+    "shareIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai stores a \".mankai\" file in this folder to keep the share ID consistent across devices. If the file cannot be written, this share will use a local ID and its records will not sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankaiはこのフォルダに「.mankai」ファイルを保存し、デバイス間で共有IDを一致させます。ファイルを書き込めない場合、この共有はローカルIDを使用し、その記録は同期されません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 会在此文件夹中存储“.mankai”文件，以使共享 ID 在不同设备上保持一致。如果无法写入该文件，共享将使用本地 ID，相关记录也不会同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 會在此資料夾儲存「.mankai」檔案，讓共用 ID 在不同裝置間保持一致。如果無法寫入此檔案，共用將使用本機 ID，其記錄亦不會同步。"
+          }
+        }
+      }
+    },
+    "shares" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shares"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共用"
+          }
+        }
+      }
+    },
+    "sharesDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage the shares available in Files, including adding, configuring, and removing shares."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「ファイル」で使用できる共有を管理します。共有の追加、設定、削除を行えます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理“文件”中可用的共享，包括添加、配置和移除共享。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理「檔案」中可用的共用，包括新增、設定和移除共用。"
+          }
+        }
+      }
+    },
+    "shareType" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Type"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有の種類"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享类型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共用類型"
           }
         }
       }
@@ -14791,30 +14903,30 @@
         }
       }
     },
-    "swipeToEditOrRemoveFolder" : {
+    "swipeToEditOrRemoveShare" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Swipe left to edit or remove a folder"
+            "value" : "Swipe left to edit or remove a share"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "左にスワイプしてフォルダを編集または削除"
+            "value" : "左にスワイプして共有を編集または削除"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向左滑动以编辑或移除文件夹"
+            "value" : "向左滑动以编辑或移除共享"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向左滑動以編輯或移除資料夾"
+            "value" : "向左滑動以編輯或移除共用"
           }
         }
       }
@@ -15071,181 +15183,6 @@
         }
       }
     },
-    "syncFolderAcrossDevices" : {
-      "comment" : "Whether this folder's connection settings sync across devices.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync folder across devices"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "デバイス間でフォルダを同期"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跨设备同步文件夹"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跨裝置同步資料夾"
-          }
-        }
-      }
-    },
-    "syncFolderBuiltInDescription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This built-in folder is already included on every device and does not need to sync."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "この内蔵フォルダはすべてのデバイスに含まれているため、同期する必要はありません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此内置文件夹已包含在每台设备中，无需同步。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此內建資料夾已包含在每台裝置中，無需同步。"
-          }
-        }
-      }
-    },
-    "syncFolderDescription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syncs this folder’s connection settings to your other devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このフォルダの接続設定を他のデバイスに同期します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将此文件夹的连接设置同步到你的其他设备。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將此資料夾的連線設定同步到你的其他裝置。"
-          }
-        }
-      }
-    },
-    "syncFolderMangaDescription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syncs your library entries and reading progress for manga in this folder."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このフォルダ内の漫画のライブラリ登録情報と読書の進捗を同期します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步此文件夹中漫画的书库记录和阅读进度。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "同步此資料夾中漫畫的書庫記錄和閱讀進度。"
-          }
-        }
-      }
-    },
-    "syncFolderMangaLocalIDDescription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This folder uses a local ID, so its manga records cannot be matched across devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このフォルダはローカルIDを使用しているため、デバイス間で漫画の記録を一致させることができません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此文件夹使用本地 ID，因此无法在不同设备之间匹配漫画记录。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此資料夾使用本機 ID，因此無法在不同裝置之間對應漫畫記錄。"
-          }
-        }
-      }
-    },
-    "syncFolderUnsupportedDescription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This folder’s connection settings cannot be synced to other devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このフォルダの接続設定は他のデバイスに同期できません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此文件夹的连接设置无法同步到其他设备。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此資料夾的連線設定無法同步到其他裝置。"
-          }
-        }
-      }
-    },
     "syncing" : {
       "localizations" : {
         "en" : {
@@ -15305,7 +15242,6 @@
       }
     },
     "syncMangaBuiltInDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15334,7 +15270,6 @@
       }
     },
     "syncMangaDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15363,7 +15298,6 @@
       }
     },
     "syncMangaMissingIDDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15450,7 +15384,6 @@
       }
     },
     "syncPluginBuiltInDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15479,7 +15412,6 @@
       }
     },
     "syncPluginDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15508,7 +15440,6 @@
       }
     },
     "syncPluginFilesystemDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15537,7 +15468,6 @@
       }
     },
     "syncPluginMissingURLDescription" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15561,6 +15491,230 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此外掛模組沒有可用的下載網址，因此無法自動安裝到其他裝置。"
+          }
+        }
+      }
+    },
+    "syncShareAcrossDevices" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync share across devices"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイス間で共有を同期"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨设备同步共享"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨裝置同步共用"
+          }
+        }
+      }
+    },
+    "syncShareBuiltInDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This built-in share is already included on every device and does not need to sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この内蔵共有はすべてのデバイスに含まれているため、同期する必要はありません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此内置共享已包含在每台设备中，无需同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此內建共用已包含在每台裝置中，無需同步。"
+          }
+        }
+      }
+    },
+    "syncShareDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs this share’s connection settings to your other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この共有の接続設定を他のデバイスに同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此共享的连接设置同步到你的其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將此共用的連線設定同步到你的其他裝置。"
+          }
+        }
+      }
+    },
+    "syncShareFilesystemDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder access must be granted separately on each device. Add this share on each device to use it there."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダへのアクセスはデバイスごとに許可する必要があります。各デバイスでこの共有を追加してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件夹访问权限必须在每台设备上分别授予。请在各设备上添加此共享以使用它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾存取權限必須在每台裝置上分別授予。請在各裝置上加入此共用以使用它。"
+          }
+        }
+      }
+    },
+    "syncShareMangaBuiltInDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga in the built-in local share is specific to this device, so its library entries and reading progress stay on this device."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内蔵のローカル共有にある漫画はこのデバイス専用のため、ライブラリの登録情報と読書の進捗はこのデバイスに保存されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内置本地共享中的漫画仅属于此设备，因此其书库记录和阅读进度仅保存在此设备上。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建本機共用中的漫畫僅屬於此裝置，因此其書庫記錄和閱讀進度僅保存在此裝置上。"
+          }
+        }
+      }
+    },
+    "syncShareMangaDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs your library entries and reading progress for manga in this share."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この共有内の漫画のライブラリ登録情報と読書の進捗を同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步此共享中漫画的书库记录和阅读进度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步此共用中漫畫的書庫記錄和閱讀進度。"
+          }
+        }
+      }
+    },
+    "syncShareMangaLocalIDDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This share uses a local ID, so its manga records cannot be matched across devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この共有はローカルIDを使用しているため、デバイス間で漫画の記録を一致させることができません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此共享使用本地 ID，因此无法在不同设备之间匹配漫画记录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此共用使用本機 ID，因此無法在不同裝置之間對應漫畫記錄。"
+          }
+        }
+      }
+    },
+    "syncShareUnsupportedDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This share’s connection settings cannot be synced to other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この共有の接続設定は他のデバイスに同期できません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此共享的连接设置无法同步到其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此共用的連線設定無法同步到其他裝置。"
           }
         }
       }

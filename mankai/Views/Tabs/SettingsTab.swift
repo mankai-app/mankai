@@ -37,8 +37,8 @@ struct SettingsTab: View {
                 }
 
                 Section("libraryAndData") {
-                    NavigationLink(destination: FolderSettingsScreen()) {
-                        Label("folders", systemImage: "folder.fill")
+                    NavigationLink(destination: ShareSettingsScreen()) {
+                        Label("shares", systemImage: "folder.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
 

@@ -12,7 +12,7 @@ enum SettingsDefaults {
     static let hideBuiltInPlugins: Bool = false
     static let showDebugScreen: Bool = false
     static let checkClipboard: Bool = false
-    static let browseViewMode: BrowseViewMode = .list
+    static let filesViewMode: FilesViewMode = .list
     static let accentColor: AppAccentColor = .sakura
 
     // Cache Settings

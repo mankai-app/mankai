@@ -1,5 +1,5 @@
 //
-//  FolderInfoScreen.swift
+//  ShareInfoScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 20/8/2026.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct FolderInfoScreen: View {
-    @State private var plugin: BrowsablePlugin
+struct ShareInfoScreen: View {
+    @State private var share: BrowsablePlugin
 
     @ObservedObject private var browseService = BrowseService.shared
     @Environment(\.dismiss) private var dismiss
@@ -17,30 +17,29 @@ struct FolderInfoScreen: View {
     @State private var username: String
     @State private var password: String
 
-    @State private var errorTitle: LocalizedStringKey = "failedToSaveFolder"
+    @State private var errorTitle: LocalizedStringKey = "failedToSaveShare"
     @State private var errorMessage: String?
     @State private var showingRemoveConfirmation = false
 
-    init(plugin: BrowsablePlugin) {
-        _plugin = State(initialValue: plugin)
+    init(share: BrowsablePlugin) {
+        _share = State(initialValue: share)
 
-        _name = State(initialValue: plugin.displayName ?? "")
+        _name = State(initialValue: share.displayName ?? "")
 
         let credentials: (username: String?, password: String?)
-        switch plugin { case let smbPlugin as SmbBrowsablePlugin:
+        switch share { case let smbShare as SmbBrowsablePlugin:
             credentials = (
-                username: smbPlugin.configuration.username,
-                password: smbPlugin.configuration.password
+                username: smbShare.configuration.username, password: smbShare.configuration.password
             )
-            case let webDavPlugin as WebDavBrowsablePlugin:
+            case let webDavShare as WebDavBrowsablePlugin:
                 credentials = (
-                    username: webDavPlugin.configuration.username,
-                    password: webDavPlugin.configuration.password
+                    username: webDavShare.configuration.username,
+                    password: webDavShare.configuration.password
                 )
-            case let opdsPlugin as OpdsBrowsablePlugin:
+            case let opdsShare as OpdsBrowsablePlugin:
                 credentials = (
-                    username: opdsPlugin.configuration.username,
-                    password: opdsPlugin.configuration.password
+                    username: opdsShare.configuration.username,
+                    password: opdsShare.configuration.password
                 )
             default: credentials = (username: nil, password: nil)
         }
@@ -49,73 +48,72 @@ struct FolderInfoScreen: View {
         _password = State(initialValue: credentials.password ?? "")
     }
 
-    private var isEditable: Bool { !(plugin is AppDirBrowsablePlugin) }
+    private var isEditable: Bool { !(share is AppDirBrowsablePlugin) }
 
-    private var folderSyncDisabledReason: LocalizedStringKey {
-        if plugin is AppDirBrowsablePlugin { return "syncFolderBuiltInDescription" }
-        if plugin is FsBrowsablePlugin { return "syncPluginFilesystemDescription" }
-        return "syncFolderUnsupportedDescription"
+    private var shareSyncDisabledReason: LocalizedStringKey {
+        if share is AppDirBrowsablePlugin { return "syncShareBuiltInDescription" }
+        if share is FsBrowsablePlugin { return "syncShareFilesystemDescription" }
+        return "syncShareUnsupportedDescription"
     }
 
     private var mangaSyncDisabledReason: LocalizedStringKey {
-        if plugin is AppDirBrowsablePlugin { return "syncMangaBuiltInDescription" }
-        return "syncFolderMangaLocalIDDescription"
+        if share is AppDirBrowsablePlugin { return "syncShareMangaBuiltInDescription" }
+        return "syncShareMangaLocalIDDescription"
     }
 
     private var errorIsPresented: Binding<Bool> {
         Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
     }
 
-    private var folderTypeName: LocalizedStringKey {
-        switch plugin { case is FsBrowsablePlugin: "fs" case is SmbBrowsablePlugin: "smb"
+    private var shareTypeName: LocalizedStringKey {
+        switch share { case is FsBrowsablePlugin: "fs" case is SmbBrowsablePlugin: "smb"
             case is NfsBrowsablePlugin: "nfs"
             case is WebDavBrowsablePlugin: "webdav"
             case is OpdsBrowsablePlugin: "opds"
-            default: "folder"
+            default: "share"
         }
     }
 
     var body: some View {
         Form {
             Section("info") {
-                LabeledContent("id") { Text(plugin.id).lineLimit(1).truncationMode(.middle) }
+                LabeledContent("id") { Text(share.id).lineLimit(1).truncationMode(.middle) }
 
-                LabeledContent("folderType") { Text(folderTypeName) }
+                LabeledContent("shareType") { Text(shareTypeName) }
             }
 
             Section("sync") {
                 VStack(alignment: .leading, spacing: 4) {
-                    LabeledContent("syncFolderAcrossDevices") {
+                    LabeledContent("syncShareAcrossDevices") {
                         HStack(spacing: 8) {
-                            Circle().fill(plugin.supports(.urlEncoding) ? Color.green : Color.red)
+                            Circle().fill(share.supports(.urlEncoding) ? Color.green : Color.red)
                                 .frame(width: 8, height: 8)
-                            Text(plugin.supports(.urlEncoding) ? "syncEnabled" : "syncDisabled")
+                            Text(share.supports(.urlEncoding) ? "syncEnabled" : "syncDisabled")
                                 .foregroundStyle(.secondary)
                         }
                     }
 
-                    if !plugin.supports(.urlEncoding) {
-                        Text(folderSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
+                    if !share.supports(.urlEncoding) {
+                        Text(shareSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
                     } else {
-                        Text("syncFolderDescription").font(.caption).foregroundStyle(.secondary)
+                        Text("syncShareDescription").font(.caption).foregroundStyle(.secondary)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     LabeledContent("syncMangaAcrossDevices") {
                         HStack(spacing: 8) {
-                            Circle().fill(plugin.supports(.sync) ? Color.green : Color.red)
+                            Circle().fill(share.supports(.sync) ? Color.green : Color.red)
                                 .frame(width: 8, height: 8)
-                            Text(plugin.supports(.sync) ? "syncEnabled" : "syncDisabled")
+                            Text(share.supports(.sync) ? "syncEnabled" : "syncDisabled")
                                 .foregroundStyle(.secondary)
                         }
                     }
 
-                    if !plugin.supports(.sync) {
+                    if !share.supports(.sync) {
                         Text(mangaSyncDisabledReason).font(.caption).foregroundStyle(.secondary)
                     } else {
-                        Text("syncFolderMangaDescription").font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text("syncShareMangaDescription").font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -129,40 +127,40 @@ struct FolderInfoScreen: View {
                 }
             }
 
-            switch plugin { case let filesystemPlugin as FsBrowsablePlugin:
+            switch share { case let filesystemShare as FsBrowsablePlugin:
                 Section("filesystemSettings") {
                     LabeledContent("folder") {
-                        Text(filesystemPlugin.url.path(percentEncoded: false)).lineLimit(1)
+                        Text(filesystemShare.url.path(percentEncoded: false)).lineLimit(1)
                     }
                 }
-                case let smbPlugin as SmbBrowsablePlugin:
+                case let smbShare as SmbBrowsablePlugin:
                     Section("smbSettings") {
-                        LabeledContent("server") { Text(smbPlugin.host) }
+                        LabeledContent("server") { Text(smbShare.host) }
 
-                        LabeledContent("port") { Text(String(smbPlugin.port)) }
+                        LabeledContent("port") { Text(String(smbShare.port)) }
 
-                        LabeledContent("share") { Text(smbPlugin.share) }
+                        LabeledContent("share") { Text(smbShare.share) }
 
                         credentialFields
                     }
-                case let nfsPlugin as NfsBrowsablePlugin:
+                case let nfsShare as NfsBrowsablePlugin:
                     Section("nfsSettings") {
-                        LabeledContent("server") { Text(nfsPlugin.host) }
+                        LabeledContent("server") { Text(nfsShare.host) }
 
-                        LabeledContent("export") { Text(nfsPlugin.export).lineLimit(1) }
+                        LabeledContent("export") { Text(nfsShare.export).lineLimit(1) }
                     }
-                case let webDavPlugin as WebDavBrowsablePlugin:
+                case let webDavShare as WebDavBrowsablePlugin:
                     Section("webdavSettings") {
                         LabeledContent("serverUrl") {
-                            Text(webDavPlugin.baseURL.absoluteString).lineLimit(1)
+                            Text(webDavShare.baseURL.absoluteString).lineLimit(1)
                         }
 
                         credentialFields
                     }
-                case let opdsPlugin as OpdsBrowsablePlugin:
+                case let opdsShare as OpdsBrowsablePlugin:
                     Section("opdsSettings") {
                         LabeledContent("catalogUrl") {
-                            Text(opdsPlugin.configuration.catalogURL.absoluteString).lineLimit(1)
+                            Text(opdsShare.configuration.catalogURL.absoluteString).lineLimit(1)
                         }
 
                         credentialFields
@@ -172,20 +170,20 @@ struct FolderInfoScreen: View {
 
             if isEditable {
                 Section("actions") {
-                    Button("removeFolder", role: .destructive) { showingRemoveConfirmation = true }
+                    Button("removeShare", role: .destructive) { showingRemoveConfirmation = true }
                 }
                 .confirmationDialog(
-                    "removeFolder", isPresented: $showingRemoveConfirmation,
+                    "removeShare", isPresented: $showingRemoveConfirmation,
                     titleVisibility: .visible
                 ) {
-                    Button("remove", role: .destructive) { removeFolder() }
+                    Button("remove", role: .destructive) { removeShare() }
                     Button("cancel", role: .cancel) {}
                 } message: {
-                    Text("removeFolderConfirmation")
+                    Text("removeShareConfirmation")
                 }
             }
         }
-        .navigationTitle(name.isEmpty ? (plugin.name ?? plugin.id) : name)
+        .navigationTitle(name.isEmpty ? (share.name ?? share.id) : name)
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { browseService.objectWillChange.send() }
         .alert(errorTitle, isPresented: errorIsPresented) {
@@ -206,41 +204,41 @@ struct FolderInfoScreen: View {
 
     private func saveSettings() {
         do {
-            plugin.displayName = Optional(name).trimmed
+            share.displayName = Optional(name).trimmed
 
             let trimmedUsername = Optional(username).trimmed
             let trimmedPassword = Optional(password).trimmed
 
-            switch plugin { case let smbPlugin as SmbBrowsablePlugin:
-                var configuration = smbPlugin.configuration
+            switch share { case let smbShare as SmbBrowsablePlugin:
+                var configuration = smbShare.configuration
                 configuration.username = trimmedUsername
                 configuration.password = trimmedPassword
-                smbPlugin.configuration = configuration
-                case let webDavPlugin as WebDavBrowsablePlugin:
-                    var configuration = webDavPlugin.configuration
+                smbShare.configuration = configuration
+                case let webDavShare as WebDavBrowsablePlugin:
+                    var configuration = webDavShare.configuration
                     configuration.username = trimmedUsername
                     configuration.password = trimmedPassword
-                    webDavPlugin.configuration = configuration
-                case let opdsPlugin as OpdsBrowsablePlugin:
-                    var configuration = opdsPlugin.configuration
+                    webDavShare.configuration = configuration
+                case let opdsShare as OpdsBrowsablePlugin:
+                    var configuration = opdsShare.configuration
                     configuration.username = trimmedUsername
                     configuration.password = trimmedPassword
-                    opdsPlugin.configuration = configuration
+                    opdsShare.configuration = configuration
                 default: break
             }
 
-            try browseService.savePlugin(plugin)
+            try browseService.savePlugin(share)
         } catch { presentError(error) }
     }
 
-    private func removeFolder() {
+    private func removeShare() {
         do {
-            try browseService.removePlugin(plugin.id)
+            try browseService.removePlugin(share.id)
             dismiss()
-        } catch { presentError(error, title: "failedToRemovePlugin") }
+        } catch { presentError(error, title: "failedToRemoveShare") }
     }
 
-    private func presentError(_ error: Error, title: LocalizedStringKey = "failedToSaveFolder") {
+    private func presentError(_ error: Error, title: LocalizedStringKey = "failedToSaveShare") {
         errorTitle = title
         errorMessage = error.localizedDescription
     }

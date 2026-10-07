@@ -1,5 +1,5 @@
 //
-//  BrowseScreen.swift
+//  FilesScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 14/7/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct BrowseScreen: View {
+struct FilesScreen: View {
     private struct TopRightCornerTriangle: Shape {
         func path(in rect: CGRect) -> Path {
             var path = Path()
@@ -19,13 +19,13 @@ struct BrowseScreen: View {
         }
     }
 
-    let plugin: BrowsablePlugin
+    let share: BrowsablePlugin
     let entry: Entity?
     let color: Color?
 
     @Environment(\.openURL) private var openURL
-    @AppStorage(SettingsKey.browseViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
-        .browseViewMode.rawValue
+    @AppStorage(SettingsKey.filesViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
+        .filesViewMode.rawValue
 
     @State private var entities: [Entity] = []
     @State private var isLoading: Bool = false
@@ -36,10 +36,10 @@ struct BrowseScreen: View {
     @State private var parsingPaths: Set<String> = []
     @State private var parseErrors: [String: String] = [:]
 
-    init(plugin: BrowsablePlugin, entry: Entity? = nil, color: Color? = nil) {
-        self.plugin = plugin
+    init(share: BrowsablePlugin, entry: Entity? = nil, color: Color? = nil) {
+        self.share = share
         self.entry = entry
-        self.color = color ?? plugin.color
+        self.color = color ?? share.color
     }
 
     var body: some View {
@@ -51,14 +51,15 @@ struct BrowseScreen: View {
                 ) {
                     ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
                         switch entity.type { case .directory:
-                            NavigationLink(destination: BrowseScreen(plugin: plugin, entry: entity))
-                            { directoryView(entity: entity) }
+                            NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
+                                directoryView(entity: entity)
+                            }
                             .buttonStyle(.plain)
                             case .book:
                                 if let manga = parsedMangas[entity.path] {
                                     NavigationLink(
                                         destination: MangaDetailsScreen(
-                                            plugin: plugin, manga: manga.toManga())
+                                            plugin: share, manga: manga.toManga())
                                     ) {
                                         mangaView(
                                             manga: manga, entity: entity,
@@ -79,14 +80,15 @@ struct BrowseScreen: View {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(entities.enumerated()), id: \.offset) { index, entity in
                         switch entity.type { case .directory:
-                            NavigationLink(destination: BrowseScreen(plugin: plugin, entry: entity))
-                            { directoryListView(entity: entity) }
+                            NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
+                                directoryListView(entity: entity)
+                            }
                             .buttonStyle(.plain)
                             case .book(let fileType):
                                 if let manga = parsedMangas[entity.path] {
                                     NavigationLink(
                                         destination: MangaDetailsScreen(
-                                            plugin: plugin, manga: manga.toManga())
+                                            plugin: share, manga: manga.toManga())
                                     ) {
                                         mangaListView(
                                             manga: manga, entity: entity, fileType: fileType,
@@ -130,7 +132,7 @@ struct BrowseScreen: View {
         .overlay {
             if isLoading && entities.isEmpty {
                 ProgressView {
-                    Text("browseScreenLoadingHint").multilineTextAlignment(.center)
+                    Text("filesScreenLoadingHint").multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
             } else if let errorMessage = errorMessage {
@@ -145,20 +147,20 @@ struct BrowseScreen: View {
         .task { await loadEntities() }
     }
 
-    private var viewMode: BrowseViewMode {
-        BrowseViewMode(rawValue: viewModeRawValue) ?? SettingsDefaults.browseViewMode
+    private var viewMode: FilesViewMode {
+        FilesViewMode(rawValue: viewModeRawValue) ?? SettingsDefaults.filesViewMode
     }
 
     private var navigationTitle: String {
         if let entry { return entry.displayName }
-        return plugin.name ?? plugin.id
+        return share.name ?? share.id
     }
 
-    private var folderURL: URL? { plugin.absoluteURL(for: entry?.path) }
+    private var folderURL: URL? { share.absoluteURL(for: entry?.path) }
 
     private func toggleViewMode() {
         viewModeRawValue =
-            viewMode == .grid ? BrowseViewMode.list.rawValue : BrowseViewMode.grid.rawValue
+            viewMode == .grid ? FilesViewMode.list.rawValue : FilesViewMode.grid.rawValue
     }
 
     private func openInFilesApp() {
@@ -185,7 +187,7 @@ struct BrowseScreen: View {
 
         do {
             try Task.checkCancellation()
-            let result = try await plugin.getEntities(path: entry?.path)
+            let result = try await share.getEntities(path: entry?.path)
 
             let sorted = result.sorted { lhs, rhs in
                 switch (lhs.type, rhs.type) { case (.directory, .book): return true
@@ -205,10 +207,10 @@ struct BrowseScreen: View {
 
                 do {
                     try Task.checkCancellation()
-                    let manga = try await plugin.parseFile(path: filePath, fileType: fileType)
+                    let manga = try await share.parseFile(path: filePath, fileType: fileType)
 
                     let isUnread =
-                        ProgressService.shared.get(mangaId: manga.id, pluginId: plugin.id) == nil
+                        ProgressService.shared.get(mangaId: manga.id, pluginId: share.id) == nil
                     parsedMangas[filePath] = manga
                     if isUnread { unreadMangaPaths.insert(filePath) }
                     parsingPaths.remove(filePath)
@@ -306,7 +308,7 @@ struct BrowseScreen: View {
             if let cornerRadius { cornerRadius } else if #available(iOS 26.0, *) { 12 } else { 8 }
 
         return MangaCoverView(
-            coverUrl: manga.cover, plugin: plugin,
+            coverUrl: manga.cover, plugin: share,
             tag: isUnread && showsUnreadTag ? String(localized: "unread") : nil,
             tagColor: isUnread && showsUnreadTag ? .orange : nil, cornerRadius: cornerRadius
         )

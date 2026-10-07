@@ -1,5 +1,5 @@
 //
-//  FolderSettingsScreen.swift
+//  ShareSettingsScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 20/8/2026.
@@ -7,50 +7,50 @@
 
 import SwiftUI
 
-struct FolderSettingsScreen: View {
+struct ShareSettingsScreen: View {
     @ObservedObject private var browseService = BrowseService.shared
-    @State private var showingAddFolderModal = false
+    @State private var showingAddFilesModal = false
     @State private var showingRemoveConfirmation = false
-    @State private var folderIdsToRemove: [String] = []
+    @State private var shareIdsToRemove: [String] = []
     @State private var errorMessage: String?
 
     var body: some View {
         List {
             SettingsHeaderView(
                 image: Image(systemName: "folder.fill"), color: .blue,
-                title: String(localized: "folders"),
-                description: String(localized: "foldersDescription"))
+                title: String(localized: "shares"),
+                description: String(localized: "sharesDescription"))
 
-            ForEach(browseService.plugins, id: \.id) { plugin in
+            ForEach(browseService.plugins, id: \.id) { share in
                 NavigationLink {
-                    FolderInfoScreen(plugin: plugin)
+                    ShareInfoScreen(share: share)
                 } label: {
                     Label {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(plugin.name ?? plugin.id)
+                            Text(share.name ?? share.id)
 
                             HStack(spacing: 8) {
-                                Text(folderTypeName(for: plugin)).smallTagStyle()
+                                Text(shareTypeName(for: share)).smallTagStyle()
 
-                                if plugin is AppDirBrowsablePlugin {
+                                if share is AppDirBrowsablePlugin {
                                     Text("builtin").smallTagStyle()
                                 }
                             }
                         }
                     } icon: {
-                        plugin.icon
+                        share.icon
                     }
-                    .labelStyle(ColorfulIconLabelStyle(color: plugin.color))
+                    .labelStyle(ColorfulIconLabelStyle(color: share.color))
                 }
-                .deleteDisabled(plugin is AppDirBrowsablePlugin)
+                .deleteDisabled(share is AppDirBrowsablePlugin)
             }
             .onDelete { offsets in
-                let plugins = browseService.plugins
-                folderIdsToRemove = offsets.compactMap { index in
-                    let plugin = plugins[index]
-                    return plugin is AppDirBrowsablePlugin ? nil : plugin.id
+                let shares = browseService.plugins
+                shareIdsToRemove = offsets.compactMap { index in
+                    let share = shares[index]
+                    return share is AppDirBrowsablePlugin ? nil : share.id
                 }
-                showingRemoveConfirmation = !folderIdsToRemove.isEmpty
+                showingRemoveConfirmation = !shareIdsToRemove.isEmpty
             }
         }
         .toolbar {
@@ -59,20 +59,20 @@ struct FolderSettingsScreen: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showingAddFolderModal = true
+                    showingAddFilesModal = true
                 } label: {
                     ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
                 }
             }
         }
-        .navigationTitle("folders").navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingAddFolderModal) { AddBrowsableFolderModal() }
+        .navigationTitle("shares").navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingAddFilesModal) { AddFilesModal() }
         .confirmationDialog(
-            "removeFolder", isPresented: $showingRemoveConfirmation, titleVisibility: .visible
+            "removeShare", isPresented: $showingRemoveConfirmation, titleVisibility: .visible
         ) {
             Button("remove", role: .destructive) {
-                let ids = folderIdsToRemove
-                folderIdsToRemove = []
+                let ids = shareIdsToRemove
+                shareIdsToRemove = []
                 for id in ids {
                     do { try browseService.removePlugin(id) } catch {
                         errorMessage = error.localizedDescription
@@ -80,16 +80,16 @@ struct FolderSettingsScreen: View {
                     }
                 }
             }
-            Button("cancel", role: .cancel) { folderIdsToRemove = [] }
+            Button("cancel", role: .cancel) { shareIdsToRemove = [] }
         } message: {
-            if folderIdsToRemove.count == 1 {
-                Text("removeFolderConfirmation")
+            if shareIdsToRemove.count == 1 {
+                Text("removeShareConfirmation")
             } else {
-                Text("removeFoldersConfirmation")
+                Text("removeSharesConfirmation")
             }
         }
         .alert(
-            "failedToRemovePlugin",
+            "failedToRemoveShare",
             isPresented: Binding(
                 get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
         ) {
@@ -100,13 +100,13 @@ struct FolderSettingsScreen: View {
     }
 }
 
-private func folderTypeName(for plugin: BrowsablePlugin) -> String {
-    switch plugin { case is AppDirBrowsablePlugin, is FsBrowsablePlugin:
+private func shareTypeName(for share: BrowsablePlugin) -> String {
+    switch share { case is AppDirBrowsablePlugin, is FsBrowsablePlugin:
         return String(localized: "fs")
         case is SmbBrowsablePlugin: return String(localized: "smb")
         case is NfsBrowsablePlugin: return String(localized: "nfs")
         case is WebDavBrowsablePlugin: return String(localized: "webdav")
         case is OpdsBrowsablePlugin: return String(localized: "opds")
-        default: return String(localized: "folder")
+        default: return String(localized: "share")
     }
 }

@@ -11,7 +11,7 @@ struct HomeFilterModal: View {
     @Binding var isPresented: Bool
     @Binding var showPlugins: [String]
     let availablePlugins: [Plugin]
-    let availableFolders: [BrowsablePlugin]
+    let availableShares: [BrowsablePlugin]
     let onReset: () -> Void
     let onApply: () -> Void
 
@@ -19,13 +19,13 @@ struct HomeFilterModal: View {
 
     init(
         isPresented: Binding<Bool>, showPlugins: Binding<[String]>, availablePlugins: [Plugin],
-        availableFolders: [BrowsablePlugin], onReset: @escaping () -> Void,
+        availableShares: [BrowsablePlugin], onReset: @escaping () -> Void,
         onApply: @escaping () -> Void
     ) {
         _isPresented = isPresented
         _showPlugins = showPlugins
         self.availablePlugins = availablePlugins
-        self.availableFolders = availableFolders
+        self.availableShares = availableShares
         self.onReset = onReset
         self.onApply = onApply
         _tempShowPlugins = State(initialValue: showPlugins.wrappedValue)
@@ -40,9 +40,9 @@ struct HomeFilterModal: View {
                     }
                 }
 
-                if !availableFolders.isEmpty {
-                    Section("folders") {
-                        ForEach(availableFolders, id: \.id) { folder in filterButton(for: folder) }
+                if !availableShares.isEmpty {
+                    Section("shares") {
+                        ForEach(availableShares, id: \.id) { share in filterButton(for: share) }
                     }
                 }
 

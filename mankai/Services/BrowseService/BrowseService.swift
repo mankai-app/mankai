@@ -248,6 +248,7 @@ enum BrowsePluginAddConflictResolution {
             switch conflictResolution { case .reject:
                 Logger.browseService.warning("Plugin ID already exists: \(plugin.id)")
                 throw MankaiErrorCode.pluginDuplicateId.makeError(
+                    messageOverride: String(localized: "duplicateShareIdMessageFormat"),
                     messageArguments: [plugin.id],
                     additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id])
                 case .overwrite: shouldOverwriteExisting = true
@@ -262,6 +263,7 @@ enum BrowsePluginAddConflictResolution {
         if plugin.id != originalPluginID, _plugins[plugin.id] != nil {
             Logger.browseService.warning("Local plugin ID already exists: \(plugin.id)")
             throw MankaiErrorCode.pluginDuplicateId.makeError(
+                messageOverride: String(localized: "duplicateShareIdMessageFormat"),
                 messageArguments: [plugin.id],
                 additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id])
         }

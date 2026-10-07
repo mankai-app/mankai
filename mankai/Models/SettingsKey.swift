@@ -12,7 +12,7 @@ enum SettingsKey: String {
     case hideBuiltInPlugins
     case showDebugScreen
     case checkClipboard
-    case browseViewMode
+    case filesViewMode
     case accentColor
 
     /// Cache Settings
@@ -41,7 +41,7 @@ enum SettingsKey: String {
     case PR_tapNavigationBehavior
 }
 
-enum BrowseViewMode: String {
+enum FilesViewMode: String {
     case grid
     case list
 }

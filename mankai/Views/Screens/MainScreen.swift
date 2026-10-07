@@ -9,12 +9,12 @@ import SwiftUI
 import UIKit
 
 struct MainScreen: View {
-    private enum Tab: Hashable { case home, library, browse, settings }
+    private enum Tab: Hashable { case home, library, files, settings }
 
     @State private var selectedTab: Tab = .home
     @State private var importedFiles: [URL] = []
     @State private var showingImportsModal = false
-    @State private var importDestinationPluginId: String?
+    @State private var importDestinationShareId: String?
     @State private var pluginImportRequest: PluginImportRequest?
     @State private var lastCheckedPasteboardChangeCount: Int?
 
@@ -28,17 +28,16 @@ struct MainScreen: View {
             HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
             LibraryTab().tag(Tab.library)
                 .tabItem { Label("library", systemImage: "books.vertical.fill") }
-            BrowseTab(importDestinationPluginId: $importDestinationPluginId) {
+            FilesTab(importDestinationShareId: $importDestinationShareId) {
                 showingImportsModal = true
             }
-            .tag(Tab.browse).tabItem { Label("browse", systemImage: "folder.fill") }
+            .tag(Tab.files).tabItem { Label("files", systemImage: "folder.fill") }
             SettingsTab().tag(Tab.settings).tabItem { Label("settings", systemImage: "gearshape") }
         }
         .overlay(alignment: .bottom) { NotificationContainerView() }
         .sheet(isPresented: $showingImportsModal, onDismiss: { importedFiles = [] }) {
             [importedFiles] in
-            ImportsModal(initialFiles: importedFiles) { plugin in
-                importDestinationPluginId = plugin.id
+            ImportsModal(initialFiles: importedFiles) { share in importDestinationShareId = share.id
             }
         }
         .sheet(item: $pluginImportRequest) { request in AddPluginsModal(sources: request.sources) }
@@ -46,7 +45,7 @@ struct MainScreen: View {
             Logger.ui.info("Received URL: \(url)")
 
             if url.isFileURL {
-                selectedTab = .browse
+                selectedTab = .files
                 importedFiles.append(url)
                 showingImportsModal = true
                 return

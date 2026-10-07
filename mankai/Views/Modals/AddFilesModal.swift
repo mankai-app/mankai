@@ -1,5 +1,5 @@
 //
-//  AddBrowsableFolderModal.swift
+//  AddFilesModal.swift
 //  mankai
 //
 //  Created by Travis XU on 4/8/2026.
@@ -9,11 +9,11 @@ import SwiftSMB
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct AddBrowsableFolderModal: View {
+struct AddFilesModal: View {
     @ObservedObject private var browseService = BrowseService.shared
     @Environment(\.dismiss) private var dismiss
 
-    enum FolderType: String, CaseIterable, Identifiable {
+    enum ShareType: String, CaseIterable, Identifiable {
         case filesystem
         case smb
         case sftp
@@ -34,7 +34,7 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
-    @State private var selectedFolderType: FolderType = .filesystem
+    @State private var selectedShareType: ShareType = .filesystem
     @State private var name = ""
 
     // Fs State
@@ -75,16 +75,16 @@ struct AddBrowsableFolderModal: View {
     @State private var isLoadingShares = false
     @State private var isLoadingExports = false
     @State private var isAdding = false
-    @State private var errorTitle: LocalizedStringKey = "failedToAddFolder"
+    @State private var errorTitle: LocalizedStringKey = "failedToAddFiles"
     @State private var errorMessage: String?
-    @State private var duplicatePlugin: BrowsablePlugin?
+    @State private var duplicateShare: BrowsablePlugin?
 
     private var isProcessing: Bool { isLoadingShares || isLoadingExports || isAdding }
 
     private var canContinue: Bool {
         guard !isProcessing else { return false }
 
-        switch selectedFolderType { case .filesystem: return selectedFolder != nil case .smb:
+        switch selectedShareType { case .filesystem: return selectedFolder != nil case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             case .sftp:
@@ -103,19 +103,19 @@ struct AddBrowsableFolderModal: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("folderType", selection: $selectedFolderType) {
-                        ForEach(FolderType.allCases) { type in Text(type.localizedName).tag(type) }
+                    Picker("shareType", selection: $selectedShareType) {
+                        ForEach(ShareType.allCases) { type in Text(type.localizedName).tag(type) }
                     }
                     .disabled(isProcessing)
                 } footer: {
-                    switch selectedFolderType { case .opds: Text("opdsPluginIdSyncHint") default:
-                        Text("pluginIdSyncHint")
+                    switch selectedShareType { case .opds: Text("opdsShareIdSyncHint") default:
+                        Text("shareIdSyncHint")
                     }
                 }
 
                 Section("displayName") { TextField("default", text: $name).disabled(isProcessing) }
 
-                switch selectedFolderType { case .filesystem: filesystemConfiguration case .smb:
+                switch selectedShareType { case .filesystem: filesystemConfiguration case .smb:
                     smbConfiguration
                     case .sftp: sftpConfiguration
                     case .nfs: nfsConfiguration
@@ -123,7 +123,7 @@ struct AddBrowsableFolderModal: View {
                     case .opds: opdsConfiguration
                 }
             }
-            .navigationTitle("addFolder").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("addFiles").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel") { dismiss() }.disabled(isProcessing)
@@ -147,16 +147,16 @@ struct AddBrowsableFolderModal: View {
         } message: {
             if let errorMessage { Text(errorMessage) }
         }
-        .alert("duplicatePluginTitle", isPresented: duplicatePluginIsPresented) {
-            Button("overwrite", role: .destructive) { resolveDuplicatePlugin(with: .overwrite) }
-            Button("addAsLocalPlugin") { resolveDuplicatePlugin(with: .makeLocal) }
-            Button("cancel", role: .cancel) { duplicatePlugin = nil }
+        .alert("duplicateShareTitle", isPresented: duplicateShareIsPresented) {
+            Button("overwrite", role: .destructive) { resolveDuplicateShare(with: .overwrite) }
+            Button("addAsLocalShare") { resolveDuplicateShare(with: .makeLocal) }
+            Button("cancel", role: .cancel) { duplicateShare = nil }
         } message: {
-            if let duplicatePlugin {
+            if let duplicateShare {
                 Text(
                     String(
-                        format: String(localized: "duplicateBrowsablePluginIdMessageFormat"),
-                        locale: .current, duplicatePlugin.id))
+                        format: String(localized: "duplicateShareIdOptionsMessageFormat"),
+                        locale: .current, duplicateShare.id))
             }
         }
     }
@@ -297,7 +297,7 @@ struct AddBrowsableFolderModal: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
-                    addSmbFolder()
+                    addSmbShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
@@ -339,7 +339,7 @@ struct AddBrowsableFolderModal: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
-                    addNfsFolder()
+                    addNfsShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
@@ -349,9 +349,9 @@ struct AddBrowsableFolderModal: View {
     }
 
     @ViewBuilder private var primaryAction: some View {
-        switch selectedFolderType { case .filesystem:
+        switch selectedShareType { case .filesystem:
             Button {
-                addFilesystemFolder()
+                addFilesystemShare()
             } label: {
                 if isAdding { ProgressView() } else { Text("add") }
             }
@@ -365,7 +365,7 @@ struct AddBrowsableFolderModal: View {
                 .disabled(!canContinue)
             case .sftp:
                 Button {
-                    addSftpFolder()
+                    addSftpShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
@@ -379,14 +379,14 @@ struct AddBrowsableFolderModal: View {
                 .disabled(!canContinue)
             case .webdav:
                 Button {
-                    addWebDavFolder()
+                    addWebDavShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
                 .disabled(!canContinue)
             case .opds:
                 Button {
-                    addOpdsPlugin()
+                    addOpdsShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
@@ -417,7 +417,7 @@ struct AddBrowsableFolderModal: View {
                 shares = discoveredShares
                 if discoveredShares.count == 1 {
                     selectedShare = discoveredShares[0]
-                    addSmbFolder()
+                    addSmbShare()
                     return
                 }
 
@@ -437,7 +437,7 @@ struct AddBrowsableFolderModal: View {
                 exports = discoveredExports
                 if discoveredExports.count == 1 {
                     selectedExport = discoveredExports[0]
-                    addNfsFolder()
+                    addNfsShare()
                     return
                 }
 
@@ -447,7 +447,7 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
-    private func addFilesystemFolder() {
+    private func addFilesystemShare() {
         guard let selectedFolder else { return }
 
         isAdding = true
@@ -455,13 +455,13 @@ struct AddBrowsableFolderModal: View {
             defer { isAdding = false }
 
             do {
-                let plugin = try FsBrowsablePlugin(url: selectedFolder, name: name)
-                addPlugin(plugin)
+                let share = try FsBrowsablePlugin(url: selectedFolder, name: name)
+                addShare(share)
             } catch { presentError(error) }
         }
     }
 
-    private func addSmbFolder() {
+    private func addSmbShare() {
         guard let selectedShare, let portValue = parsedPort else { return }
 
         isAdding = true
@@ -473,13 +473,13 @@ struct AddBrowsableFolderModal: View {
                     host: host, port: portValue, share: selectedShare.name, username: username,
                     password: password)
                 let session = SmbSession(configuration: configuration)
-                let plugin = try await SmbBrowsablePlugin(session: session, name: name)
-                addPlugin(plugin)
+                let share = try await SmbBrowsablePlugin(session: session, name: name)
+                addShare(share)
             } catch { presentError(error) }
         }
     }
 
-    private func addNfsFolder() {
+    private func addNfsShare() {
         guard let selectedExport else { return }
 
         isAdding = true
@@ -490,13 +490,13 @@ struct AddBrowsableFolderModal: View {
                 let configuration = try NfsConnectionConfiguration(
                     host: nfsHost, export: selectedExport)
                 let session = NfsSession(configuration: configuration)
-                let plugin = try await NfsBrowsablePlugin(session: session, name: name)
-                addPlugin(plugin)
+                let share = try await NfsBrowsablePlugin(session: session, name: name)
+                addShare(share)
             } catch { presentError(error) }
         }
     }
 
-    private func addSftpFolder() {
+    private func addSftpShare() {
         guard let portValue = parsedSftpPort else {
             presentError(MankaiErrorCode.browseSftpInvalidConnectionConfiguration.makeError())
             return
@@ -510,13 +510,13 @@ struct AddBrowsableFolderModal: View {
                 let configuration = try SftpConnectionConfiguration(
                     host: sftpHost, port: portValue, username: sftpUsername, password: sftpPassword)
                 let session = SftpSession(configuration: configuration)
-                let plugin = try await SftpBrowsablePlugin(session: session, name: name)
-                addPlugin(plugin)
+                let share = try await SftpBrowsablePlugin(session: session, name: name)
+                addShare(share)
             } catch { presentError(error) }
         }
     }
 
-    private func addWebDavFolder() {
+    private func addWebDavShare() {
         isAdding = true
         Task { @MainActor in
             defer { isAdding = false }
@@ -525,13 +525,13 @@ struct AddBrowsableFolderModal: View {
                 let configuration = try WebDavConnectionConfiguration(
                     baseURL: webDavServerURL, username: webDavUsername, password: webDavPassword)
                 let session = WebDavSession(configuration: configuration)
-                let plugin = try await WebDavBrowsablePlugin(session: session, name: name)
-                addPlugin(plugin)
+                let share = try await WebDavBrowsablePlugin(session: session, name: name)
+                addShare(share)
             } catch { presentError(error) }
         }
     }
 
-    private func addOpdsPlugin() {
+    private func addOpdsShare() {
         isAdding = true
         Task { @MainActor in
             defer { isAdding = false }
@@ -540,8 +540,8 @@ struct AddBrowsableFolderModal: View {
                 let configuration = try OpdsConnectionConfiguration(
                     catalogURL: opdsCatalogURL, username: opdsUsername, password: opdsPassword)
                 let session = OpdsSession(configuration: configuration)
-                let plugin = try await OpdsBrowsablePlugin(session: session, name: name)
-                addPlugin(plugin)
+                let share = try await OpdsBrowsablePlugin(session: session, name: name)
+                addShare(share)
             } catch { presentError(error) }
         }
     }
@@ -560,31 +560,30 @@ struct AddBrowsableFolderModal: View {
         return portValue
     }
 
-    private var duplicatePluginIsPresented: Binding<Bool> {
-        Binding(get: { duplicatePlugin != nil }, set: { if !$0 { duplicatePlugin = nil } })
+    private var duplicateShareIsPresented: Binding<Bool> {
+        Binding(get: { duplicateShare != nil }, set: { if !$0 { duplicateShare = nil } })
     }
 
-    private func addPlugin(_ plugin: BrowsablePlugin) {
+    private func addShare(_ share: BrowsablePlugin) {
         do {
-            try browseService.addPlugin(plugin)
+            try browseService.addPlugin(share)
             dismiss()
         } catch let error where MankaiErrorCode.pluginDuplicateId.matches(error) {
-            duplicatePlugin = plugin
+            duplicateShare = share
         } catch { presentError(error) }
     }
 
-    private func resolveDuplicatePlugin(with conflictResolution: BrowsePluginAddConflictResolution)
-    {
-        guard let duplicatePlugin else { return }
-        self.duplicatePlugin = nil
+    private func resolveDuplicateShare(with conflictResolution: BrowsePluginAddConflictResolution) {
+        guard let duplicateShare else { return }
+        self.duplicateShare = nil
 
         do {
-            try browseService.addPlugin(duplicatePlugin, conflictResolution: conflictResolution)
+            try browseService.addPlugin(duplicateShare, conflictResolution: conflictResolution)
             dismiss()
         } catch { presentError(error) }
     }
 
-    private func presentError(_ error: Error, title: LocalizedStringKey = "failedToAddFolder") {
+    private func presentError(_ error: Error, title: LocalizedStringKey = "failedToAddFiles") {
         errorTitle = title
         errorMessage = error.localizedDescription
     }

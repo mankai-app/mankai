@@ -35,12 +35,12 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ## Features
 
-- **Flexible sources** — JavaScript, file system, and HTTP plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV connections.
-- **Local books** — Read MMA, CBZ, CBR, EPUB, and PDF files from your device or connected folders.
+- **Flexible sources** — JavaScript, file system, and HTTP plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV shares.
+- **Local books** — Read MMA, CBZ, CBR, EPUB, and PDF files from your device or connected shares.
 - **Reader controls** — Paged and continuous layouts, horizontal and vertical navigation, and page-curl transitions.
 - **Image processing** — [Automatic spread grouping](#smart-grouping), optional [on-device 4× AI upscaling](#real-esrgan-upscaling), and configurable remote image processors.
 - **Collections and downloads** — Bookmark titles, track reading history, and download chapters for offline reading.
-- **Optional sync** — Keep your collection, reading progress, URL-backed plugins, and remote folder settings in sync through an HTTP server or Supabase.
+- **Optional sync** — Keep your collection, reading progress, URL-backed plugins, and remote share settings in sync through an HTTP server or Supabase.
 
 ## Road to 1.0.0
 
@@ -86,7 +86,7 @@ For setup instructions, usage guides, and troubleshooting, visit the [Mankai doc
 | :---------------------------------------------------------------- | :--------------------------------------------------------------------- |
 | [Installation](https://mankai.app/guides/installation/)           | Installation options for your device.                                  |
 | [Quick start](https://mankai.app/guides/quick-start/)             | Add a source, read your first book, and save your place.               |
-| [Add books and sources](https://mankai.app/guides/sources/)       | Set up plugins, import books, and connect local or network folders.    |
+| [Add books and sources](https://mankai.app/guides/sources/)       | Set up plugins, import books, and connect local or network shares.     |
 | [Collections and downloads](https://mankai.app/guides/library/)   | Manage saved titles, reading history, and offline chapters.            |
 | [Reading and reader settings](https://mankai.app/guides/reading/) | Reading layouts, navigation, and reader controls.                      |
 | [Image processing](https://mankai.app/guides/image-processing/)   | Configure upscaling, downsampling, page colors, and remote processors. |

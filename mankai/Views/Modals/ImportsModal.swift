@@ -16,7 +16,7 @@ struct ImportsModal: View {
     var initialFiles: [URL]
 
     @State private var selectedFiles: [URL]
-    @State private var selectedPluginId: String = AppDirBrowsablePlugin.shared.id
+    @State private var selectedShareId: String = AppDirBrowsablePlugin.shared.id
     @State private var showingFileImporter = false
     @State private var isImporting = false
     @State private var importError: String?
@@ -29,7 +29,7 @@ struct ImportsModal: View {
     }
 
     private var supportedContentTypes: [UTType] {
-        (selectedPlugin?.supportedExtensions ?? AppDirBrowsablePlugin.shared.supportedExtensions)
+        (selectedShare?.supportedExtensions ?? AppDirBrowsablePlugin.shared.supportedExtensions)
             .compactMap { ext in
                 if ext == "epub" { return .epub }
 
@@ -37,8 +37,8 @@ struct ImportsModal: View {
             }
     }
 
-    private var selectedPlugin: ImportableBrowsablePlugin? {
-        browseService.getImportablePlugin(selectedPluginId)
+    private var selectedShare: ImportableBrowsablePlugin? {
+        browseService.getImportablePlugin(selectedShareId)
     }
 
     var body: some View {
@@ -70,9 +70,9 @@ struct ImportsModal: View {
                 }
 
                 Section("importTo") {
-                    Picker("folder", selection: $selectedPluginId) {
-                        ForEach(browseService.importablePlugins, id: \.id) { plugin in
-                            Text(plugin.name ?? plugin.id).tag(plugin.id)
+                    Picker("share", selection: $selectedShareId) {
+                        ForEach(browseService.importablePlugins, id: \.id) { share in
+                            Text(share.name ?? share.id).tag(share.id)
                         }
                     }
                 }
@@ -82,7 +82,7 @@ struct ImportsModal: View {
                 ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("import") { Task { await importFiles() } }
-                        .disabled(selectedFiles.isEmpty || selectedPlugin == nil || isImporting)
+                        .disabled(selectedFiles.isEmpty || selectedShare == nil || isImporting)
                 }
             }
             .fileImporter(
@@ -104,14 +104,14 @@ struct ImportsModal: View {
     }
 
     private func importFiles() async {
-        guard let plugin = selectedPlugin else { return }
+        guard let share = selectedShare else { return }
 
         isImporting = true
         defer { isImporting = false }
 
         do {
-            for file in selectedFiles { try await plugin.importFile(from: file) }
-            onImport?(plugin)
+            for file in selectedFiles { try await share.importFile(from: file) }
+            onImport?(share)
             dismiss()
         } catch {
             importError = error.localizedDescription

@@ -273,7 +273,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .authInvalidUrl: .init(domain: .auth, code: 11, messageKey: "invalidUrl"),
         .authRequestFailed: .init(domain: .auth, code: 12, messageKey: "httpRequestFailed"),
 
-        .browseInvalidPlugin: .init(domain: .browse, code: 1, messageKey: "invalidBrowsablePlugin"),
+        .browseInvalidPlugin: .init(domain: .browse, code: 1, messageKey: "invalidShare"),
         .browseArchiveNoImagesFoundInArchive: .init(
             domain: .browseArchive, code: 1, messageKey: "noImagesFoundInArchive"),
         .browseArchiveEntryNotFound: .init(
@@ -294,22 +294,22 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .browseFilesystem, code: 6, messageKey: "unableToOpenFileForHashing"),
         .browseSmbInvalidConnectionConfiguration: .init(
             domain: .browseSmb, code: 1, messageKey: "invalidSmbConnectionConfiguration"),
-        .browseSmbInvalidPlugin: .init(domain: .browseSmb, code: 2, messageKey: "invalidSmbPlugin"),
+        .browseSmbInvalidPlugin: .init(domain: .browseSmb, code: 2, messageKey: "invalidSmbShare"),
         .browseSftpInvalidConnectionConfiguration: .init(
             domain: .browseSftp, code: 1, messageKey: "invalidSftpConnectionConfiguration"),
         .browseSftpInvalidPlugin: .init(
-            domain: .browseSftp, code: 2, messageKey: "invalidSftpPlugin"),
+            domain: .browseSftp, code: 2, messageKey: "invalidSftpShare"),
         .browseNfsInvalidConnectionConfiguration: .init(
             domain: .browseNfs, code: 1, messageKey: "invalidNfsConnectionConfiguration"),
-        .browseNfsInvalidPlugin: .init(domain: .browseNfs, code: 2, messageKey: "invalidNfsPlugin"),
+        .browseNfsInvalidPlugin: .init(domain: .browseNfs, code: 2, messageKey: "invalidNfsShare"),
         .browseWebDavInvalidConnectionConfiguration: .init(
             domain: .browseWebDav, code: 1, messageKey: "invalidWebDavConnectionConfiguration"),
         .browseWebDavInvalidPlugin: .init(
-            domain: .browseWebDav, code: 2, messageKey: "invalidWebDavPlugin"),
+            domain: .browseWebDav, code: 2, messageKey: "invalidWebDavShare"),
         .browseWebDavRequestFailed: .init(
             domain: .browseWebDav, code: 3, messageKey: "webDavRequestFailed"),
         .browseOpdsInvalidPlugin: .init(
-            domain: .browseOpds, code: 1, messageKey: "invalidOpdsPlugin"),
+            domain: .browseOpds, code: 1, messageKey: "invalidOpdsShare"),
         .browseOpdsInvalidDocument: .init(
             domain: .browseOpds, code: 2, messageKey: "invalidOpdsDocument"),
         .browsePdfInvalidDocument: .init(

@@ -86,8 +86,8 @@ struct HomeTab: View {
         var pluginsById = Dictionary(
             uniqueKeysWithValues: pluginService.plugins.map { ($0.id, $0) })
 
-        for plugin in browseService.plugins where pluginsById[plugin.id] == nil {
-            pluginsById[plugin.id] = plugin
+        for share in browseService.plugins where pluginsById[share.id] == nil {
+            pluginsById[share.id] = share
         }
 
         return pluginsById
@@ -101,10 +101,10 @@ struct HomeTab: View {
         }
     }
 
-    private var availableFolders: [BrowsablePlugin] {
-        return browseService.plugins.sorted { plugin1, plugin2 in
-            let name1 = plugin1.name ?? plugin1.id
-            let name2 = plugin2.name ?? plugin2.id
+    private var availableShares: [BrowsablePlugin] {
+        return browseService.plugins.sorted { share1, share2 in
+            let name1 = share1.name ?? share1.id
+            let name2 = share2.name ?? share2.id
             return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
         }
     }
@@ -213,7 +213,7 @@ struct HomeTab: View {
             .sheet(isPresented: $showingFilters) {
                 HomeFilterModal(
                     isPresented: $showingFilters, showPlugins: $showPlugins,
-                    availablePlugins: availablePlugins, availableFolders: availableFolders,
+                    availablePlugins: availablePlugins, availableShares: availableShares,
                     onReset: resetFilters, onApply: filterManga)
             }
             .sheet(isPresented: $showingDownloads) {
