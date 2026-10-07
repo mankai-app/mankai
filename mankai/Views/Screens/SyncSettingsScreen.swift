@@ -89,7 +89,7 @@ struct SyncSettingsScreen: View {
     private func performSync() async {
         syncError = nil
 
-        do { try await syncService.sync() } catch {
+        do { try await syncService.sync() } catch is CancellationError { return } catch {
             syncError = error.localizedDescription
             showErrorAlert = true
         }
@@ -100,7 +100,7 @@ struct SyncSettingsScreen: View {
         defer { isClearingSyncCache = false }
         syncError = nil
 
-        do { try await syncService.onEngineChange() } catch {
+        do { try await syncService.onEngineChange() } catch is CancellationError { return } catch {
             syncError = error.localizedDescription
             showErrorAlert = true
         }

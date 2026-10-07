@@ -29,6 +29,7 @@ import GRDB
     private var engineCancellable: AnyCancellable?
     private var syncTimer: Timer?
     private var syncTask: Task<Void, Error>?
+    private var engineChangeTask: Task<Void, Never>?
     private let syncInterval: TimeInterval = 60 * 3  // 3 minutes
 
     /// A flag indicating if a synchronization process is currently in progress.
@@ -38,7 +39,9 @@ import GRDB
     var engine: SyncEngine? {
         get { _engine }
         set {
+            guard _engine?.id != newValue?.id else { return }
             Logger.syncService.debug("Setting sync engine: \(newValue?.id ?? "nil")")
+            engineChangeTask?.cancel()
             syncTask?.cancel()
             _engine = newValue
 
@@ -47,11 +50,15 @@ import GRDB
 
             subscribeToEngine()
 
-            if newValue != nil { startPeriodicSync() } else { stopPeriodicSync() }
+            if newValue != nil {
+                startPeriodicSync(syncImmediately: false)
+            } else {
+                stopPeriodicSync()
+            }
 
             objectWillChange.send()
 
-            Task { try? await self.onEngineChange() }
+            engineChangeTask = Task { try? await self.onEngineChange() }
         }
     }
 
@@ -64,17 +71,21 @@ import GRDB
     /// Handles changes when the sync engine is updated.
     /// - Throws: An error if the new engine cannot be initialized.
     func onEngineChange() async throws {
+        try Task.checkCancellation()
         Logger.syncService.debug("Handling engine change")
         syncTask?.cancel()
         if let current = syncTask { try? await current.value }
-        guard let engine = engine else { return }
+        try Task.checkCancellation()
+        guard let engine else { return }
 
         // Reset last sync time in UserDefaults
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: "SyncService.lastSyncTime")
 
         try await engine.onSelected()
-        try await sync()
+        try Task.checkCancellation()
+        try await sync(wait: true)
+        try Task.checkCancellation()
         try await UpdateService.shared.update()
     }
 
@@ -84,16 +95,18 @@ import GRDB
             .sink { [weak self] _ in Task { @MainActor in self?.objectWillChange.send() } }
     }
 
-    private func startPeriodicSync() {
+    private func startPeriodicSync(syncImmediately: Bool = true) {
         stopPeriodicSync()
 
         guard engine != nil else { return }
 
-        // Initial
         Logger.syncService.debug("Starting periodic sync")
-        Task {
-            try? await sync()
-            try? await UpdateService.shared.update()
+        // Engine changes perform their initial sync after resetting the engine.
+        if syncImmediately {
+            Task {
+                try? await sync()
+                try? await UpdateService.shared.update()
+            }
         }
 
         syncTimer = Timer.scheduledTimer(withTimeInterval: syncInterval, repeats: true) {
@@ -109,6 +122,7 @@ import GRDB
 
     isolated deinit {
         stopPeriodicSync()
+        engineChangeTask?.cancel()
         engineCancellable?.cancel()
     }
 
@@ -145,11 +159,13 @@ import GRDB
         }
 
         do { try await task.value } catch {
-            if error is CancellationError || task.isCancelled {
+            if error is CancellationError || task.isCancelled
+                || (error as? URLError)?.code == .cancelled
+            {
                 Logger.syncService.debug("Sync cancelled")
-            } else {
-                Logger.syncService.error("Sync failed", error: error)
+                throw CancellationError()
             }
+            Logger.syncService.error("Sync failed", error: error)
 
             if showError, engine?.active == true, case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToSyncFormat")
@@ -165,6 +181,7 @@ import GRDB
 
     private func internalSync() async throws {
         Logger.syncService.debug("Starting sync")
+        try Task.checkCancellation()
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw MankaiErrorCode.syncNoEngine.makeError()
