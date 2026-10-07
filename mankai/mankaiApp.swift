@@ -49,12 +49,17 @@ import SwiftUI
 
 extension View {
     @ViewBuilder fileprivate func detectDuo() -> some View {
-        if #available(iOS 27.1, *) {
-            onHingeChange { _, context in
-                UserDefaults.standard.set(context.hinge != nil, forKey: SettingsKey.isDuo.rawValue)
+        #if !targetEnvironment(macCatalyst)
+            if #available(iOS 27.1, *) {
+                onHingeChange { _, context in
+                    UserDefaults.standard.set(
+                        context.hinge != nil, forKey: SettingsKey.isDuo.rawValue)
+                }
+            } else {
+                self
             }
-        } else {
+        #else
             self
-        }
+        #endif
     }
 }
