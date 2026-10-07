@@ -16,9 +16,33 @@ struct AddPluginModal: View {
         case httpPlugin
 
         var id: String { rawValue }
+
+        var localizedName: String {
+            switch self { case .jsPlugin: String(localized: "js") case .fsPlugin:
+                String(localized: "fs")
+                case .httpPlugin: String(localized: "http")
+            }
+        }
+
+        var color: Color {
+            switch self { case .jsPlugin:
+                Color(.sRGB, red: 0xEF / 255.0, green: 0xD8 / 255.0, blue: 0x1C / 255.0)
+                case .fsPlugin: .blue
+                case .httpPlugin:
+                    Color(.sRGB, red: 0x01 / 255.0, green: 0x58 / 255.0, blue: 0x96 / 255.0)
+            }
+        }
+
+        @ViewBuilder var icon: some View {
+            switch self { case .jsPlugin:
+                Text(verbatim: "JS").font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(.black)
+                case .fsPlugin: Image(systemName: "folder.fill")
+                case .httpPlugin: Image(systemName: "globe")
+            }
+        }
     }
 
-    @State private var selectedPluginType: PluginType = .jsPlugin
     @State private var useJson = false
     @State private var jsonInput: String = ""
     @State private var urlInput: String = ""
@@ -34,38 +58,70 @@ struct AddPluginModal: View {
     @State private var duplicatePlugin: Plugin?
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
-                Section {
-                    Picker("pluginType", selection: $selectedPluginType) {
-                        ForEach(PluginType.allCases) { type in
-                            switch type { case .jsPlugin: Text("js").tag(type) case .fsPlugin:
-                                Text("fs").tag(type)
-                                case .httpPlugin: Text("http").tag(type)
-                            }
-                        }
+                Section("local") { pluginTypeLink(.fsPlugin) }
+
+                Section("remote") {
+                    pluginTypeLink(.jsPlugin)
+                    pluginTypeLink(.httpPlugin)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline).navigationTitle("addPlugin")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
+            }
+        }
+        .alert("failedToAddPlugin", isPresented: $showError) {
+            Button("ok", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
+        .alert("duplicatePluginTitle", isPresented: duplicatePluginIsPresented) {
+            Button("overwrite", role: .destructive) { overwriteDuplicatePlugin() }
+            Button("cancel", role: .cancel) { duplicatePlugin = nil }
+        } message: {
+            if let duplicatePlugin {
+                Text(
+                    String(
+                        format: String(localized: "duplicatePluginIdMessageFormat"),
+                        duplicatePlugin.id))
+            }
+        }
+    }
+
+    private func pluginTypeLink(_ type: PluginType) -> some View {
+        NavigationLink {
+            configuration(for: type)
+        } label: {
+            Label {
+                Text(type.localizedName)
+            } icon: {
+                type.icon
+            }
+            .labelStyle(ColorfulIconLabelStyle(color: type.color))
+        }
+    }
+
+    private func configuration(for type: PluginType) -> some View {
+        List {
+            switch type { case .jsPlugin:
+                Section("jsPluginSettings") {
+                    Toggle(isOn: $useJson) { Text("useJson") }
+                    if useJson {
+                        TextField("json", text: $jsonInput).textInputAutocapitalization(.never)
+                    } else {
+                        TextField("url", text: $urlInput).keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
                     }
                 }
-
-                if selectedPluginType == .jsPlugin {
-                    Section {
-                        Toggle(isOn: $useJson) { Text("useJson") }
-                        if useJson {
-                            TextField("json", text: $jsonInput).textInputAutocapitalization(.never)
-                        } else {
-                            TextField("url", text: $urlInput).keyboardType(.URL)
-                                .textInputAutocapitalization(.never)
-                        }
-                    } header: {
-                        Text("jsPluginSettings")
-                    }
-                } else if selectedPluginType == .fsPlugin {
+                case .fsPlugin:
                     Section {
                         Button(action: { showFileImporter = true }) {
                             HStack {
                                 Text("selectFolder")
                                 Spacer()
-                                if let selectedFolder = selectedFolder {
+                                if let selectedFolder {
                                     Text(selectedFolder.lastPathComponent)
                                         .foregroundColor(.secondary)
                                 } else {
@@ -80,126 +136,106 @@ struct AddPluginModal: View {
                     } footer: {
                         Text("pluginIdSyncHint")
                     }
-                } else if selectedPluginType == .httpPlugin {
-                    Section {
+                case .httpPlugin:
+                    Section("httpPluginSettings") {
                         TextField("url", text: $urlInput).keyboardType(.URL)
                             .textInputAutocapitalization(.never)
-                    } header: {
-                        Text("httpPluginSettings")
                     }
-                }
             }
-            .navigationBarTitleDisplayMode(.inline).navigationTitle("addPlugin")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(action: { dismiss() }) { Text("cancel") }
+        }
+        .disabled(isProcessing).navigationTitle(type.localizedName)
+        .navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden(isProcessing)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    addConfiguredPlugin(type)
+                } label: {
+                    if isProcessing { ProgressView() } else { Text("add") }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(action: {
-                        Task {
-                            isProcessing = true
-                            defer { isProcessing = false }
+                .disabled(!canAddPlugin(type))
+            }
+        }
+        .fileImporter(
+            isPresented: $showFileImporter, allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result { case .success(let urls): selectedFolder = urls.first
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                    showError = true
+            }
+        }
+    }
 
-                            switch selectedPluginType { case .jsPlugin:
-                                let plugin: JsPlugin?
+    private func canAddPlugin(_ type: PluginType) -> Bool {
+        guard !isProcessing else { return false }
 
-                                if useJson {
-                                    plugin = jsonInput.data(using: .utf8)
-                                        .flatMap {
-                                            try? JSONSerialization.jsonObject(with: $0)
-                                                as? [String: Any]
-                                        }
-                                        .flatMap { JsPlugin.fromJson($0) }
-                                } else {
-                                    plugin =
-                                        await PluginService.shared.decodeURL(urlInput, type: "js")
-                                        as? JsPlugin
-                                }
+        switch type { case .jsPlugin: return useJson ? !jsonInput.isEmpty : !urlInput.isEmpty
+            case .fsPlugin: return selectedFolder != nil
+            case .httpPlugin: return !urlInput.isEmpty
+        }
+    }
 
-                                guard let plugin = plugin else {
-                                    errorMessage = String(localized: "failedToParsePlugin")
-                                    showError = true
-                                    return
-                                }
+    private func addConfiguredPlugin(_ type: PluginType) {
+        isProcessing = true
+        Task {
+            defer { isProcessing = false }
 
-                                addPlugin(plugin)
-                                case .fsPlugin:
-                                    guard let selectedFolder = selectedFolder else {
-                                        errorMessage = String(localized: "noFolderSelected")
-                                        showError = true
-                                        return
-                                    }
+            switch type { case .jsPlugin:
+                let plugin: JsPlugin?
 
-                                    // Check if the folder is accessible
-                                    guard selectedFolder.startAccessingSecurityScopedResource()
-                                    else {
-                                        errorMessage = String(localized: "failedToAccessFolder")
-                                        showError = true
-                                        return
-                                    }
-                                    defer { selectedFolder.stopAccessingSecurityScopedResource() }
+                if useJson {
+                    plugin = jsonInput.data(using: .utf8)
+                        .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+                        .flatMap { JsPlugin.fromJson($0) }
+                } else {
+                    plugin = await PluginService.shared.decodeURL(urlInput, type: "js") as? JsPlugin
+                }
 
-                                    let plugin: ReadFsPlugin
-                                    do {
-                                        if isReadOnly {
-                                            plugin = try ReadFsPlugin(url: selectedFolder)
-                                        } else {
-                                            plugin = try ReadWriteFsPlugin(url: selectedFolder)
-                                        }
+                guard let plugin = plugin else {
+                    errorMessage = String(localized: "failedToParsePlugin")
+                    showError = true
+                    return
+                }
 
-                                        addPlugin(plugin)
-                                    } catch {
-                                        errorMessage = error.localizedDescription
-                                        showError = true
-                                    }
-                                case .httpPlugin:
-                                    guard
-                                        let plugin = await PluginService.shared.decodeURL(
-                                            urlInput, type: "http")
-                                    else {
-                                        errorMessage = String(localized: "failedToParsePlugin")
-                                        showError = true
-                                        return
-                                    }
+                addPlugin(plugin)
+                case .fsPlugin:
+                    guard let selectedFolder = selectedFolder else {
+                        errorMessage = String(localized: "noFolderSelected")
+                        showError = true
+                        return
+                    }
 
-                                    addPlugin(plugin)
-                            }
+                    // Check if the folder is accessible
+                    guard selectedFolder.startAccessingSecurityScopedResource() else {
+                        errorMessage = String(localized: "failedToAccessFolder")
+                        showError = true
+                        return
+                    }
+                    defer { selectedFolder.stopAccessingSecurityScopedResource() }
+
+                    let plugin: ReadFsPlugin
+                    do {
+                        if isReadOnly {
+                            plugin = try ReadFsPlugin(url: selectedFolder)
+                        } else {
+                            plugin = try ReadWriteFsPlugin(url: selectedFolder)
                         }
-                    }) { if isProcessing { ProgressView() } else { Text("add") } }
-                    .disabled(
-                        isProcessing
-                            || (selectedPluginType == .jsPlugin
-                                && (useJson ? jsonInput.isEmpty : urlInput.isEmpty))
-                            || (selectedPluginType == .fsPlugin && selectedFolder == nil)
-                            || (selectedPluginType == .httpPlugin && urlInput.isEmpty))
-                }
-            }
-            .fileImporter(
-                isPresented: $showFileImporter, allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result { case .success(let urls):
-                    if let url = urls.first { selectedFolder = url }
-                    case .failure(let error):
+
+                        addPlugin(plugin)
+                    } catch {
                         errorMessage = error.localizedDescription
                         showError = true
-                }
-            }
-            .alert("failedToAddPlugin", isPresented: $showError) {
-                Button("ok", role: .cancel) {}
-            } message: {
-                Text(errorMessage)
-            }
-            .alert("duplicatePluginTitle", isPresented: duplicatePluginIsPresented) {
-                Button("overwrite", role: .destructive) { overwriteDuplicatePlugin() }
-                Button("cancel", role: .cancel) { duplicatePlugin = nil }
-            } message: {
-                if let duplicatePlugin {
-                    Text(
-                        String(
-                            format: String(localized: "duplicatePluginIdMessageFormat"),
-                            duplicatePlugin.id))
-                }
+                    }
+                case .httpPlugin:
+                    guard let plugin = await PluginService.shared.decodeURL(urlInput, type: "http")
+                    else {
+                        errorMessage = String(localized: "failedToParsePlugin")
+                        showError = true
+                        return
+                    }
+
+                    addPlugin(plugin)
             }
         }
     }

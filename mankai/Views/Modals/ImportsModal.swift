@@ -44,7 +44,8 @@ struct ImportsModal: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
+                Section("files") {
+                    ForEach(selectedFiles, id: \.self) { file in Text(file.lastPathComponent) }
                     Button {
                         showingFileImporter = true
                     } label: {
@@ -61,11 +62,6 @@ struct ImportsModal: View {
                                 .foregroundStyle(.secondary)
                             }
                         }
-                    }
-                } footer: {
-                    if !selectedFiles.isEmpty {
-                        Text(selectedFiles.map(\.lastPathComponent).joined(separator: ", "))
-                            .lineLimit(2)
                     }
                 }
 

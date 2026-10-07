@@ -32,9 +32,26 @@ struct AddFilesModal: View {
                 case .opds: String(localized: "opds")
             }
         }
+
+        var color: Color {
+            switch self { case .filesystem: .blue case .smb: .orange case .sftp: .green case .nfs:
+                .purple
+                case .webdav: .teal
+                case .opds: .red
+            }
+        }
+
+        @ViewBuilder var icon: some View {
+            switch self { case .filesystem: Image(systemName: "folder.fill") case .smb:
+                LabeledFolderIcon(label: "SMB", color: color)
+                case .sftp: LabeledFolderIcon(label: "SSH", color: color)
+                case .nfs: LabeledFolderIcon(label: "NFS", color: color)
+                case .webdav: LabeledFolderIcon(label: "DAV", color: color)
+                case .opds: Image(systemName: "books.vertical.fill")
+            }
+        }
     }
 
-    @State private var selectedShareType: ShareType = .filesystem
     @State private var name = ""
 
     // Fs State
@@ -81,10 +98,10 @@ struct AddFilesModal: View {
 
     private var isProcessing: Bool { isLoadingShares || isLoadingExports || isAdding }
 
-    private var canContinue: Bool {
+    private func canContinue(_ type: ShareType) -> Bool {
         guard !isProcessing else { return false }
 
-        switch selectedShareType { case .filesystem: return selectedFolder != nil case .smb:
+        switch type { case .filesystem: return selectedFolder != nil case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             case .sftp:
@@ -101,46 +118,21 @@ struct AddFilesModal: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    Picker("shareType", selection: $selectedShareType) {
-                        ForEach(ShareType.allCases) { type in Text(type.localizedName).tag(type) }
-                    }
-                    .disabled(isProcessing)
-                } footer: {
-                    switch selectedShareType { case .opds: Text("opdsShareIdSyncHint") default:
-                        Text("shareIdSyncHint")
-                    }
+            List {
+                Section("localShares") { shareTypeLink(.filesystem) }
+
+                Section("remoteShares") {
+                    ForEach([ShareType.smb, .sftp, .nfs, .webdav]) { type in shareTypeLink(type) }
                 }
 
-                Section("displayName") { TextField("default", text: $name).disabled(isProcessing) }
-
-                switch selectedShareType { case .filesystem: filesystemConfiguration case .smb:
-                    smbConfiguration
-                    case .sftp: sftpConfiguration
-                    case .nfs: nfsConfiguration
-                    case .webdav: webDavConfiguration
-                    case .opds: opdsConfiguration
-                }
+                Section("catalogs") { shareTypeLink(.opds) }
             }
             .navigationTitle("addFiles").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel") { dismiss() }.disabled(isProcessing)
                 }
-
-                ToolbarItem(placement: .confirmationAction) { primaryAction }
             }
-            .fileImporter(
-                isPresented: $showingFileImporter, allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result { case .success(let urls): selectedFolder = urls.first
-                    case .failure(let error): presentError(error)
-                }
-            }
-            .navigationDestination(isPresented: $showingShareSelection) { shareSelection }
-            .navigationDestination(isPresented: $showingExportSelection) { exportSelection }
         }
         .alert(errorTitle, isPresented: errorIsPresented) {
             Button("ok", role: .cancel) { errorMessage = nil }
@@ -159,6 +151,53 @@ struct AddFilesModal: View {
                         locale: .current, duplicateShare.id))
             }
         }
+    }
+
+    private func shareTypeLink(_ type: ShareType) -> some View {
+        NavigationLink {
+            configuration(for: type)
+        } label: {
+            Label {
+                Text(type.localizedName)
+            } icon: {
+                type.icon
+            }
+            .labelStyle(ColorfulIconLabelStyle(color: type.color))
+        }
+    }
+
+    private func configuration(for type: ShareType) -> some View {
+        Form {
+            Section {
+                TextField("default", text: $name).disabled(isProcessing)
+            } header: {
+                Text("displayName")
+            } footer: {
+                switch type { case .opds: Text("opdsShareIdSyncHint") default:
+                    Text("shareIdSyncHint")
+                }
+            }
+
+            switch type { case .filesystem: filesystemConfiguration case .smb: smbConfiguration
+                case .sftp: sftpConfiguration
+                case .nfs: nfsConfiguration
+                case .webdav: webDavConfiguration
+                case .opds: opdsConfiguration
+            }
+        }
+        .navigationTitle(type.localizedName).navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isProcessing)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { primaryAction(for: type) } }
+        .fileImporter(
+            isPresented: $showingFileImporter, allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result { case .success(let urls): selectedFolder = urls.first
+                case .failure(let error): presentError(error)
+            }
+        }
+        .navigationDestination(isPresented: $showingShareSelection) { shareSelection }
+        .navigationDestination(isPresented: $showingExportSelection) { exportSelection }
     }
 
     private var filesystemConfiguration: some View {
@@ -348,49 +387,49 @@ struct AddFilesModal: View {
         }
     }
 
-    @ViewBuilder private var primaryAction: some View {
-        switch selectedShareType { case .filesystem:
+    @ViewBuilder private func primaryAction(for type: ShareType) -> some View {
+        switch type { case .filesystem:
             Button {
                 addFilesystemShare()
             } label: {
                 if isAdding { ProgressView() } else { Text("add") }
             }
-            .disabled(!canContinue)
+            .disabled(!canContinue(type))
             case .smb:
                 Button {
                     discoverShares()
                 } label: {
                     if isLoadingShares || isAdding { ProgressView() } else { Text("selectShare") }
                 }
-                .disabled(!canContinue)
+                .disabled(!canContinue(type))
             case .sftp:
                 Button {
                     addSftpShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
-                .disabled(!canContinue)
+                .disabled(!canContinue(type))
             case .nfs:
                 Button {
                     discoverExports()
                 } label: {
                     if isLoadingExports || isAdding { ProgressView() } else { Text("selectExport") }
                 }
-                .disabled(!canContinue)
+                .disabled(!canContinue(type))
             case .webdav:
                 Button {
                     addWebDavShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
-                .disabled(!canContinue)
+                .disabled(!canContinue(type))
             case .opds:
                 Button {
                     addOpdsShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
-                .disabled(!canContinue)
+                .disabled(!canContinue(type))
         }
     }
 
