@@ -1,5 +1,5 @@
 //
-//  PluginLibraryScreen.swift
+//  SourceLibraryScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 27/6/2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PluginLibraryScreen: View {
+struct SourceLibraryScreen: View {
     let plugin: Plugin
 
     @State var selectedGenre: Genre = .all
@@ -104,7 +104,7 @@ struct PluginLibraryScreen: View {
         }
         .onDisappear { searchTask?.cancel() }
         .navigationDestination(isPresented: $navigateToSearch) {
-            PluginSearchScreen(
+            SourceSearchScreen(
                 plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus)
         }
         .sheet(isPresented: $showingFilters) {

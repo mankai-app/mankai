@@ -34,7 +34,7 @@ final class KomgaPlugin: Plugin, Configurable {
 
     override var tags: [String] { [String(localized: "komga")] }
 
-    override var description: String? { String(localized: "komgaPluginDescription") }
+    override var description: String? { String(localized: "komgaSourceDescription") }
 
     init(
         id: String? = nil, baseUrl: String, name: String = "", username: String = "",

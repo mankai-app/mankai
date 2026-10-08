@@ -116,7 +116,7 @@ struct DebugScreen: View {
                 }
 
             } else {
-                Section("plugin") {
+                Section("jsPlugin") {
                     TextField("json", text: $jsonInput)
                     Button("parse") {
                         plugin = jsonInput.data(using: .utf8)

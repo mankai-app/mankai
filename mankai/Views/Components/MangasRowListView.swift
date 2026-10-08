@@ -18,9 +18,9 @@ struct MangasRowListView: View {
         VStack(alignment: .leading) {
             NavigationLink(destination: {
                 if let query = query {
-                    PluginSearchScreen(plugin: plugin, query: query)
+                    SourceSearchScreen(plugin: plugin, query: query)
                 } else {
-                    PluginLibraryScreen(plugin: plugin)
+                    SourceLibraryScreen(plugin: plugin)
                 }
             }) {
                 HStack(spacing: 4) {

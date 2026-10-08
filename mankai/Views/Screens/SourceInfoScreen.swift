@@ -1,5 +1,5 @@
 //
-//  PluginInfoScreen.swift
+//  SourceInfoScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 26/6/2025.
@@ -8,7 +8,7 @@
 import SwiftUI
 import WrappingHStack
 
-struct PluginInfoScreen: View {
+struct SourceInfoScreen: View {
     @ObservedObject var plugin: Plugin
     @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
         SettingsDefaults.hideBuiltInPlugins
@@ -27,9 +27,9 @@ struct PluginInfoScreen: View {
     }
 
     private var pluginSyncDisabledReason: LocalizedStringKey {
-        if plugin is AppDirPlugin { return "syncPluginBuiltInDescription" }
-        if plugin is ReadFsPlugin { return "syncPluginFilesystemDescription" }
-        return "syncPluginMissingURLDescription"
+        if plugin is AppDirPlugin { return "syncSourceBuiltInDescription" }
+        if plugin is ReadFsPlugin { return "syncSourceFilesystemDescription" }
+        return "syncSourceMissingURLDescription"
     }
 
     private var mangaSyncDisabledReason: LocalizedStringKey {
@@ -90,7 +90,7 @@ struct PluginInfoScreen: View {
 
                 Section("sync") {
                     VStack(alignment: .leading, spacing: 4) {
-                        LabeledContent("syncPluginAcrossDevices") {
+                        LabeledContent("syncSourceAcrossDevices") {
                             HStack(spacing: 8) {
                                 Circle()
                                     .fill(plugin.supports(.urlEncoding) ? Color.green : Color.red)
@@ -104,7 +104,7 @@ struct PluginInfoScreen: View {
                             Text(pluginSyncDisabledReason).font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("syncPluginDescription").font(.caption).foregroundStyle(.secondary)
+                            Text("syncSourceDescription").font(.caption).foregroundStyle(.secondary)
                         }
                     }
 
@@ -127,7 +127,7 @@ struct PluginInfoScreen: View {
                 }
 
                 if plugin is AppDirPlugin {
-                    Section { Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins) }
+                    Section { Toggle("hideBuiltInSources", isOn: $hideBuiltInPlugins) }
                 }
 
                 if let configurable = plugin as? any Configurable & ObservableObject,
@@ -163,11 +163,11 @@ struct PluginInfoScreen: View {
                         }
 
                         Button(
-                            "removePlugin", role: .destructive,
+                            "removeSource", role: .destructive,
                             action: { showRemoveConfirmation = true }
                         )
                         .confirmationDialog(
-                            "removePlugin", isPresented: $showRemoveConfirmation,
+                            "removeSource", isPresented: $showRemoveConfirmation,
                             titleVisibility: .visible
                         ) {
                             Button("remove", role: .destructive) {
@@ -175,14 +175,14 @@ struct PluginInfoScreen: View {
                                     try PluginService.shared.removePlugin(plugin.id)
                                     dismiss()
                                 } catch {
-                                    errorTitle = String(localized: "failedToRemovePlugin")
+                                    errorTitle = String(localized: "failedToRemoveSource")
                                     errorMessage = error.localizedDescription
                                     showErrorAlert = true
                                 }
                             }
                             Button("cancel", role: .cancel) {}
                         } message: {
-                            Text("removePluginConfirmation")
+                            Text("removeSourceConfirmation")
                         }
                     }
                 }

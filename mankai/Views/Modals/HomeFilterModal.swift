@@ -35,7 +35,7 @@ struct HomeFilterModal: View {
         NavigationView {
             List {
                 if !availablePlugins.isEmpty {
-                    Section("plugins") {
+                    Section("sources") {
                         ForEach(availablePlugins, id: \.id) { plugin in filterButton(for: plugin) }
                     }
                 }

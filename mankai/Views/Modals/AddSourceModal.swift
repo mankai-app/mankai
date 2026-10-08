@@ -1,5 +1,5 @@
 //
-//  AddPluginModal.swift
+//  AddSourceModal.swift
 //  mankai
 //
 //  Created by Travis XU on 22/6/2025.
@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-struct AddPluginModal: View {
+struct AddSourceModal: View {
     @Environment(\.dismiss) var dismiss
 
-    enum PluginType: String, CaseIterable, Identifiable {
+    enum SourceType: String, CaseIterable, Identifiable {
         case jsPlugin
         case fsPlugin
         case httpPlugin
@@ -86,39 +86,39 @@ struct AddPluginModal: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("localSources") { pluginTypeLink(.fsPlugin) }
+                Section("localSources") { sourceTypeLink(.fsPlugin) }
 
                 Section("remoteSources") {
-                    pluginTypeLink(.jsPlugin)
-                    pluginTypeLink(.httpPlugin)
+                    sourceTypeLink(.jsPlugin)
+                    sourceTypeLink(.httpPlugin)
                 }
 
-                Section("integrations") { pluginTypeLink(.komgaPlugin) }
+                Section("integrations") { sourceTypeLink(.komgaPlugin) }
             }
-            .navigationBarTitleDisplayMode(.inline).navigationTitle("addPlugin")
+            .navigationBarTitleDisplayMode(.inline).navigationTitle("addSource")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
             }
         }
-        .alert("failedToAddPlugin", isPresented: $showError) {
+        .alert("failedToAddSource", isPresented: $showError) {
             Button("ok", role: .cancel) {}
         } message: {
             Text(errorMessage)
         }
-        .alert("duplicatePluginTitle", isPresented: duplicatePluginIsPresented) {
+        .alert("duplicateSourceTitle", isPresented: duplicatePluginIsPresented) {
             Button("overwrite", role: .destructive) { overwriteDuplicatePlugin() }
             Button("cancel", role: .cancel) { duplicatePlugin = nil }
         } message: {
             if let duplicatePlugin {
                 Text(
                     String(
-                        format: String(localized: "duplicatePluginIdMessageFormat"),
+                        format: String(localized: "duplicateSourceIdMessageFormat"),
                         duplicatePlugin.id))
             }
         }
     }
 
-    private func pluginTypeLink(_ type: PluginType) -> some View {
+    private func sourceTypeLink(_ type: SourceType) -> some View {
         NavigationLink {
             configuration(for: type)
         } label: {
@@ -131,7 +131,7 @@ struct AddPluginModal: View {
         }
     }
 
-    private func configuration(for type: PluginType) -> some View {
+    private func configuration(for type: SourceType) -> some View {
         List {
             switch type { case .jsPlugin:
                 Section("jsPluginSettings") {
@@ -162,9 +162,9 @@ struct AddPluginModal: View {
 
                         Toggle("readOnly", isOn: $isReadOnly)
                     } header: {
-                        Text("fsPluginSettings")
+                        Text("fsSourceSettings")
                     } footer: {
-                        Text("pluginIdSyncHint")
+                        Text("sourceIdSyncHint")
                     }
 
                 case .httpPlugin:
@@ -231,7 +231,7 @@ struct AddPluginModal: View {
         }
     }
 
-    private func autofillConfiguration(from url: String, for type: PluginType) {
+    private func autofillConfiguration(from url: String, for type: SourceType) {
         guard let configuration = PluginURLConfiguration(url) else { return }
 
         let values = configuration.configValues
@@ -250,7 +250,7 @@ struct AddPluginModal: View {
         }
     }
 
-    private func configuredPluginURL(for type: PluginType) -> String? {
+    private func configuredPluginURL(for type: SourceType) -> String? {
         guard let configuration = PluginURLConfiguration(urlInput) else { return nil }
 
         let values: [String: String]
@@ -270,7 +270,7 @@ struct AddPluginModal: View {
         return configuration.url(overriding: values)?.absoluteString
     }
 
-    private func canAddPlugin(_ type: PluginType) -> Bool {
+    private func canAddPlugin(_ type: SourceType) -> Bool {
         guard !isProcessing else { return false }
 
         switch type { case .jsPlugin: return useJson ? !jsonInput.isEmpty : !urlInput.isEmpty
@@ -281,7 +281,7 @@ struct AddPluginModal: View {
         }
     }
 
-    private func addConfiguredPlugin(_ type: PluginType) {
+    private func addConfiguredPlugin(_ type: SourceType) {
         isProcessing = true
         Task {
             defer { isProcessing = false }
@@ -298,7 +298,7 @@ struct AddPluginModal: View {
                 }
 
                 guard let plugin = plugin else {
-                    errorMessage = String(localized: "failedToParsePlugin")
+                    errorMessage = String(localized: "failedToParseSource")
                     showError = true
                     return
                 }
@@ -338,7 +338,7 @@ struct AddPluginModal: View {
                     guard let url = configuredPluginURL(for: type),
                         let plugin = await PluginService.shared.decodeURL(url, type: "http")
                     else {
-                        errorMessage = String(localized: "failedToParsePlugin")
+                        errorMessage = String(localized: "failedToParseSource")
                         showError = true
                         return
                     }
@@ -350,7 +350,7 @@ struct AddPluginModal: View {
                         let plugin = await PluginService.shared.decodeURL(url, type: "komga")
                             as? KomgaPlugin
                     else {
-                        errorMessage = String(localized: "failedToParsePlugin")
+                        errorMessage = String(localized: "failedToParseSource")
                         showError = true
                         return
                     }

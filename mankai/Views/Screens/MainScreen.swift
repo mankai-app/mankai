@@ -15,7 +15,7 @@ struct MainScreen: View {
     @State private var importedFiles: [URL] = []
     @State private var showingImportsModal = false
     @State private var importDestinationShareId: String?
-    @State private var pluginImportRequest: PluginImportRequest?
+    @State private var sourceImportRequest: SourceImportRequest?
     @State private var lastCheckedPasteboardChangeCount: Int?
 
     @AppStorage(SettingsKey.checkClipboard.rawValue) private var checkClipboard: Bool =
@@ -40,7 +40,7 @@ struct MainScreen: View {
             ImportsModal(initialFiles: importedFiles) { share in importDestinationShareId = share.id
             }
         }
-        .sheet(item: $pluginImportRequest) { request in AddPluginsModal(sources: request.sources) }
+        .sheet(item: $sourceImportRequest) { request in AddSourcesModal(sources: request.sources) }
         .onOpenURL { url in
             Logger.ui.info("Received URL: \(url)")
 
@@ -86,7 +86,7 @@ struct MainScreen: View {
     }
 
     private func handleMankaiURLs(_ urls: [URL]) {
-        var plugins: [PluginImportSource] = []
+        var plugins: [SourceImportItem] = []
 
         for url in urls {
             guard let host = url.host?.lowercased() else { continue }
@@ -94,13 +94,13 @@ struct MainScreen: View {
             switch host { case "add-plugins":
                 let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                 let sources = (components?.queryItems ?? [])
-                    .compactMap { item -> PluginImportSource? in
-                        guard let type = PluginImportSource.Kind(rawValue: item.name.lowercased()),
+                    .compactMap { item -> SourceImportItem? in
+                        guard let type = SourceImportItem.Kind(rawValue: item.name.lowercased()),
                             let value = item.value, let decodedURL = Base62.decode(value),
                             let pluginURL = URL(string: decodedURL)
                         else { return nil }
 
-                        return PluginImportSource(kind: type, url: pluginURL)
+                        return SourceImportItem(kind: type, url: pluginURL)
                     }
 
                 guard !sources.isEmpty else {
@@ -115,6 +115,6 @@ struct MainScreen: View {
 
         guard !plugins.isEmpty else { return }
 
-        pluginImportRequest = PluginImportRequest(sources: plugins)
+        sourceImportRequest = SourceImportRequest(sources: plugins)
     }
 }

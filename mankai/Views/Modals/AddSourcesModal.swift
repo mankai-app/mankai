@@ -1,5 +1,5 @@
 //
-//  AddPluginsModal.swift
+//  AddSourcesModal.swift
 //  mankai
 //
 //  Created by Travis XU on 12/8/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PluginImportSource: Identifiable {
+struct SourceImportItem: Identifiable {
     enum Kind: String {
         case js
         case http
@@ -28,14 +28,14 @@ struct PluginImportSource: Identifiable {
     let url: URL
 }
 
-struct PluginImportRequest: Identifiable {
+struct SourceImportRequest: Identifiable {
     let id = UUID()
-    let sources: [PluginImportSource]
+    let sources: [SourceImportItem]
 }
 
-struct AddPluginsModal: View {
+struct AddSourcesModal: View {
     private struct Candidate: Identifiable {
-        let source: PluginImportSource
+        let source: SourceImportItem
         var plugin: Plugin?
         var isLoading = true
 
@@ -44,7 +44,7 @@ struct AddPluginsModal: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    let sources: [PluginImportSource]
+    let sources: [SourceImportItem]
 
     @State private var candidates: [Candidate] = []
     @State private var selectedSourceIds: Set<UUID> = []
@@ -103,7 +103,7 @@ struct AddPluginsModal: View {
                             .foregroundStyle(.red)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("failedToParsePlugin").foregroundStyle(.red)
+                            Text("failedToParseSource").foregroundStyle(.red)
 
                             Text(candidate.source.url.absoluteString).font(.caption2)
                                 .foregroundStyle(.secondary).lineLimit(2)
@@ -111,7 +111,7 @@ struct AddPluginsModal: View {
                     }
                 }
             }
-            .navigationTitle("addPlugins").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("addSources").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
 
@@ -122,7 +122,7 @@ struct AddPluginsModal: View {
             }
             .task { await loadCandidates() }
             .alert(
-                "failedToAddPlugin",
+                "failedToAddSource",
                 isPresented: Binding(
                     get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
             ) {
@@ -130,7 +130,7 @@ struct AddPluginsModal: View {
             } message: {
                 if let errorMessage { Text(errorMessage) }
             }
-            .alert("duplicatePluginTitle", isPresented: duplicatePluginsArePresented) {
+            .alert("duplicateSourceTitle", isPresented: duplicatePluginsArePresented) {
                 Button("overwrite", role: .destructive) {
                     duplicatePluginIDs = []
                     performAddSelectedPlugins(overwriteDuplicates: true)
@@ -139,7 +139,7 @@ struct AddPluginsModal: View {
             } message: {
                 Text(
                     String(
-                        format: String(localized: "duplicatePluginIdMessageFormat"),
+                        format: String(localized: "duplicateSourceIdMessageFormat"),
                         duplicatePluginIDs.joined(separator: ", ")))
             }
         }

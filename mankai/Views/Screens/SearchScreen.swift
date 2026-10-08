@@ -19,7 +19,7 @@ struct SearchScreen: View {
         ScrollView {
             LazyVStack {
                 ForEach(plugins) { plugin in
-                    PluginSearchMangasRowListView(query: query, plugin: plugin)
+                    SourceSearchMangasRowListView(query: query, plugin: plugin)
                 }
             }
             .padding()
@@ -27,8 +27,8 @@ struct SearchScreen: View {
         .overlay {
             if plugins.isEmpty {
                 ContentUnavailableView(
-                    "noPluginAvailable", systemImage: "puzzlepiece.extension",
-                    description: Text("noPluginAvailableDescription"))
+                    "noSourceAvailable", systemImage: "puzzlepiece.extension",
+                    description: Text("noSourceAvailableDescription"))
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -44,7 +44,7 @@ struct SearchScreen: View {
     }
 }
 
-struct PluginSearchMangasRowListView: View {
+struct SourceSearchMangasRowListView: View {
     let query: String
 
     @ObservedObject var plugin: Plugin

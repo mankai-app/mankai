@@ -24,12 +24,12 @@ struct LibraryTab: View {
             Group {
                 if plugins.isEmpty {
                     ContentUnavailableView(
-                        "noPluginAvailable", systemImage: "puzzlepiece.extension",
-                        description: Text("noPluginAvailableDescription"))
+                        "noSourceAvailable", systemImage: "puzzlepiece.extension",
+                        description: Text("noSourceAvailableDescription"))
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(plugins) { plugin in PluginListMangasRowListView(plugin: plugin)
+                            ForEach(plugins) { plugin in SourceListMangasRowListView(plugin: plugin)
                             }
                         }
                         .padding()
@@ -146,7 +146,7 @@ extension View {
     }
 }
 
-private struct PluginListMangasRowListView: View {
+private struct SourceListMangasRowListView: View {
     @ObservedObject var plugin: Plugin
     @State var mangas: [Manga]? = nil
     @State private var showErrorAlert = false

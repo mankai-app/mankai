@@ -35,7 +35,7 @@ final class AppDirPlugin: ReadWriteFsPlugin {
         [String(localized: "builtin"), String(localized: "fs"), String(localized: "editable")]
     }
 
-    override var description: String? { String(localized: "appFsPluginDescription") }
+    override var description: String? { String(localized: "appFsSourceDescription") }
 
     override var name: String? { String(localized: "appName") }
 

@@ -1,5 +1,5 @@
 //
-//  PluginSettingsScreen.swift
+//  SourceSettingsScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 21/6/2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PluginSettingsScreen: View {
+struct SourceSettingsScreen: View {
     @State private var showModal = false
     @State private var showingRemoveConfirmation = false
     @State private var pluginIdsToRemove: [String] = []
@@ -33,11 +33,11 @@ struct PluginSettingsScreen: View {
         List {
             SettingsHeaderView(
                 image: Image(systemName: "square.stack.3d.up.fill"), color: .red,
-                title: String(localized: "plugins"),
-                description: String(localized: "pluginsDescription"))
+                title: String(localized: "sources"),
+                description: String(localized: "sourcesDescription"))
 
             ForEach(sortedPlugins) { plugin in
-                NavigationLink(destination: { PluginInfoScreen(plugin: plugin) }) {
+                NavigationLink(destination: { SourceInfoScreen(plugin: plugin) }) {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 8) {
                             Text(plugin.name ?? plugin.id)
@@ -81,10 +81,10 @@ struct PluginSettingsScreen: View {
                 }
             }
         }
-        .navigationTitle("plugins").navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showModal) { AddPluginModal() }
+        .navigationTitle("sources").navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showModal) { AddSourceModal() }
         .confirmationDialog(
-            "removePlugin", isPresented: $showingRemoveConfirmation, titleVisibility: .visible
+            "removeSource", isPresented: $showingRemoveConfirmation, titleVisibility: .visible
         ) {
             Button("remove", role: .destructive) {
                 let ids = pluginIdsToRemove
@@ -99,13 +99,13 @@ struct PluginSettingsScreen: View {
             Button("cancel", role: .cancel) { pluginIdsToRemove = [] }
         } message: {
             if pluginIdsToRemove.count == 1 {
-                Text("removePluginConfirmation")
+                Text("removeSourceConfirmation")
             } else {
-                Text("removePluginsConfirmation")
+                Text("removeSourcesConfirmation")
             }
         }
         .alert(
-            "failedToRemovePlugin",
+            "failedToRemoveSource",
             isPresented: Binding(
                 get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
         ) {

@@ -344,7 +344,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
         .downloadDatabaseNotAvailable: .init(
             domain: .download, code: 1, messageKey: "downloadDatabaseNotAvailable"),
-        .downloadPluginNotFound: .init(domain: .download, code: 2, messageKey: "pluginNotFound"),
+        .downloadPluginNotFound: .init(domain: .download, code: 2, messageKey: "sourceNotFound"),
         .downloadDisabled: .init(domain: .download, code: 3, messageKey: "downloadDisabled"),
         .exportNoChaptersSelected: .init(
             domain: .export, code: 1, messageKey: "exportNoChaptersSelected"),
@@ -364,9 +364,9 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
         .pluginMangaNotFound: .init(domain: .plugin, code: 1, messageKey: "mangaNotFound"),
         .pluginDuplicateId: .init(
-            domain: .plugin, code: 2, messageKey: "duplicatePluginIdMessageFormat"),
+            domain: .plugin, code: 2, messageKey: "duplicateSourceIdMessageFormat"),
         .pluginDummyCannotBeUsed: .init(
-            domain: .pluginDummy, code: 1, messageKey: "dummyPluginCannotBeUsed"),
+            domain: .pluginDummy, code: 1, messageKey: "dummySourceCannotBeUsed"),
         .pluginDownloadDatabaseNotAvailable: .init(
             domain: .pluginDownload, code: 1, messageKey: "databaseNotAvailable"),
         .pluginDownloadMangaNotFound: .init(
@@ -383,9 +383,9 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .pluginFilesystemFailedToAccessFolder: .init(
             domain: .pluginFilesystem, code: 1, messageKey: "failedToAccessFolder"),
         .pluginFilesystemPluginIdNotFound: .init(
-            domain: .pluginFilesystem, code: 2, messageKey: "pluginIdNotFound"),
+            domain: .pluginFilesystem, code: 2, messageKey: "sourceIdNotFound"),
         .pluginFilesystemPluginIdEmpty: .init(
-            domain: .pluginFilesystem, code: 3, messageKey: "pluginIdEmpty"),
+            domain: .pluginFilesystem, code: 3, messageKey: "sourceIdEmpty"),
         .pluginFilesystemDatabaseNotAvailable: .init(
             domain: .pluginFilesystem, code: 4, messageKey: "databaseNotAvailable"),
         .pluginFilesystemMangaDirectoryNotFound: .init(

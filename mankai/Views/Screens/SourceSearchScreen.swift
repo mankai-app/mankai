@@ -1,5 +1,5 @@
 //
-//  PluginSearchScreen.swift
+//  SourceSearchScreen.swift
 //  mankai
 //
 //  Created by Travis XU on 27/6/2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PluginSearchScreen: View {
+struct SourceSearchScreen: View {
     let plugin: Plugin
     let query: String
     let isAuthorSearch: Bool

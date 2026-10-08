@@ -28,10 +28,10 @@ struct MangaDetailsScreen: View {
     @State private var openDownloadAfterExport = false
 
     @State private var selectedGenre: Genre? = nil
-    @State private var showPluginLibraryScreen = false
+    @State private var showSourceLibraryScreen = false
 
     @State private var searchQuery: String? = nil
-    @State private var showPluginSearchScreen = false
+    @State private var showSourceSearchScreen = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -182,7 +182,7 @@ struct MangaDetailsScreen: View {
                                     if plugin.supportsSearch(isAuthor: true) {
                                         Button(action: {
                                             searchQuery = author
-                                            showPluginSearchScreen = true
+                                            showSourceSearchScreen = true
                                         }) { Text(author).foregroundStyle(.secondary) }
                                     } else {
                                         Text(author).foregroundStyle(.secondary)
@@ -300,7 +300,7 @@ struct MangaDetailsScreen: View {
                         if plugin.supportsList(genre: genre) {
                             Button(action: {
                                 selectedGenre = genre
-                                showPluginLibraryScreen = true
+                                showSourceLibraryScreen = true
                             }) { Text(LocalizedStringKey(genre.rawValue)).genreTagStyle() }
                             .buttonStyle(.borderless)
                         } else {
@@ -536,14 +536,14 @@ struct MangaDetailsScreen: View {
                 chapterGroupIndex: params.chapterGroupIndex, chapter: params.chapter,
                 initialPage: params.initialPage)
         }
-        .navigationDestination(isPresented: $showPluginLibraryScreen) {
+        .navigationDestination(isPresented: $showSourceLibraryScreen) {
             if let selectedGenre = selectedGenre {
-                PluginLibraryScreen(plugin: plugin, selectedGenre: selectedGenre)
+                SourceLibraryScreen(plugin: plugin, selectedGenre: selectedGenre)
             }
         }
-        .navigationDestination(isPresented: $showPluginSearchScreen) {
+        .navigationDestination(isPresented: $showSourceSearchScreen) {
             if let searchQuery = searchQuery {
-                PluginSearchScreen(plugin: plugin, query: searchQuery, isAuthorSearch: true)
+                SourceSearchScreen(plugin: plugin, query: searchQuery, isAuthorSearch: true)
             }
         }
         .toolbar {

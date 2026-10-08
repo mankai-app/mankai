@@ -289,7 +289,7 @@ import Foundation
             await advanceProgress(by: pluginLibraryItems.count - completedMangaIds.count)
 
             if pluginHadError, case .online = Reach().connectionStatus() {
-                let message = String(localized: "failedToCheckUpdatesForPluginFormat")
+                let message = String(localized: "failedToCheckUpdatesForSourceFormat")
                 NotificationService.shared.showWarning(String(format: message, pluginId))
             }
         }

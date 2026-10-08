@@ -619,58 +619,58 @@
         }
       }
     },
-    "addPlugin" : {
+    "addSource" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add Plugin"
+            "value" : "Add Source"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プラグインを追加"
+            "value" : "ソースを追加"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加插件"
+            "value" : "添加来源"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增外掛模組"
+            "value" : "新增來源"
           }
         }
       }
     },
-    "addPlugins" : {
+    "addSources" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add Plugins"
+            "value" : "Add Sources"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プラグインを追加"
+            "value" : "ソースを追加"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加插件"
+            "value" : "添加来源"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增外掛模組"
+            "value" : "新增來源"
           }
         }
       }
@@ -817,30 +817,30 @@
         }
       }
     },
-    "appFsPluginDescription" : {
+    "appFsSourceDescription" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This is a built-in plugin that enables users to store and manage manga directly within the app's local directory."
+            "value" : "This is a built-in source that enables users to store and manage manga directly within the app's local directory."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アプリのローカルディレクトリ内に漫画を直接保存し、管理できる内蔵プラグインです。"
+            "value" : "アプリのローカルディレクトリ内に漫画を直接保存し、管理できる内蔵ソースです。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这是一个内置插件，可让用户直接在 App 的本地目录中存储和管理漫画。"
+            "value" : "这是一个内置来源，可让用户直接在 App 的本地目录中存储和管理漫画。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "這是內置外掛模組，讓用戶直接在 App 的本機目錄儲存和管理漫畫。"
+            "value" : "這是內置來源，讓用戶直接在 App 的本機目錄儲存和管理漫畫。"
           }
         }
       }
@@ -3444,25 +3444,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Downloads are disabled for this plugin"
+            "value" : "Downloads are disabled for this source"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このプラグインではダウンロードが無効です"
+            "value" : "このソースではダウンロードが無効です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此插件已禁用下载功能"
+            "value" : "此来源已禁用下载功能"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此外掛模組已停用下載功能"
+            "value" : "此來源已停用下載功能"
           }
         }
       }
@@ -3803,86 +3803,30 @@
         }
       }
     },
-    "dummyPluginCannotBeUsed" : {
+    "dummySourceCannotBeUsed" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dummy Plugin Cannot Be Used"
+            "value" : "Dummy Source Cannot Be Used"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ダミープラグインは使用できません"
+            "value" : "ダミーソースは使用できません"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "虚拟插件无法使用"
+            "value" : "虚拟来源无法使用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法使用虛擬外掛模組"
-          }
-        }
-      }
-    },
-    "duplicatePluginIdMessageFormat" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A plugin with the ID “%@” already exists. Do you want to overwrite it?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ID「%@」のプラグインはすでに存在します。上書きしますか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ID 为“%@”的插件已存在。确定要覆盖吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ID 為「%@」的外掛模組已存在。要覆寫嗎？"
-          }
-        }
-      }
-    },
-    "duplicatePluginTitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duplicate Plugin ID"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインIDが重複しています"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件 ID 重复"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外掛模組 ID 重複"
+            "value" : "無法使用虛擬來源"
           }
         }
       }
@@ -3967,6 +3911,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "共用 ID 重複"
+          }
+        }
+      }
+    },
+    "duplicateSourceIdMessageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A source with the ID “%@” already exists. Do you want to overwrite it?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID「%@」のソースはすでに存在します。上書きしますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID 为“%@”的来源已存在。确定要覆盖吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID 為「%@」的來源已存在。要覆寫嗎？"
+          }
+        }
+      }
+    },
+    "duplicateSourceTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate Source ID"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースIDが重複しています"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源 ID 重复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來源 ID 重複"
           }
         }
       }
@@ -4925,58 +4925,58 @@
         }
       }
     },
-    "failedToAddPlugin" : {
+    "failedToAddSource" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Add Plugin"
+            "value" : "Failed to Add Source"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プラグインを追加できませんでした"
+            "value" : "ソースを追加できませんでした"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加插件失败"
+            "value" : "添加来源失败"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增外掛模組失敗"
+            "value" : "新增來源失敗"
           }
         }
       }
     },
-    "failedToCheckUpdatesForPluginFormat" : {
+    "failedToCheckUpdatesForSourceFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Check Plugin %@ for Updates"
+            "value" : "Failed to Check Source %@ for Updates"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プラグイン%@のアップデートを確認できませんでした"
+            "value" : "ソース%@のアップデートを確認できませんでした"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "检查插件 %@ 的更新失败"
+            "value" : "检查来源 %@ 的更新失败"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法檢查外掛模組 %@ 的更新"
+            "value" : "無法檢查來源 %@ 的更新"
           }
         }
       }
@@ -5513,30 +5513,30 @@
         }
       }
     },
-    "failedToParsePlugin" : {
+    "failedToParseSource" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Parse Plugin"
+            "value" : "Failed to Parse Source"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プラグインを解析できませんでした"
+            "value" : "ソースを解析できませんでした"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "解析插件失败"
+            "value" : "解析来源失败"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "解析外掛模組失敗"
+            "value" : "解析來源失敗"
           }
         }
       }
@@ -5625,34 +5625,6 @@
         }
       }
     },
-    "failedToRemovePlugin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to Remove Plugin"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインを削除できませんでした"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除插件失败"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除外掛模組失敗"
-          }
-        }
-      }
-    },
     "failedToRemoveShare" : {
       "localizations" : {
         "en" : {
@@ -5677,6 +5649,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除共用失敗"
+          }
+        }
+      }
+    },
+    "failedToRemoveSource" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Remove Source"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースを削除できませんでした"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除来源失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除來源失敗"
           }
         }
       }
@@ -6311,30 +6311,30 @@
         }
       }
     },
-    "fsPluginSettings" : {
+    "fsSourceSettings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File System Plugin Settings"
+            "value" : "File System Source Settings"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ファイルシステムプラグイン設定"
+            "value" : "ファイルシステムソース設定"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件系统插件设置"
+            "value" : "文件系统来源设置"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案系統外掛模組設定"
+            "value" : "檔案系統來源設定"
           }
         }
       }
@@ -6481,7 +6481,7 @@
         }
       }
     },
-    "hideBuiltInPlugins" : {
+    "hideBuiltInSources" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8445,6 +8445,34 @@
         }
       }
     },
+    "jsPlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugin"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プラグイン"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外掛模組"
+          }
+        }
+      }
+    },
     "jsPluginSettings" : {
       "localizations" : {
         "en" : {
@@ -8585,34 +8613,6 @@
         }
       }
     },
-    "komgaPluginDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Read manga and comics from your Komga server."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Komgaサーバーの漫画やコミックを読みます。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "阅读 Komga 服务器上的漫画。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "閱讀 Komga 伺服器上的漫畫。"
-          }
-        }
-      }
-    },
     "komgaServer" : {
       "localizations" : {
         "en" : {
@@ -8693,6 +8693,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Komga 伺服器設定"
+          }
+        }
+      }
+    },
+    "komgaSourceDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read manga and comics from your Komga server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komgaサーバーの漫画やコミックを読みます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阅读 Komga 服务器上的漫画。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀 Komga 伺服器上的漫畫。"
           }
         }
       }
@@ -9896,25 +9924,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This plugin does not support this method."
+            "value" : "This source does not support this method."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このプラグインはこのメソッドをサポートしていません。"
+            "value" : "このソースはこのメソッドをサポートしていません。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此插件不支持此方法。"
+            "value" : "此来源不支持此方法。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此外掛程式不支援此方法。"
+            "value" : "此來源不支援此方法。"
           }
         }
       }
@@ -11123,62 +11151,6 @@
         }
       }
     },
-    "noPluginAvailable" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Plugin Available"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "利用可能なプラグインはありません"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有可用的插件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有可用的外掛模組"
-          }
-        }
-      }
-    },
-    "noPluginAvailableDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Install a plugin to browse manga"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインをインストールして漫画をブラウズできます"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装插件以浏览漫画"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝外掛模組以瀏覽漫畫"
-          }
-        }
-      }
-    },
     "noPreviousChapter" : {
       "localizations" : {
         "en" : {
@@ -11427,6 +11399,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此伺服器沒有可瀏覽的磁碟共用。"
+          }
+        }
+      }
+    },
+    "noSourceAvailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Source Available"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "利用可能なソースはありません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可用的来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可用的來源"
+          }
+        }
+      }
+    },
+    "noSourceAvailableDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a source to browse manga"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースを追加して漫画をブラウズできます"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加来源以浏览漫画"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增來源以瀏覽漫畫"
           }
         }
       }
@@ -12137,118 +12165,6 @@
         }
       }
     },
-    "plugin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugin"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグイン"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外掛模組"
-          }
-        }
-      }
-    },
-    "pluginIdEmpty" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugin ID is empty"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインIDが空です"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件 ID 为空"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外掛模組 ID 為空"
-          }
-        }
-      }
-    },
-    "pluginIdNotFound" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugin ID Not Found"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインIDが見つかりません"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到插件 ID"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到外掛模組 ID"
-          }
-        }
-      }
-    },
-    "pluginIdSyncHint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mankai stores a \".mankai\" file in this folder to keep the plugin ID consistent across devices. If the file cannot be written, this plugin will use a local ID and its records will not sync."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mankaiはこのフォルダに「.mankai」ファイルを保存し、デバイス間でプラグインIDを一致させます。ファイルを書き込めない場合、このプラグインはローカルIDを使用し、その記録は同期されません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mankai 会在此文件夹中存储“.mankai”文件，以使插件 ID 在不同设备上保持一致。如果无法写入该文件，插件将使用本地 ID，相关记录也不会同步。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mankai 會在此資料夾儲存「.mankai」檔案，讓外掛模組 ID 在不同裝置間保持一致。如果無法寫入此檔案，外掛模組將使用本機 ID，其記錄亦不會同步。"
-          }
-        }
-      }
-    },
     "pluginLink" : {
       "localizations" : {
         "en" : {
@@ -12273,90 +12189,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "外掛模組連結"
-          }
-        }
-      }
-    },
-    "pluginNotFound" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugin Not Found"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインが見つかりません"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到插件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到外掛模組"
-          }
-        }
-      }
-    },
-    "plugins" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plugins"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグイン"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外掛模組"
-          }
-        }
-      }
-    },
-    "pluginsDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage your plugins, including adding new plugins, configuring existing ones, removing plugins, and more."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新しいプラグインの追加、既存プラグインの設定や削除など、プラグインを管理します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理插件，包括添加新插件、配置现有插件和移除插件等。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "管理你的外掛模組，包括新增、設定和移除等操作。"
           }
         }
       }
@@ -13145,90 +12977,6 @@
         }
       }
     },
-    "removePlugin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove Plugin"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プラグインを削除"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除插件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移除外掛模組"
-          }
-        }
-      }
-    },
-    "removePluginConfirmation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to remove this plugin?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このプラグインを削除してもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你确定要移除这个插件吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你確定要移除這個外掛模組嗎？"
-          }
-        }
-      }
-    },
-    "removePluginsConfirmation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to remove the selected plugins?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選択したプラグインを削除してもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你确定要移除所选插件吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你確定要移除所選外掛模組嗎？"
-          }
-        }
-      }
-    },
     "removeShare" : {
       "localizations" : {
         "en" : {
@@ -13309,6 +13057,90 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你確定要移除所選共用嗎？"
+          }
+        }
+      }
+    },
+    "removeSource" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Source"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースを削除"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除來源"
+          }
+        }
+      }
+    },
+    "removeSourceConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove this source?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このソースを削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确定要移除这个来源吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除這個來源嗎？"
+          }
+        }
+      }
+    },
+    "removeSourcesConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove the selected sources?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したソースを削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确定要移除所选来源吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除所選來源嗎？"
           }
         }
       }
@@ -14109,30 +13941,30 @@
         }
       }
     },
-    "selectedPluginNotFound" : {
+    "selectedSourceNotFound" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Selected Plugin Not Found"
+            "value" : "Selected Source Not Found"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選択したプラグインが見つかりません"
+            "value" : "選択したソースが見つかりません"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到所选插件"
+            "value" : "未找到所选来源"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找不到所選外掛模組"
+            "value" : "找不到所選來源"
           }
         }
       }
@@ -15065,6 +14897,174 @@
         }
       }
     },
+    "sourceIdEmpty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source ID is empty"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースIDが空です"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源 ID 为空"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來源 ID 為空"
+          }
+        }
+      }
+    },
+    "sourceIdNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source ID Not Found"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースIDが見つかりません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到来源 ID"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到來源 ID"
+          }
+        }
+      }
+    },
+    "sourceIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai stores a \".mankai\" file in this folder to keep the source ID consistent across devices. If the file cannot be written, this source will use a local ID and its records will not sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankaiはこのフォルダに「.mankai」ファイルを保存し、デバイス間でソースIDを一致させます。ファイルを書き込めない場合、このソースはローカルIDを使用し、その記録は同期されません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 会在此文件夹中存储“.mankai”文件，以使来源 ID 在不同设备上保持一致。如果无法写入该文件，来源将使用本地 ID，相关记录也不会同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 會在此資料夾儲存「.mankai」檔案，讓來源 ID 在不同裝置間保持一致。如果無法寫入此檔案，來源將使用本機 ID，其記錄亦不會同步。"
+          }
+        }
+      }
+    },
+    "sourceNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source Not Found"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースが見つかりません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到來源"
+          }
+        }
+      }
+    },
+    "sources" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sources"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソース"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來源"
+          }
+        }
+      }
+    },
+    "sourcesDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage your sources, including adding new sources, configuring existing ones, removing sources, and more."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいソースの追加、既存ソースの設定や削除など、ソースを管理します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理来源，包括添加新来源、配置现有来源和移除来源等。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理你的來源，包括新增、設定和移除等操作。"
+          }
+        }
+      }
+    },
     "speculativeFiction" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
@@ -15778,25 +15778,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Syncs your library entries and reading progress for manga from this plugin."
+            "value" : "Syncs your library entries and reading progress for manga from this source."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このプラグインの漫画のライブラリ登録情報と読書の進捗を同期します。"
+            "value" : "このソースの漫画のライブラリ登録情報と読書の進捗を同期します。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "同步此插件中漫画的书库记录和阅读进度。"
+            "value" : "同步此来源中漫画的书库记录和阅读进度。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "同步此外掛模組中漫畫的書庫記錄和閱讀進度。"
+            "value" : "同步此來源中漫畫的書庫記錄和閱讀進度。"
           }
         }
       }
@@ -15806,25 +15806,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mankai could not save a shared plugin ID in this folder’s .mankai file, so manga records cannot be matched across devices."
+            "value" : "Mankai could not save a shared source ID in this folder’s .mankai file, so manga records cannot be matched across devices."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mankaiがこのフォルダの「.mankai」ファイルに共通のプラグインIDを保存できなかったため、デバイス間で漫画の記録を一致させることができません。"
+            "value" : "Mankaiがこのフォルダの「.mankai」ファイルに共通のソースIDを保存できなかったため、デバイス間で漫画の記録を一致させることができません。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mankai 无法在此文件夹的“.mankai”文件中保存共享插件 ID，因此无法在不同设备之间匹配漫画记录。"
+            "value" : "Mankai 无法在此文件夹的“.mankai”文件中保存共享来源 ID，因此无法在不同设备之间匹配漫画记录。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mankai 無法在此資料夾的「.mankai」檔案中儲存共用外掛模組 ID，因此無法在不同裝置之間對應漫畫記錄。"
+            "value" : "Mankai 無法在此資料夾的「.mankai」檔案中儲存共用來源 ID，因此無法在不同裝置之間對應漫畫記錄。"
           }
         }
       }
@@ -15853,148 +15853,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即同步"
-          }
-        }
-      }
-    },
-    "syncPluginAcrossDevices" : {
-      "comment" : "Whether the plugin and its configuration sync across devices.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync plugin across devices"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "デバイス間でプラグインを同期"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跨设备同步插件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跨裝置同步插件"
-          }
-        }
-      }
-    },
-    "syncPluginBuiltInDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This built-in plugin is already included on every device and does not need to sync."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "この内蔵プラグインはすべてのデバイスに含まれているため、同期する必要はありません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此内置插件已包含在每台设备中，无需同步。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此內建外掛模組已包含在每台裝置中，無需同步。"
-          }
-        }
-      }
-    },
-    "syncPluginDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Syncs this plugin and its settings to your other devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このプラグインとその設定を他のデバイスに同期します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将此插件及其设置同步到你的其他设备。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將此外掛模組及其設定同步到你的其他裝置。"
-          }
-        }
-      }
-    },
-    "syncPluginFilesystemDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folder access must be granted separately on each device. Add this folder on each device to use it there."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダへのアクセスはデバイスごとに許可する必要があります。各デバイスでこのフォルダを追加してください。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹访问权限必须在每台设备上分别授予。请在各设备上添加此文件夹以使用它。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料夾存取權限必須在每台裝置上分別授予。請在各裝置上加入此資料夾以使用它。"
-          }
-        }
-      }
-    },
-    "syncPluginMissingURLDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This plugin has no usable download URL, so it cannot be installed automatically on other devices."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このプラグインには利用可能なダウンロードURLがないため、他のデバイスに自動でインストールできません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此插件没有可用的下载网址，因此无法自动安装到其他设备。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此外掛模組沒有可用的下載網址，因此無法自動安裝到其他裝置。"
           }
         }
       }
@@ -16219,6 +16077,148 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此共用的連線設定無法同步到其他裝置。"
+          }
+        }
+      }
+    },
+    "syncSourceAcrossDevices" : {
+      "comment" : "Whether the plugin and its configuration sync across devices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync source across devices"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイス間でソースを同期"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨设备同步来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨裝置同步來源"
+          }
+        }
+      }
+    },
+    "syncSourceBuiltInDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This built-in source is already included on every device and does not need to sync."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この内蔵ソースはすべてのデバイスに含まれているため、同期する必要はありません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此内置来源已包含在每台设备中，无需同步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此內建來源已包含在每台裝置中，無需同步。"
+          }
+        }
+      }
+    },
+    "syncSourceDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Syncs this source and its settings to your other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このソースとその設定を他のデバイスに同期します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此来源及其设置同步到你的其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將此來源及其設定同步到你的其他裝置。"
+          }
+        }
+      }
+    },
+    "syncSourceFilesystemDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder access must be granted separately on each device. Add this folder on each device to use it there."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダへのアクセスはデバイスごとに許可する必要があります。各デバイスでこのフォルダを追加してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件夹访问权限必须在每台设备上分别授予。请在各设备上添加此文件夹以使用它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾存取權限必須在每台裝置上分別授予。請在各裝置上加入此資料夾以使用它。"
+          }
+        }
+      }
+    },
+    "syncSourceMissingURLDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This source has no usable download URL, so it cannot be installed automatically on other devices."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このソースには利用可能なダウンロードURLがないため、他のデバイスに自動でインストールできません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此来源没有可用的下载网址，因此无法自动安装到其他设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此來源沒有可用的下載網址，因此無法自動安裝到其他裝置。"
           }
         }
       }

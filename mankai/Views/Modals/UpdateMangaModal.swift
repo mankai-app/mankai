@@ -103,7 +103,7 @@ struct UpdateMangaContent: View {
 
         do {
             guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
-                errorTitle = String(localized: "selectedPluginNotFound")
+                errorTitle = String(localized: "selectedSourceNotFound")
                 showingErrorAlert = true
                 isProcessing = false
                 return
@@ -149,7 +149,7 @@ struct UpdateMangaContent: View {
 
         do {
             guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
-                errorTitle = String(localized: "selectedPluginNotFound")
+                errorTitle = String(localized: "selectedSourceNotFound")
                 showingErrorAlert = true
                 isProcessing = false
                 return
@@ -177,7 +177,7 @@ struct UpdateMangaContent: View {
 
         do {
             guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
-                errorTitle = String(localized: "selectedPluginNotFound")
+                errorTitle = String(localized: "selectedSourceNotFound")
                 showingErrorAlert = true
                 isProcessing = false
                 return
@@ -210,7 +210,7 @@ struct UpdateMangaContent: View {
 
         do {
             guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
-                errorTitle = String(localized: "selectedPluginNotFound")
+                errorTitle = String(localized: "selectedSourceNotFound")
                 showingErrorAlert = true
                 isProcessing = false
                 return
@@ -231,7 +231,7 @@ struct UpdateMangaContent: View {
         List {
             if isCreatingManga {
                 Section {
-                    Picker("plugin", selection: $plugin) {
+                    Picker("source", selection: $plugin) {
                         ForEach(plugins, id: \.id) { plugin in
                             Text(plugin.name ?? plugin.id).tag(plugin.id)
                         }

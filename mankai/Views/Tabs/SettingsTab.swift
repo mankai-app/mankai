@@ -42,8 +42,8 @@ struct SettingsTab: View {
                             .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
 
-                    NavigationLink(destination: PluginSettingsScreen()) {
-                        Label("plugins", systemImage: "square.stack.3d.up.fill")
+                    NavigationLink(destination: SourceSettingsScreen()) {
+                        Label("sources", systemImage: "square.stack.3d.up.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .red))
                     }
 
