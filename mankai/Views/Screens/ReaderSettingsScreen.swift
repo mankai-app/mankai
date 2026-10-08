@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ReaderSettingsScreen: View {
+    private let showsHeader: Bool
+
     @AppStorage(SettingsKey.readerType.rawValue) private var readerTypeRawValue: Int =
         SettingsDefaults.readerType.rawValue
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
@@ -21,12 +23,16 @@ struct ReaderSettingsScreen: View {
     @AppStorage(SettingsKey.showCoverOnExternalDisplay.rawValue) private
         var showCoverOnExternalDisplay: Bool = SettingsDefaults.showCoverOnExternalDisplay
 
+    init(showsHeader: Bool = true) { self.showsHeader = showsHeader }
+
     var body: some View {
         List {
-            SettingsHeaderView(
-                image: Image(systemName: "book.pages.fill"), color: .orange,
-                title: String(localized: "reader"),
-                description: String(localized: "readerDescription"))
+            if showsHeader {
+                SettingsHeaderView(
+                    image: Image(systemName: "book.pages.fill"), color: .orange,
+                    title: String(localized: "reader"),
+                    description: String(localized: "readerDescription"))
+            }
 
             Section("readingMode") {
                 Picker(
@@ -106,6 +112,8 @@ struct ContinuousReaderSettingsView: View {
         Int = SettingsDefaults.CR_readingDirection.rawValue
     @AppStorage(SettingsKey.CR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.CR_tapNavigation
+    @AppStorage(SettingsKey.CR_tapNavigationAcrossChapters.rawValue) private
+        var tapNavigationAcrossChapters: Bool = SettingsDefaults.CR_tapNavigationAcrossChapters
     @AppStorage(SettingsKey.CR_snapToPage.rawValue) private var snapToPage: Bool = SettingsDefaults
         .CR_snapToPage
     @AppStorage(SettingsKey.CR_softSnap.rawValue) private var softSnap: Bool = SettingsDefaults
@@ -127,6 +135,10 @@ struct ContinuousReaderSettingsView: View {
 
             Toggle("tapNavigation", isOn: $tapNavigation)
 
+            if tapNavigation {
+                Toggle("tapNavigationAcrossChapters", isOn: $tapNavigationAcrossChapters)
+            }
+
             Toggle("snapToPage", isOn: $snapToPage)
 
             if snapToPage { Toggle("softSnap", isOn: $softSnap) }
@@ -143,6 +155,8 @@ struct PagedReaderSettingsView: View {
         SettingsDefaults.PR_pageTransition.rawValue
     @AppStorage(SettingsKey.PR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.PR_tapNavigation
+    @AppStorage(SettingsKey.PR_tapNavigationAcrossChapters.rawValue) private
+        var tapNavigationAcrossChapters: Bool = SettingsDefaults.PR_tapNavigationAcrossChapters
     @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private
         var tapNavigationBehaviorRawValue: Int = SettingsDefaults.PR_tapNavigationBehavior.rawValue
 
@@ -191,6 +205,10 @@ struct PagedReaderSettingsView: View {
             }
 
             Toggle("tapNavigation", isOn: $tapNavigation)
+
+            if tapNavigation {
+                Toggle("tapNavigationAcrossChapters", isOn: $tapNavigationAcrossChapters)
+            }
 
             if tapNavigation && !isVertical {
                 Picker(

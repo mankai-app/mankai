@@ -281,6 +281,10 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
             ])
         }
         pageViewController.didMove(toParent: self)
+        // Use the reader's tap handler so page curl respects navigation settings.
+        for case let tapGesture as UITapGestureRecognizer in pageViewController.gestureRecognizers {
+            tapGesture.isEnabled = false
+        }
     }
 
     private func setupPageContainerScrollView() {
@@ -832,10 +836,6 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
             imageWidthConstraints[url] = widthConstraint
             contentStackView.addArrangedSubview(container)
         }
-
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        scrollView.addGestureRecognizer(doubleTap)
     }
 
     private func updateContent() {
@@ -894,17 +894,6 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
                 imageViews[url]?.image = processedImage
                 updateContent()
             }
-    }
-
-    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
-        if scrollView.zoomScale > scrollView.minimumZoomScale {
-            scrollView.setZoomScale(scrollView.minimumZoomScale, animated: true)
-        } else {
-            let location = gesture.location(in: contentStackView)
-            scrollView.zoom(
-                to: CGRect(x: location.x - 50, y: location.y - 50, width: 100, height: 100),
-                animated: true)
-        }
     }
 
     func viewForZooming(in _: UIScrollView) -> UIView? { contentStackView }

@@ -326,6 +326,8 @@ struct ReaderScreen: View {
         SettingsDefaults.CR_readingDirection.rawValue
     @AppStorage(SettingsKey.CR_tapNavigation.rawValue) private var continuousTapNavigation =
         SettingsDefaults.CR_tapNavigation
+    @AppStorage(SettingsKey.CR_tapNavigationAcrossChapters.rawValue) private
+        var continuousTapNavigationAcrossChapters = SettingsDefaults.CR_tapNavigationAcrossChapters
     @AppStorage(SettingsKey.CR_snapToPage.rawValue) private var continuousSnapToPage =
         SettingsDefaults.CR_snapToPage
     @AppStorage(SettingsKey.CR_softSnap.rawValue) private var continuousSoftSnap = SettingsDefaults
@@ -340,6 +342,8 @@ struct ReaderScreen: View {
         SettingsDefaults.PR_pageTransition.rawValue
     @AppStorage(SettingsKey.PR_tapNavigation.rawValue) private var pagedTapNavigation =
         SettingsDefaults.PR_tapNavigation
+    @AppStorage(SettingsKey.PR_tapNavigationAcrossChapters.rawValue) private
+        var pagedTapNavigationAcrossChapters = SettingsDefaults.PR_tapNavigationAcrossChapters
     @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private
         var pagedTapBehaviorRawValue = SettingsDefaults.PR_tapNavigationBehavior.rawValue
 
@@ -360,6 +364,7 @@ struct ReaderScreen: View {
     @State private var viewportSize: CGSize = .zero
     @State private var isChromeVisible = true
     @State private var isShowingChapters = false
+    @State private var isShowingReaderSettings = false
     @State private var saveScheduled = false
     @State private var saveRequestGeneration = 0
     @State private var lastSavedPosition: ReaderSavedPosition?
@@ -486,6 +491,11 @@ struct ReaderScreen: View {
                     case .paged: pagedTapNavigation = isEnabled
                 }
             })
+    }
+
+    private var tapNavigationAcrossChapters: Bool {
+        readerType == .continuous
+            ? continuousTapNavigationAcrossChapters : pagedTapNavigationAcrossChapters
     }
 
     private var followReadingDirectionSelection: Binding<Bool> {
@@ -631,6 +641,17 @@ struct ReaderScreen: View {
                 isShowingChapters = false
             }
         }
+        .sheet(isPresented: $isShowingReaderSettings) {
+            NavigationStack {
+                ReaderSettingsScreen(showsHeader: false)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("close") { isShowingReaderSettings = false }
+                        }
+                    }
+            }
+            .presentationDetents([.large]).presentationDragIndicator(.hidden)
+        }
         .task(id: chapterLoadKey) { await loadChapter(for: chapterLoadKey) }
         .task(id: adjacencyKey) { await updateAdjacencyScores(for: adjacencyKey) }
         .task(id: saveRequestGeneration) { await performScheduledSave() }
@@ -725,6 +746,14 @@ struct ReaderScreen: View {
 
                 Toggle(isOn: smartGroupingSelection) {
                     Label("smartGrouping", systemImage: "sparkles")
+                }
+            }
+
+            Section {
+                Button {
+                    isShowingReaderSettings = true
+                } label: {
+                    Label("more", systemImage: "ellipsis")
                 }
             }
         } label: {
@@ -845,9 +874,13 @@ struct ReaderScreen: View {
     }
 
     private func stepGroup(_ step: ReaderStep) {
-        guard let groupIndex = currentGroupIndex else { return }
+        guard loadPhase == .ready, let groupIndex = currentGroupIndex else { return }
         let targetIndex = step == .previous ? groupIndex - 1 : groupIndex + 1
-        guard groups.indices.contains(targetIndex), let targetURL = groups[targetIndex].urls.first,
+        guard groups.indices.contains(targetIndex) else {
+            if tapNavigationAcrossChapters { stepChapter(step) }
+            return
+        }
+        guard let targetURL = groups[targetIndex].urls.first,
             let page = urls.firstIndex(of: targetURL)
         else { return }
 

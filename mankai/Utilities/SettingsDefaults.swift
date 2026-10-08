@@ -34,6 +34,7 @@ enum SettingsDefaults {
     // Continuous Reader Defaults
     static let CR_readingDirection: ReadingDirection = .rightToLeft
     static let CR_tapNavigation: Bool = true
+    static let CR_tapNavigationAcrossChapters: Bool = false
     static let CR_snapToPage: Bool = false
     static let CR_softSnap: Bool = false
 
@@ -42,5 +43,6 @@ enum SettingsDefaults {
     static let PR_pageTransition: PageTransition = .scroll
     static let PR_readingDirection: ReadingDirection = .rightToLeft
     static let PR_tapNavigation: Bool = true
+    static let PR_tapNavigationAcrossChapters: Bool = false
     static let PR_tapNavigationBehavior: TapBehavior = .followReadingDirection
 }

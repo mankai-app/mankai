@@ -30,6 +30,7 @@ enum SettingsKey: String {
     // Continuous Reader
     case CR_readingDirection
     case CR_tapNavigation
+    case CR_tapNavigationAcrossChapters
     case CR_snapToPage
     case CR_softSnap
 
@@ -38,6 +39,7 @@ enum SettingsKey: String {
     case PR_pageTransition
     case PR_readingDirection
     case PR_tapNavigation
+    case PR_tapNavigationAcrossChapters
     case PR_tapNavigationBehavior
 }
 

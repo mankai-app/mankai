@@ -385,8 +385,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        let location = gesture.location(in: scrollView)
-        let width = scrollView.bounds.width
+        let location = gesture.location(in: view)
+        let width = view.bounds.width
 
         guard configuration.tapNavigation else {
             actions.toggleChrome()
