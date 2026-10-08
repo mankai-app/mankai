@@ -21,7 +21,7 @@ final class HttpEngine: MutationSyncEngine {
     }
 
     override var id: String { "HttpEngine" }
-    override var name: String { String(localized: "httpEngine") }
+    override var name: String { String(localized: "customServer") }
     override var active: Bool { authManager.loggedIn }
     var username: String? { authManager.username }
 
