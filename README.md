@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> Mankai does not provide, host, or distribute any media content. Users are responsible for obtaining media through legal means and complying with their local laws. Any plugins used with the app are unaffiliated with Mankai, and we have no control over them.
+> Mankai does not provide, host, or distribute any media content. Users are responsible for obtaining media through legal means and complying with their local laws. Any third-party sources used with the app are unaffiliated with Mankai, and we have no control over them.
 
 > [!WARNING]
 > Mankai is pre-1.0.0, and breaking changes may be introduced before the 1.0.0 release. See the [roadmap](#road-to-100) for planned milestones.
@@ -23,7 +23,7 @@
 
 </div>
 
-Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and plugin sources together with collections, offline downloads, and optional sync across devices.
+Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and external sources together with collections, offline downloads, and optional sync across devices.
 
 <p align="center">
   <a href="https://mankai.app/screenshots/">
@@ -35,18 +35,18 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ## Features
 
-- **Flexible sources** — JavaScript, file system, HTTP, and Komga plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV shares.
+- **Flexible sources** — JavaScript, file system, Mankai Compatible, and Komga Server sources, plus OPDS catalogs and SMB, SFTP, NFS, and WebDAV shares.
 - **Local books** — Read MMA, CBZ, CBR, EPUB, and PDF files from your device or connected shares.
 - **Reader controls** — Paged and continuous layouts, horizontal and vertical navigation, and page-curl transitions.
 - **Image processing** — [Automatic spread grouping](#smart-grouping), optional [on-device 4× AI upscaling](#real-esrgan-upscaling), and configurable remote image processors.
 - **Collections and downloads** — Bookmark titles, track reading history, and download chapters for offline reading.
-- **Optional sync** — Keep your collection, reading progress, URL-backed plugins, and remote share settings in sync through an HTTP server or Supabase.
+- **Optional sync** — Keep your collection, reading progress, URL-backed sources, and remote share settings in sync through an HTTP server or Supabase.
 
 ## Road to 1.0.0
 
 ### App Features
 
-- [x] **Plugin Installation Deep Links** - Review and add one or more plugins through a deep link.
+- [x] **Source Installation Deep Links** - Review and add one or more sources through a deep link.
 - [x] **Export** - Export downloaded chapters as MMA archives or separate PDF files for each chapter and share them.
 - [ ] ~~**Sharing** - Share manga as an image.~~
 - [x] **Page curl animations** - Choose realistic page-turning animations in the paged reader for a more immersive reading experience.
@@ -58,7 +58,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ### Integrations
 
-- [x] **Komga** - Regular plugin support for the Komga API, including search, reading, and downloads.
+- [x] **Komga** - Connect to Komga servers for search, reading, and downloads.
 - [x] **OPDS 1.2** - Open Publication Distribution System catalog support.
 - [x] **SMB** - Server Message Block support.
 - [x] **WebDAV** - Web Distributed Authoring and Versioning support.
@@ -86,24 +86,26 @@ For setup instructions, usage guides, and troubleshooting, visit the [Mankai doc
 | :---------------------------------------------------------------- | :--------------------------------------------------------------------- |
 | [Installation](https://mankai.app/guides/installation/)           | Installation options for your device.                                  |
 | [Quick start](https://mankai.app/guides/quick-start/)             | Add a source, read your first book, and save your place.               |
-| [Add books and sources](https://mankai.app/guides/sources/)       | Set up plugins, import books, and connect local or network shares.     |
+| [Add books and sources](https://mankai.app/guides/sources/)       | Set up sources, import books, and connect local or network shares.     |
 | [Collections and downloads](https://mankai.app/guides/library/)   | Manage saved titles, reading history, and offline chapters.            |
 | [Reading and reader settings](https://mankai.app/guides/reading/) | Reading layouts, navigation, and reader controls.                      |
 | [Image processing](https://mankai.app/guides/image-processing/)   | Configure upscaling, downsampling, page colors, and remote processors. |
 | [Sync across devices](https://mankai.app/guides/sync/)            | Configure syncing for your collection and reading progress.            |
 | [Troubleshooting](https://mankai.app/guides/troubleshooting/)     | Resolve common setup and reading issues.                               |
 
-## Plugins and APIs
+## Sources and APIs
 
 Build a content source or connect a service using the [API reference](https://mankai.app/api/overview/).
 
-| Reference                                                        | Build                                                                    |
-| :--------------------------------------------------------------- | :----------------------------------------------------------------------- |
-| [JavaScript plugins](https://mankai.app/api/javascript-plugins/) | A content plugin with browsing, search, chapters, and images.            |
-| [HTTP plugin API](https://mankai.app/api/http-api/)              | A server that serves a manga library to Mankai.                          |
-| [Editor API](https://mankai.app/api/editor-api/)                 | Editing support for an HTTP source.                                      |
-| [Image processor API](https://mankai.app/api/image-processors/)  | A configurable service that processes reader images.                     |
-| [MMA format](https://mankai.app/api/mma-format/)                 | A ZIP archive containing book metadata, chapter groups, and page images. |
+To let Mankai's HTTP plugin interact with your server, implement the [Mankai Compatible API](https://mankai.app/api/http-api/). Users connect to your server by adding a **Mankai Compatible** source in **Settings → Sources**.
+
+| Reference                                                        | Build                                                                     |
+| :--------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| [JavaScript plugins](https://mankai.app/api/javascript-plugins/) | A JavaScript source plugin with browsing, search, chapters, and images.   |
+| [Mankai Compatible API](https://mankai.app/api/http-api/)        | A server implementing compatible HTTP endpoints for Mankai's HTTP plugin. |
+| [Editor API](https://mankai.app/api/editor-api/)                 | Editing support for a Mankai Compatible source.                           |
+| [Image processor API](https://mankai.app/api/image-processors/)  | A configurable service that processes reader images.                      |
+| [MMA format](https://mankai.app/api/mma-format/)                 | A ZIP archive containing book metadata, chapter groups, and page images.  |
 
 ## Models and Benchmarks
 
