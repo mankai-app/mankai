@@ -7,10 +7,23 @@
 
 import SwiftUI
 
+extension ProgressModel: Identifiable {
+    internal struct ID: Hashable {
+        let mangaId: String
+        let pluginId: String
+    }
+
+    internal var id: ID { ID(mangaId: mangaId, pluginId: pluginId) }
+}
+
 struct HistoryScreen: View {
     @State private var progressEntries: [ProgressModel] = []
     @State private var isLoading = false
     @State private var hasLoadedAll = false
+    @State private var historyError: String?
+    @State private var historyErrorTitle: LocalizedStringKey = "failedToRemoveHistoryRecord"
+    @State private var showingClearHistoryConfirmation = false
+    @State private var isClearingHistory = false
 
     private let batchSize = 25
 
@@ -24,11 +37,19 @@ struct HistoryScreen: View {
                 } else {
                     List {
                         Section {
-                            ForEach(Array(progressEntries.enumerated()), id: \.offset) {
-                                index, progress in
+                            ForEach(progressEntries) { progress in
                                 HistoryItemView(progress: progress)
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            Task { await removeProgress(progress) }
+                                        } label: {
+                                            Label("delete", systemImage: "trash")
+                                        }
+                                        .disabled(isClearingHistory)
+                                    }
                                     .onAppear {
-                                        if index == progressEntries.count - 1 && !hasLoadedAll {
+                                        if progress.id == progressEntries.last?.id && !hasLoadedAll
+                                        {
                                             loadMoreProgress()
                                         }
                                     }
@@ -42,8 +63,36 @@ struct HistoryScreen: View {
                 }
             }
             .navigationTitle("history").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingClearHistoryConfirmation = true
+                    } label: {
+                        Label("clearHistory", systemImage: "trash")
+                    }
+                    .disabled(progressEntries.isEmpty || isClearingHistory)
+                    .confirmationDialog(
+                        "clearHistory", isPresented: $showingClearHistoryConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("clearHistory", role: .destructive) { Task { await clearHistory() } }
+                        Button("cancel", role: .cancel) {}
+                    } message: {
+                        Text("clearHistoryMessage")
+                    }
+                }
+            }
             .onAppear { if progressEntries.isEmpty { loadInitialProgress() } }
             .onReceive(ProgressService.shared.objectWillChange) { refreshProgress() }
+            .alert(
+                historyErrorTitle,
+                isPresented: .init(
+                    get: { historyError != nil }, set: { if !$0 { historyError = nil } })
+            ) {
+                Button("ok", role: .cancel) {}
+            } message: {
+                if let historyError { Text(historyError) }
+            }
         }
     }
 
@@ -67,8 +116,33 @@ struct HistoryScreen: View {
     }
 
     private func refreshProgress() {
-        let newProgressEntries = ProgressService.shared.getAll(limit: progressEntries.count)
+        let limit = max(progressEntries.count, batchSize)
+        let newProgressEntries = ProgressService.shared.getAll(limit: limit)
         progressEntries = newProgressEntries
+        hasLoadedAll = newProgressEntries.count < limit
+    }
+
+    private func removeProgress(_ progress: ProgressModel) async {
+        do {
+            _ = try await ProgressService.shared.remove(
+                mangaId: progress.mangaId, pluginId: progress.pluginId)
+        } catch {
+            Logger.ui.error("Failed to remove history record", error: error)
+            historyErrorTitle = "failedToRemoveHistoryRecord"
+            historyError = error.localizedDescription
+        }
+    }
+
+    private func clearHistory() async {
+        guard !isClearingHistory else { return }
+        isClearingHistory = true
+        defer { isClearingHistory = false }
+
+        do { try await ProgressService.shared.clear() } catch {
+            Logger.ui.error("Failed to clear history", error: error)
+            historyErrorTitle = "failedToClearHistory"
+            historyError = error.localizedDescription
+        }
     }
 }
 

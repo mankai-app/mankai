@@ -97,26 +97,42 @@ import GRDB
         return !updated.isEmpty
     }
 
+    /// Deletes a history record and queues the removal for sync in the same transaction.
+    func remove(mangaId: String, pluginId: String) async throws -> Bool {
+        try await delete(mangaId: mangaId, pluginId: pluginId, queueSync: true)
+    }
+
     /// Deletes local data only, without queueing sync, after checking the sync timestamp.
     func deleteLocal(mangaId: String, pluginId: String, datetime: Date) async throws -> Bool {
+        try await delete(mangaId: mangaId, pluginId: pluginId, queueSync: false, datetime: datetime)
+    }
+
+    private func delete(mangaId: String, pluginId: String, queueSync: Bool, datetime: Date? = nil)
+        async throws -> Bool
+    {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
         let mutation = SyncMutation(
             entry: .progress(key: .init(sourceId: pluginId, mangaId: mangaId), payload: nil),
-            action: .delete, date: datetime)
+            action: .delete, date: datetime ?? Date())
         let deleted = try await appDb.write { db in
-            guard try SyncService.shouldApply(mutation, in: db) else { return false }
             let key = ["mangaId": mangaId, "pluginId": pluginId]
-            if let current = try ProgressModel.fetchOne(db, key: key),
-                !current.shouldSync
-                    || !mutation.wins(over: SyncMutation.milliseconds(current.datetime))
-            {
-                return false
+            let current = try ProgressModel.fetchOne(db, key: key)
+            if !queueSync {
+                guard try SyncService.shouldApply(mutation, in: db) else { return false }
+                if let current,
+                    !current.shouldSync
+                        || !mutation.wins(over: SyncMutation.milliseconds(current.datetime))
+                {
+                    return false
+                }
             }
+            if queueSync, current?.shouldSync == true { try SyncService.enqueue(mutation, in: db) }
             return try ProgressModel.deleteOne(db, key: key)
         }
         if deleted { publish(.deleted([(mangaId: mangaId, pluginId: pluginId)])) }
+        if queueSync { SyncService.shared.scheduleSync() }
         return deleted
     }
 
