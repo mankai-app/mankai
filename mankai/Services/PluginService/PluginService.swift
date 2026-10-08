@@ -19,7 +19,7 @@ enum PluginAddConflictResolution: Equatable {
 
     /// Each loader owns its stored instances, including any editable variants.
     private static let pluginTypes: [Plugin.Type] = [
-        AppDirPlugin.self, JsPlugin.self, ReadFsPlugin.self, HttpPlugin.self
+        AppDirPlugin.self, JsPlugin.self, ReadFsPlugin.self, HttpPlugin.self, KomgaPlugin.self
     ]
 
     private init() {

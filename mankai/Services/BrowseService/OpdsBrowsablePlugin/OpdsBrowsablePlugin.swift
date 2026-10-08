@@ -114,11 +114,11 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     convenience init(session: OpdsSession, name: String?) async throws {
         let rootCatalog = try await session.get(url: session.configuration.catalogURL)
-        let id = rootCatalog.metadata.id ?? UUID().uuidString
+        let id =
+            rootCatalog.metadata.id
+            ?? session.configuration.catalogURL.stablePluginID(prefix: "opds")
 
-        try self.init(
-            id: id, name: name, configuration: session.configuration, session: session,
-            shouldSync: rootCatalog.metadata.id != nil)
+        try self.init(id: id, name: name, configuration: session.configuration, session: session)
     }
 
     init(

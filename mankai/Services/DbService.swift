@@ -61,6 +61,7 @@ import GRDB
                 try JsRuntimeKvPairModel.createTable(db)
 
                 try HttpPluginModel.createTable(db)
+                try KomgaPluginModel.createTable(db)
                 try FsPluginModel.createTable(db)
                 try FsBrowsablePluginModel.createTable(db)
                 try SmbBrowsablePluginModel.createTable(db)

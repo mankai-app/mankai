@@ -92,7 +92,7 @@ class HttpPlugin: Plugin, Configurable {
     private var setupTask: Task<Void, Error>?
     private let setupLock = NSLock()
 
-    override var tags: [String] { [String(localized: "http")] }
+    override var tags: [String] { [String(localized: "mankaiCompatible")] }
 
     // MARK: - Init
 
@@ -176,30 +176,23 @@ class HttpPlugin: Plugin, Configurable {
     }
 
     static func fromUrl(_ urlString: String, sourceId: String? = nil) async -> HttpPlugin? {
-        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmed) else { return nil }
+        guard let configuration = PluginURLConfiguration(urlString) else { return nil }
 
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
-
-        guard let metadata = try? HttpPluginMetadata.decoded(from: data) else { return nil }
-
-        var baseUrl = url.absoluteString
-        if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-            components.queryItems = nil
-            components.fragment = nil
-            baseUrl = components.string ?? url.absoluteString
-        }
-
-        guard let plugin = fromMetadata(baseUrl: baseUrl, metadata: metadata) else { return nil }
+        guard let (data, _) = try? await URLSession.shared.data(from: configuration.baseURL),
+            let metadata = try? HttpPluginMetadata.decoded(from: data),
+            let plugin = fromMetadata(
+                baseUrl: configuration.baseURL.absoluteString, metadata: metadata)
+        else { return nil }
 
         let configMap = Dictionary(uniqueKeysWithValues: plugin.configs.map { ($0.key, $0) })
-        let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-
         var matchedConfigValues: [ConfigValue] = []
-        for item in queryItems {
-            guard let config = configMap[item.name] else { continue }
-            let parsedValue = config.type.parseValue(item.value ?? "")
-            matchedConfigValues.append(ConfigValue(key: item.name, value: parsedValue))
+
+        for (key, value) in configuration.configValues {
+            guard let config = configMap[key] else { continue }
+
+            // Passwords may contain significant leading or trailing whitespace.
+            let parsedValue: Any = config.type == .password ? value : config.type.parseValue(value)
+            matchedConfigValues.append(ConfigValue(key: key, value: parsedValue))
         }
 
         if !matchedConfigValues.isEmpty { plugin.setConfigValues(matchedConfigValues) }

@@ -14,22 +14,30 @@ struct AddPluginModal: View {
         case jsPlugin
         case fsPlugin
         case httpPlugin
+        case komgaPlugin
 
         var id: String { rawValue }
 
         var localizedName: String {
-            switch self { case .jsPlugin: String(localized: "js") case .fsPlugin:
-                String(localized: "fs")
-                case .httpPlugin: String(localized: "http")
+            switch self { case .jsPlugin: String(localized: "js")
+
+                case .fsPlugin: String(localized: "fs")
+
+                case .httpPlugin: String(localized: "mankaiCompatible")
+
+                case .komgaPlugin: String(localized: "komgaServer")
             }
         }
 
         var color: Color {
             switch self { case .jsPlugin:
                 Color(.sRGB, red: 0xEF / 255.0, green: 0xD8 / 255.0, blue: 0x1C / 255.0)
+
                 case .fsPlugin: .blue
-                case .httpPlugin:
-                    Color(.sRGB, red: 0x01 / 255.0, green: 0x58 / 255.0, blue: 0x96 / 255.0)
+
+                case .httpPlugin: .clear
+
+                case .komgaPlugin: .clear
             }
         }
 
@@ -37,8 +45,16 @@ struct AddPluginModal: View {
             switch self { case .jsPlugin:
                 Text(verbatim: "JS").font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(.black)
+
                 case .fsPlugin: Image(systemName: "folder.fill")
-                case .httpPlugin: Image(systemName: "globe")
+
+                case .httpPlugin:
+                    Image("SakuraIconPreview").renderingMode(.original).resizable().scaledToFit()
+                        .frame(width: 28, height: 28)
+
+                case .komgaPlugin:
+                    Image("KomgaIcon").renderingMode(.original).resizable().scaledToFit()
+                        .frame(width: 28, height: 28)
             }
         }
     }
@@ -46,6 +62,16 @@ struct AddPluginModal: View {
     @State private var useJson = false
     @State private var jsonInput: String = ""
     @State private var urlInput: String = ""
+
+    // HttpPlugin States
+    @State private var httpUsername = ""
+    @State private var httpPassword = ""
+
+    // KomgaPlugin States
+    @State private var komgaName = ""
+    @State private var komgaUsername = ""
+    @State private var komgaPassword = ""
+    @State private var komgaApiKey = ""
 
     // FsPlugin States
     @State private var selectedFolder: URL?
@@ -60,12 +86,14 @@ struct AddPluginModal: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("local") { pluginTypeLink(.fsPlugin) }
+                Section("localSources") { pluginTypeLink(.fsPlugin) }
 
-                Section("remote") {
+                Section("remoteSources") {
                     pluginTypeLink(.jsPlugin)
                     pluginTypeLink(.httpPlugin)
                 }
+
+                Section("integrations") { pluginTypeLink(.komgaPlugin) }
             }
             .navigationBarTitleDisplayMode(.inline).navigationTitle("addPlugin")
             .toolbar {
@@ -110,11 +138,13 @@ struct AddPluginModal: View {
                     Toggle(isOn: $useJson) { Text("useJson") }
                     if useJson {
                         TextField("json", text: $jsonInput).textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
                     } else {
-                        TextField("url", text: $urlInput).keyboardType(.URL)
-                            .textInputAutocapitalization(.never)
+                        TextField("pluginLink", text: $urlInput).keyboardType(.URL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
                     }
                 }
+
                 case .fsPlugin:
                     Section {
                         Button(action: { showFileImporter = true }) {
@@ -136,12 +166,45 @@ struct AddPluginModal: View {
                     } footer: {
                         Text("pluginIdSyncHint")
                     }
+
                 case .httpPlugin:
-                    Section("httpPluginSettings") {
-                        TextField("url", text: $urlInput).keyboardType(.URL)
-                            .textInputAutocapitalization(.never)
+                    Section("mankaiCompatibleServerSettings") {
+                        TextField("serverUrl", text: $urlInput).keyboardType(.URL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    }
+
+                    Section("credentials") {
+                        TextField("username", text: $httpUsername)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        SecureField("password", text: $httpPassword)
+                    }
+
+                case .komgaPlugin:
+                    Section("displayName") { TextField("default", text: $komgaName) }
+
+                    Section {
+                        TextField("serverUrl", text: $urlInput).keyboardType(.URL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    } header: {
+                        Text("komgaServerSettings")
+                    } footer: {
+                        Text("komgaServerIdSyncHint")
+                    }
+
+                    Section {
+                        TextField("username", text: $komgaUsername)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        SecureField("password", text: $komgaPassword)
+                        SecureField("apiKey", text: $komgaApiKey)
+                    } header: {
+                        Text("credentials")
+                    } footer: {
+                        Text("komgaAuthenticationHint")
                     }
             }
+        }
+        .onChange(of: urlInput, initial: true) { _, url in
+            autofillConfiguration(from: url, for: type)
         }
         .disabled(isProcessing).navigationTitle(type.localizedName)
         .navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden(isProcessing)
@@ -160,6 +223,7 @@ struct AddPluginModal: View {
             allowsMultipleSelection: false
         ) { result in
             switch result { case .success(let urls): selectedFolder = urls.first
+
                 case .failure(let error):
                     errorMessage = error.localizedDescription
                     showError = true
@@ -167,12 +231,53 @@ struct AddPluginModal: View {
         }
     }
 
+    private func autofillConfiguration(from url: String, for type: PluginType) {
+        guard let configuration = PluginURLConfiguration(url) else { return }
+
+        let values = configuration.configValues
+
+        switch type { case .httpPlugin:
+            if let username = values["username"] { httpUsername = username }
+            if let password = values["password"] { httpPassword = password }
+
+            case .komgaPlugin:
+                if let name = values["name"] { komgaName = name }
+                if let username = values["username"] { komgaUsername = username }
+                if let password = values["password"] { komgaPassword = password }
+                if let apiKey = values["apiKey"] { komgaApiKey = apiKey }
+
+            case .jsPlugin, .fsPlugin: break
+        }
+    }
+
+    private func configuredPluginURL(for type: PluginType) -> String? {
+        guard let configuration = PluginURLConfiguration(urlInput) else { return nil }
+
+        let values: [String: String]
+
+        switch type { case .httpPlugin:
+            values = ["username": httpUsername, "password": httpPassword]
+
+            case .komgaPlugin:
+                values = [
+                    "name": komgaName, "username": komgaUsername, "password": komgaPassword,
+                    "apiKey": komgaApiKey
+                ]
+
+            case .jsPlugin, .fsPlugin: return nil
+        }
+
+        return configuration.url(overriding: values)?.absoluteString
+    }
+
     private func canAddPlugin(_ type: PluginType) -> Bool {
         guard !isProcessing else { return false }
 
         switch type { case .jsPlugin: return useJson ? !jsonInput.isEmpty : !urlInput.isEmpty
+
             case .fsPlugin: return selectedFolder != nil
-            case .httpPlugin: return !urlInput.isEmpty
+
+            case .httpPlugin, .komgaPlugin: return PluginURLConfiguration(urlInput) != nil
         }
     }
 
@@ -199,6 +304,7 @@ struct AddPluginModal: View {
                 }
 
                 addPlugin(plugin)
+
                 case .fsPlugin:
                     guard let selectedFolder = selectedFolder else {
                         errorMessage = String(localized: "noFolderSelected")
@@ -227,8 +333,22 @@ struct AddPluginModal: View {
                         errorMessage = error.localizedDescription
                         showError = true
                     }
+
                 case .httpPlugin:
-                    guard let plugin = await PluginService.shared.decodeURL(urlInput, type: "http")
+                    guard let url = configuredPluginURL(for: type),
+                        let plugin = await PluginService.shared.decodeURL(url, type: "http")
+                    else {
+                        errorMessage = String(localized: "failedToParsePlugin")
+                        showError = true
+                        return
+                    }
+
+                    addPlugin(plugin)
+
+                case .komgaPlugin:
+                    guard let url = configuredPluginURL(for: type),
+                        let plugin = await PluginService.shared.decodeURL(url, type: "komga")
+                            as? KomgaPlugin
                     else {
                         errorMessage = String(localized: "failedToParsePlugin")
                         showError = true

@@ -11,6 +11,16 @@ struct PluginImportSource: Identifiable {
     enum Kind: String {
         case js
         case http
+        case komga
+
+        var localizedName: String {
+            switch self { case .js: String(localized: "js")
+
+                case .http: String(localized: "mankaiCompatible")
+
+                case .komga: String(localized: "komga")
+            }
+        }
     }
 
     let id = UUID()
@@ -70,8 +80,7 @@ struct AddPluginsModal: View {
                                 HStack(spacing: 8) {
                                     Text(plugin.name ?? plugin.id).foregroundStyle(.primary)
 
-                                    Text(LocalizedStringKey(candidate.source.kind.rawValue))
-                                        .smallTagStyle()
+                                    Text(candidate.source.kind.localizedName).smallTagStyle()
 
                                     if let version = plugin.version {
                                         Text(verbatim: "v\(version)").smallTagStyle()

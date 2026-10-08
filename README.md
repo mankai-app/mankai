@@ -35,7 +35,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ## Features
 
-- **Flexible sources** — JavaScript, file system, and HTTP plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV shares.
+- **Flexible sources** — JavaScript, file system, HTTP, and Komga plugins, plus OPDS, SMB, SFTP, NFS, and WebDAV shares.
 - **Local books** — Read MMA, CBZ, CBR, EPUB, and PDF files from your device or connected shares.
 - **Reader controls** — Paged and continuous layouts, horizontal and vertical navigation, and page-curl transitions.
 - **Image processing** — [Automatic spread grouping](#smart-grouping), optional [on-device 4× AI upscaling](#real-esrgan-upscaling), and configurable remote image processors.
@@ -58,7 +58,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ### Integrations
 
-- [ ] ~~**Komga** - Support for the Komga API.~~
+- [x] **Komga** - Regular plugin support for the Komga API, including search, reading, and downloads.
 - [x] **OPDS 1.2** - Open Publication Distribution System catalog support.
 - [x] **SMB** - Server Message Block support.
 - [x] **WebDAV** - Web Distributed Authoring and Versioning support.

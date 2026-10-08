@@ -33,6 +33,7 @@ enum MankaiErrorDomain: String {
     case pluginFilesystem = "app.mankai.plugin.filesystem"
     case pluginHttp = "app.mankai.plugin.http"
     case pluginJavascript = "app.mankai.plugin.javascript"
+    case pluginKomga = "app.mankai.plugin.komga"
     case sync = "app.mankai.sync"
     case syncHttp = "app.mankai.sync.http"
     case syncSupabase = "app.mankai.sync.supabase"
@@ -63,6 +64,7 @@ enum MankaiErrorDomain: String {
             case .pluginFilesystem: return 83
             case .pluginHttp: return 84
             case .pluginJavascript: return 85
+            case .pluginKomga: return 86
             case .sync: return 90
             case .syncHttp: return 91
             case .syncSupabase: return 92
@@ -190,6 +192,12 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case pluginHttpFailedToEncodeMetaData
     case pluginHttpFailedToEncodeConfigValuesData
     case pluginHttpMissingRequiredFields
+
+    case pluginKomgaInvalidUrl
+    case pluginKomgaInvalidCredentials
+    case pluginKomgaDatabaseNotAvailable
+    case pluginKomgaInvalidResponse
+    case pluginKomgaRequestFailed
 
     case pluginJavascriptDatabaseNotAvailable
     case pluginJavascriptFailedToEncodeMetaData
@@ -406,6 +414,16 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .pluginHttp, code: 5, messageKey: "failedToEncodeConfigValuesData"),
         .pluginHttpMissingRequiredFields: .init(
             domain: .pluginHttp, code: 6, messageKey: "missingRequiredFields"),
+
+        .pluginKomgaInvalidUrl: .init(domain: .pluginKomga, code: 1, messageKey: "invalidUrl"),
+        .pluginKomgaInvalidCredentials: .init(
+            domain: .pluginKomga, code: 2, messageKey: "invalidCredentials"),
+        .pluginKomgaDatabaseNotAvailable: .init(
+            domain: .pluginKomga, code: 3, messageKey: "databaseNotAvailable"),
+        .pluginKomgaInvalidResponse: .init(
+            domain: .pluginKomga, code: 4, messageKey: "invalidResponse"),
+        .pluginKomgaRequestFailed: .init(
+            domain: .pluginKomga, code: 5, messageKey: "httpRequestFailed"),
 
         .pluginJavascriptDatabaseNotAvailable: .init(
             domain: .pluginJavascript, code: 1, messageKey: "databaseNotAvailable"),

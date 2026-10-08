@@ -761,6 +761,34 @@
         }
       }
     },
+    "apiKey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APIキー"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API 密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API 金鑰"
+          }
+        }
+      }
+    },
     "appearance" : {
       "localizations" : {
         "en" : {
@@ -6681,34 +6709,6 @@
         }
       }
     },
-    "http" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP"
-          }
-        }
-      }
-    },
     "httpEngine" : {
       "localizations" : {
         "en" : {
@@ -6733,34 +6733,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HTTP"
-          }
-        }
-      }
-    },
-    "httpPluginSettings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP Plugin Settings"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTPプラグイン設定"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 插件设置"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 外掛模組設定"
           }
         }
       }
@@ -7461,6 +7433,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "記憶體快取項目數量"
+          }
+        }
+      }
+    },
+    "integrations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integrations"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連携"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "集成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整合"
           }
         }
       }
@@ -8529,6 +8529,174 @@
         }
       }
     },
+    "komga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga"
+          }
+        }
+      }
+    },
+    "komgaAuthenticationHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use an API key or your Komga username and password. An API key takes precedence when both are set."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APIキー、またはKomgaのユーザー名とパスワードを使用してください。両方を設定するとAPIキーが優先されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 API 密钥或 Komga 用户名和密码。同时设置时，优先使用 API 密钥。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 API 金鑰或 Komga 使用者名稱和密碼。同時設定時，優先使用 API 金鑰。"
+          }
+        }
+      }
+    },
+    "komgaPluginDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read manga and comics from your Komga server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komgaサーバーの漫画やコミックを読みます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阅读 Komga 服务器上的漫画。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀 Komga 伺服器上的漫畫。"
+          }
+        }
+      }
+    },
+    "komgaServer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga Server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komgaサーバー"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga 服务器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga 伺服器"
+          }
+        }
+      }
+    },
+    "komgaServerIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server URL is used as its identifier. Changing the URL removes the server’s sync record."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーのURLを識別子として使用します。URLを変更すると、サーバーの同期レコードが削除されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器 URL 用作其标识符。更改 URL 会移除服务器的同步记录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器 URL 用作其識別碼。變更 URL 會移除伺服器的同步紀錄。"
+          }
+        }
+      }
+    },
+    "komgaServerSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga Server Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komgaサーバー設定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga 服务器设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komga 伺服器設定"
+          }
+        }
+      }
+    },
     "lastRead" : {
       "localizations" : {
         "en" : {
@@ -9151,6 +9319,34 @@
         }
       }
     },
+    "localSources" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Sources"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカルソース"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機來源"
+          }
+        }
+      }
+    },
     "login" : {
       "localizations" : {
         "en" : {
@@ -9547,6 +9743,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "漫畫更新"
+          }
+        }
+      }
+    },
+    "mankaiCompatible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai Compatible"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 互換"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 兼容"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 相容"
+          }
+        }
+      }
+    },
+    "mankaiCompatibleServerSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai Compatible Server Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 互換サーバー設定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 兼容服务器设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai 相容伺服器設定"
           }
         }
       }
@@ -11440,25 +11692,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The OPDS catalog's ID is used to keep the share ID consistent across devices. If the catalog does not provide an ID, this share will use a local ID and its records will not sync."
+            "value" : "The OPDS catalog’s ID is used to keep the share ID consistent across devices. If the catalog does not provide an ID, its URL is used instead. Changing the URL then removes the share’s sync record."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OPDSカタログのIDは、デバイス間で共有IDを一致させるために使用されます。カタログにIDがない場合、この共有はローカルIDを使用し、その記録は同期されません。"
+            "value" : "OPDSカタログのIDを使用して、デバイス間で共有IDを一致させます。カタログにIDがない場合は、代わりにURLを使用します。その場合、URLを変更すると共有の同期レコードが削除されます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共享会使用 OPDS 目录提供的 ID，以确保共享 ID 在不同设备上保持一致。如果目录未提供 ID，共享将使用本地 ID，相关记录也不会同步。"
+            "value" : "共享会使用 OPDS 目录提供的 ID，以确保共享 ID 在不同设备上保持一致。如果目录未提供 ID，则使用目录 URL。在这种情况下，更改 URL 会移除共享的同步记录。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共用會使用 OPDS 目錄提供的 ID，確保在不同裝置間保持一致。若目錄未提供 ID，共用會使用僅限本機的 ID，相關記錄將不會同步。"
+            "value" : "共用會使用 OPDS 目錄提供的 ID，確保在不同裝置間保持一致。若目錄未提供 ID，則使用目錄 URL。在此情況下，變更 URL 會移除共用的同步紀錄。"
           }
         }
       }
@@ -11993,6 +12245,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mankai 會在此資料夾儲存「.mankai」檔案，讓外掛模組 ID 在不同裝置間保持一致。如果無法寫入此檔案，外掛模組將使用本機 ID，其記錄亦不會同步。"
+          }
+        }
+      }
+    },
+    "pluginLink" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugin Link"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プラグインのリンク"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件链接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外掛模組連結"
           }
         }
       }
@@ -12665,6 +12945,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "遠端共用"
+          }
+        }
+      }
+    },
+    "remoteSources" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Sources"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リモートソース"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "远程来源"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遠端來源"
           }
         }
       }
