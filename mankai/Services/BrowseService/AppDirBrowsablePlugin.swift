@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 import SwiftUI
 
 final class AppDirBrowsablePlugin: FsBrowsablePlugin {
@@ -40,7 +41,7 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
     override var color: Color { .accentColor }
 
     /// Built-in plugin, do nothing
-    override func savePlugin() throws {}
+    override func savePlugin(db: Database? = nil) throws {}
 
     /// Built-in plugin, do nothing
     override func deletePlugin() throws {}

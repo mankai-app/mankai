@@ -19,7 +19,8 @@ enum PluginAddConflictResolution: Equatable {
 
     /// Each loader owns its stored instances, including any editable variants.
     private static let pluginTypes: [Plugin.Type] = [
-        AppDirPlugin.self, JsPlugin.self, ReadFsPlugin.self, HttpPlugin.self, KomgaPlugin.self
+        AppDirPlugin.self, JsPlugin.self, ReadFsPlugin.self, HttpPlugin.self, KomgaPlugin.self,
+        KavitaPlugin.self
     ]
 
     private init() {
@@ -66,12 +67,10 @@ enum PluginAddConflictResolution: Equatable {
             throw MankaiErrorCode.browseInvalidPlugin.makeError()
         }
 
-        try update(try plugin.databaseModel(), plugin: plugin, mutation: mutation)
+        try update(plugin: plugin, mutation: mutation)
     }
 
-    private func update<Model: PersistableRecord>(
-        _ model: Model, plugin: Plugin, mutation: SyncMutation
-    ) throws {
+    private func update(plugin: Plugin, mutation: SyncMutation) throws {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncHttpInvalidResponse.makeError()
         }
@@ -79,7 +78,7 @@ enum PluginAddConflictResolution: Equatable {
         let updated = try appDb.write { db in
             guard try SyncService.shouldApply(mutation, in: db) else { return false }
             try deleteStoredPlugins(sourceId, in: db)
-            try model.save(db)
+            try plugin.savePlugin(db: db)
             return true
         }
 
@@ -140,17 +139,17 @@ enum PluginAddConflictResolution: Equatable {
 
     /// Saves portable settings and their pending mutation in the same transaction.
     func savePlugin(_ plugin: Plugin) throws {
-        guard plugin.supports(.urlEncoding), let type = plugin.syncType else {
+        if plugin.supports(.urlEncoding), let type = plugin.syncType {
+            try save(plugin: plugin, type: type)
+            SyncService.shared.scheduleSync()
+        } else {
             try plugin.savePlugin()
-            return
         }
 
-        try save(try plugin.databaseModel(), plugin: plugin, type: type)
-        SyncService.shared.scheduleSync()
+        objectWillChange.send()
     }
 
-    private func save<Model: PersistableRecord>(_ model: Model, plugin: Plugin, type: String) throws
-    {
+    private func save(plugin: Plugin, type: String) throws {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncInvalidResponse.makeError()
         }
@@ -163,7 +162,7 @@ enum PluginAddConflictResolution: Equatable {
                 try SyncService.enqueuePlugin(id: plugin.id, url: url, type: type, in: db)
             }
 
-            try model.save(db)
+            try plugin.savePlugin(db: db)
         }
     }
 

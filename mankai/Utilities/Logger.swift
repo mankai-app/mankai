@@ -36,6 +36,7 @@ enum LogCategory: String {
     case appDirPlugin = "AppDirPlugin"
     case httpPlugin = "HttpPlugin"
     case komgaPlugin = "KomgaPlugin"
+    case kavitaPlugin = "KavitaPlugin"
     case downloadPlugin = "DownloadPlugin"
     case fsBrowsablePlugin = "FsBrowsablePlugin"
     case appDirBrowsablePlugin = "AppDirBrowsablePlugin"
@@ -202,6 +203,7 @@ extension Logger {
     static let jsPlugin = Logger(category: .jsPlugin)
     static let httpPlugin = Logger(category: .httpPlugin)
     static let komgaPlugin = Logger(category: .komgaPlugin)
+    static let kavitaPlugin = Logger(category: .kavitaPlugin)
     static let appDirPlugin = Logger(category: .appDirPlugin)
     static let downloadPlugin = Logger(category: .downloadPlugin)
     static let fsBrowsablePlugin = Logger(category: .fsBrowsablePlugin)

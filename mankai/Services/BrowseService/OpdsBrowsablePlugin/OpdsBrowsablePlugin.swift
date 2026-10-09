@@ -247,8 +247,6 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
             shouldSync: supports(.sync))
     }
 
-    override func databaseModel() throws -> any PersistableRecord { model }
-
     override class func loadPlugins() -> [Plugin] {
         Logger.opdsBrowsablePlugin.debug("Loading OPDS browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
@@ -281,13 +279,17 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         return results
     }
 
-    override func savePlugin() throws {
+    override func savePlugin(db: Database? = nil) throws {
         Logger.opdsBrowsablePlugin.debug("Saving OPDS plugin: \(id)")
-        guard let db = DbService.shared.appDb else {
-            throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
+        let model = model
+        if let db {
+            try model.save(db)
+        } else {
+            guard let dbPool = DbService.shared.appDb else {
+                throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
+            }
+            try dbPool.write { db in try model.save(db) }
         }
-
-        try db.write { db in try model.save(db) }
     }
 
     override func deletePlugin() throws {

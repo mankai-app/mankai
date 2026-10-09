@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 final class AppDirPlugin: ReadWriteFsPlugin {
     static let shared = AppDirPlugin()
@@ -42,7 +43,7 @@ final class AppDirPlugin: ReadWriteFsPlugin {
     override var capabilities: [PluginCapability] { super.capabilities.filter { $0 != .sync } }
 
     /// Built-in plugin, do nothing
-    override func savePlugin() throws {}
+    override func savePlugin(db: Database? = nil) throws {}
 
     /// Built-in plugin, do nothing
     override func deletePlugin() throws {}

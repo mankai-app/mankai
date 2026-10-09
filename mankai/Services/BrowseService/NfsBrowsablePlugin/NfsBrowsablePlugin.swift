@@ -323,8 +323,6 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
             id: id, name: displayName, host: host, export: export, shouldSync: supports(.sync))
     }
 
-    override func databaseModel() throws -> any PersistableRecord { model }
-
     override class func loadPlugins() -> [Plugin] {
         Logger.nfsBrowsablePlugin.debug("Loading NFS browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
@@ -356,13 +354,17 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
         return results
     }
 
-    override func savePlugin() throws {
+    override func savePlugin(db: Database? = nil) throws {
         Logger.nfsBrowsablePlugin.debug("Saving NFS plugin: \(id)")
-        guard let db = DbService.shared.appDb else {
-            throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
+        let model = model
+        if let db {
+            try model.save(db)
+        } else {
+            guard let dbPool = DbService.shared.appDb else {
+                throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
+            }
+            try dbPool.write { db in try model.save(db) }
         }
-
-        try db.write { db in try model.save(db) }
     }
 
     override func deletePlugin() throws {

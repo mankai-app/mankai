@@ -164,12 +164,8 @@ class ReadFsPlugin: Plugin {
 
     // MARK: - Override Methods
 
-    override func savePlugin() throws {
+    override func savePlugin(db: Database? = nil) throws {
         Logger.fsPlugin.debug("Saving plugin: \(id)")
-        guard let db = DbService.shared.appDb else {
-            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
-        }
-
         let bookmarkData = try url.bookmarkData(
             options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
 
@@ -179,7 +175,14 @@ class ReadFsPlugin: Plugin {
             id: id, isWriteable: isWriteable, bookmarkData: bookmarkData,
             shouldSync: supports(.sync))
 
-        try db.write { db in try pluginModel.save(db) }
+        if let db {
+            try pluginModel.save(db)
+        } else {
+            guard let dbPool = DbService.shared.appDb else {
+                throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
+            }
+            try dbPool.write { db in try pluginModel.save(db) }
+        }
     }
 
     override func deletePlugin() throws {

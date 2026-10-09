@@ -8529,6 +8529,174 @@
         }
       }
     },
+    "kavita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita"
+          }
+        }
+      }
+    },
+    "kavitaAuthenticationHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a Kavita Auth Key from User Settings → 3rd Party Clients, or your username and password. The Auth Key takes precedence when both are set."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavitaのユーザー設定 → サードパーティクライアントで作成した認証キー、またはユーザー名とパスワードを使用してください。両方を設定すると認証キーが優先されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Kavita 用户设置 → 第三方客户端中的认证密钥，或用户名和密码。同时设置时，优先使用认证密钥。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Kavita 使用者設定 → 第三方用戶端中的驗證金鑰，或使用者名稱和密碼。同時設定時，優先使用驗證金鑰。"
+          }
+        }
+      }
+    },
+    "kavitaServer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita Server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavitaサーバー"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita 服务器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita 伺服器"
+          }
+        }
+      }
+    },
+    "kavitaServerIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server URL is used as its identifier. Use the same URL on each device to sync this source."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーのURLを識別子として使用します。このソースを同期するには、各デバイスで同じURLを使用してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器 URL 用作其标识符。请在各设备上使用相同的 URL 来同步此来源。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器 URL 用作其識別碼。請在各裝置上使用相同的 URL 來同步此來源。"
+          }
+        }
+      }
+    },
+    "kavitaServerSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita Server Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavitaサーバー設定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita 服务器设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavita 伺服器設定"
+          }
+        }
+      }
+    },
+    "kavitaSourceDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read manga and comics from your Kavita server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kavitaサーバーの漫画やコミックを読みます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阅读 Kavita 服务器上的漫画。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀 Kavita 伺服器上的漫畫。"
+          }
+        }
+      }
+    },
     "key" : {
       "localizations" : {
         "en" : {

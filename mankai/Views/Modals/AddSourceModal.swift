@@ -15,6 +15,7 @@ struct AddSourceModal: View {
         case fsPlugin
         case httpPlugin
         case komgaPlugin
+        case kavitaPlugin
 
         var id: String { rawValue }
 
@@ -26,6 +27,8 @@ struct AddSourceModal: View {
                 case .httpPlugin: String(localized: "mankaiCompatible")
 
                 case .komgaPlugin: String(localized: "komgaServer")
+
+                case .kavitaPlugin: String(localized: "kavitaServer")
             }
         }
 
@@ -38,6 +41,8 @@ struct AddSourceModal: View {
                 case .httpPlugin: .clear
 
                 case .komgaPlugin: .clear
+
+                case .kavitaPlugin: .clear
             }
         }
 
@@ -54,6 +59,10 @@ struct AddSourceModal: View {
 
                 case .komgaPlugin:
                     Image("KomgaIcon").renderingMode(.original).resizable().scaledToFit()
+                        .frame(width: 28, height: 28)
+
+                case .kavitaPlugin:
+                    Image("KavitaIcon").renderingMode(.original).resizable().scaledToFit()
                         .frame(width: 28, height: 28)
             }
         }
@@ -72,6 +81,12 @@ struct AddSourceModal: View {
     @State private var komgaUsername = ""
     @State private var komgaPassword = ""
     @State private var komgaApiKey = ""
+
+    // KavitaPlugin States
+    @State private var kavitaName = ""
+    @State private var kavitaUsername = ""
+    @State private var kavitaPassword = ""
+    @State private var kavitaApiKey = ""
 
     // FsPlugin States
     @State private var selectedFolder: URL?
@@ -93,7 +108,10 @@ struct AddSourceModal: View {
                     sourceTypeLink(.httpPlugin)
                 }
 
-                Section("integrations") { sourceTypeLink(.komgaPlugin) }
+                Section("integrations") {
+                    sourceTypeLink(.komgaPlugin)
+                    sourceTypeLink(.kavitaPlugin)
+                }
             }
             .navigationBarTitleDisplayMode(.inline).navigationTitle("addSource")
             .toolbar {
@@ -201,6 +219,29 @@ struct AddSourceModal: View {
                     } footer: {
                         Text("komgaAuthenticationHint")
                     }
+
+                case .kavitaPlugin:
+                    Section("displayName") { TextField("default", text: $kavitaName) }
+
+                    Section {
+                        TextField("serverUrl", text: $urlInput).keyboardType(.URL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    } header: {
+                        Text("kavitaServerSettings")
+                    } footer: {
+                        Text("kavitaServerIdSyncHint")
+                    }
+
+                    Section {
+                        TextField("username", text: $kavitaUsername)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        SecureField("password", text: $kavitaPassword)
+                        SecureField("apiKey", text: $kavitaApiKey)
+                    } header: {
+                        Text("credentials")
+                    } footer: {
+                        Text("kavitaAuthenticationHint")
+                    }
             }
         }
         .onChange(of: urlInput, initial: true) { _, url in
@@ -246,6 +287,12 @@ struct AddSourceModal: View {
                 if let password = values["password"] { komgaPassword = password }
                 if let apiKey = values["apiKey"] { komgaApiKey = apiKey }
 
+            case .kavitaPlugin:
+                if let name = values["name"] { kavitaName = name }
+                if let username = values["username"] { kavitaUsername = username }
+                if let password = values["password"] { kavitaPassword = password }
+                if let apiKey = values["apiKey"] { kavitaApiKey = apiKey }
+
             case .jsPlugin, .fsPlugin: break
         }
     }
@@ -264,6 +311,12 @@ struct AddSourceModal: View {
                     "apiKey": komgaApiKey
                 ]
 
+            case .kavitaPlugin:
+                values = [
+                    "name": kavitaName, "username": kavitaUsername, "password": kavitaPassword,
+                    "apiKey": kavitaApiKey
+                ]
+
             case .jsPlugin, .fsPlugin: return nil
         }
 
@@ -277,7 +330,8 @@ struct AddSourceModal: View {
 
             case .fsPlugin: return selectedFolder != nil
 
-            case .httpPlugin, .komgaPlugin: return PluginURLConfiguration(urlInput) != nil
+            case .httpPlugin, .komgaPlugin, .kavitaPlugin:
+                return PluginURLConfiguration(urlInput) != nil
         }
     }
 
@@ -349,6 +403,18 @@ struct AddSourceModal: View {
                     guard let url = configuredPluginURL(for: type),
                         let plugin = await PluginService.shared.decodeURL(url, type: "komga")
                             as? KomgaPlugin
+                    else {
+                        errorMessage = String(localized: "failedToParseSource")
+                        showError = true
+                        return
+                    }
+
+                    addPlugin(plugin)
+
+                case .kavitaPlugin:
+                    guard let url = configuredPluginURL(for: type),
+                        let plugin = await PluginService.shared.decodeURL(url, type: "kavita")
+                            as? KavitaPlugin
                     else {
                         errorMessage = String(localized: "failedToParseSource")
                         showError = true

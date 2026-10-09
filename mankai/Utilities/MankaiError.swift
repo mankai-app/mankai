@@ -34,6 +34,7 @@ enum MankaiErrorDomain: String {
     case pluginHttp = "app.mankai.plugin.http"
     case pluginJavascript = "app.mankai.plugin.javascript"
     case pluginKomga = "app.mankai.plugin.komga"
+    case pluginKavita = "app.mankai.plugin.kavita"
     case sync = "app.mankai.sync"
     case syncHttp = "app.mankai.sync.http"
     case syncSupabase = "app.mankai.sync.supabase"
@@ -65,6 +66,7 @@ enum MankaiErrorDomain: String {
             case .pluginHttp: return 84
             case .pluginJavascript: return 85
             case .pluginKomga: return 86
+            case .pluginKavita: return 87
             case .sync: return 90
             case .syncHttp: return 91
             case .syncSupabase: return 92
@@ -198,6 +200,12 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case pluginKomgaDatabaseNotAvailable
     case pluginKomgaInvalidResponse
     case pluginKomgaRequestFailed
+
+    case pluginKavitaInvalidUrl
+    case pluginKavitaInvalidCredentials
+    case pluginKavitaDatabaseNotAvailable
+    case pluginKavitaInvalidResponse
+    case pluginKavitaRequestFailed
 
     case pluginJavascriptDatabaseNotAvailable
     case pluginJavascriptFailedToEncodeMetaData
@@ -424,6 +432,16 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .pluginKomga, code: 4, messageKey: "invalidResponse"),
         .pluginKomgaRequestFailed: .init(
             domain: .pluginKomga, code: 5, messageKey: "httpRequestFailed"),
+
+        .pluginKavitaInvalidUrl: .init(domain: .pluginKavita, code: 1, messageKey: "invalidUrl"),
+        .pluginKavitaInvalidCredentials: .init(
+            domain: .pluginKavita, code: 2, messageKey: "invalidCredentials"),
+        .pluginKavitaDatabaseNotAvailable: .init(
+            domain: .pluginKavita, code: 3, messageKey: "databaseNotAvailable"),
+        .pluginKavitaInvalidResponse: .init(
+            domain: .pluginKavita, code: 4, messageKey: "invalidResponse"),
+        .pluginKavitaRequestFailed: .init(
+            domain: .pluginKavita, code: 5, messageKey: "httpRequestFailed"),
 
         .pluginJavascriptDatabaseNotAvailable: .init(
             domain: .pluginJavascript, code: 1, messageKey: "databaseNotAvailable"),

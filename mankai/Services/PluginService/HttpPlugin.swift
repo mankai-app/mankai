@@ -314,17 +314,21 @@ class HttpPlugin: Plugin, Configurable {
 
     // MARK: - Methods
 
-    override func savePlugin() throws {
+    override func savePlugin(db: Database? = nil) throws {
         Logger.httpPlugin.debug("Saving plugin: \(id)")
+        if let db {
+            try makeModel().save(db)
+            return
+        }
         guard let dbPool = DbService.shared.appDb else {
             throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
-        let model = try databaseModel()
+        let model = try makeModel()
         try dbPool.write { db in try model.save(db) }
     }
 
-    override func databaseModel() throws -> any PersistableRecord {
+    private func makeModel() throws -> HttpPluginModel {
         let metadata = HttpPluginMetadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, availableGenres: availableGenres,

@@ -126,9 +126,7 @@ class CacheWrapper: Plugin {
 
     // MARK: - Methods Delegation (Non-cached)
 
-    override func savePlugin() throws { try plugin.savePlugin() }
-
-    override func databaseModel() throws -> any PersistableRecord { try plugin.databaseModel() }
+    override func savePlugin(db: Database? = nil) throws { try plugin.savePlugin(db: db) }
 
     override func deletePlugin() throws { try plugin.deletePlugin() }
 

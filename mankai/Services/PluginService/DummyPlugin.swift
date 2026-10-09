@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 final class DummyPlugin: Plugin {
     private let _id: String
@@ -17,7 +18,7 @@ final class DummyPlugin: Plugin {
     init(_ id: String) { _id = id }
 
     /// DummyPlugin cannot be saved
-    override func savePlugin() throws {}
+    override func savePlugin(db: Database? = nil) throws {}
 
     override func deletePlugin() throws {}
 

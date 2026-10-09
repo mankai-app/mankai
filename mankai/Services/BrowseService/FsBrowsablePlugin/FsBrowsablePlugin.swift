@@ -173,19 +173,19 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         return results
     }
 
-    override func savePlugin() throws {
+    override func savePlugin(db: Database? = nil) throws {
         Logger.fsBrowsablePlugin.debug("Saving plugin: \(id)")
-        guard let db = DbService.shared.appDb else {
-            throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
-        }
-
         let bookmarkData = try url.bookmarkData(
             options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
-        try db.write { db in
-            try FsBrowsablePluginModel(
-                id: id, name: displayName, bookmarkData: bookmarkData, shouldSync: supports(.sync)
-            )
-            .save(db)
+        let model = FsBrowsablePluginModel(
+            id: id, name: displayName, bookmarkData: bookmarkData, shouldSync: supports(.sync))
+        if let db {
+            try model.save(db)
+        } else {
+            guard let dbPool = DbService.shared.appDb else {
+                throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
+            }
+            try dbPool.write { db in try model.save(db) }
         }
     }
 

@@ -176,15 +176,16 @@ final class KomgaPlugin: Plugin, Configurable {
         _ = try KomgaPluginModel.filter(Column("id") == id).deleteAll(db)
     }
 
-    override func databaseModel() throws -> any PersistableRecord { model }
-
-    override func savePlugin() throws {
-        guard let db = DbService.shared.appDb else {
-            throw MankaiErrorCode.pluginKomgaDatabaseNotAvailable.makeError()
-        }
-
+    override func savePlugin(db: Database? = nil) throws {
         let model = model
-        try db.write { try model.save($0) }
+        if let db {
+            try model.save(db)
+        } else {
+            guard let dbPool = DbService.shared.appDb else {
+                throw MankaiErrorCode.pluginKomgaDatabaseNotAvailable.makeError()
+            }
+            try dbPool.write { try model.save($0) }
+        }
     }
 
     override func deletePlugin() throws {
@@ -219,7 +220,7 @@ final class KomgaPlugin: Plugin, Configurable {
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        // Genre names in Komga are arbitrary; only advertise status filtering.
+        // Genre names in Komga are arbitrary, only advertise status filtering.
         guard genre == .all else { return [] }
 
         return try await session.seriesList(page: page, query: nil, statuses: statuses(for: status))

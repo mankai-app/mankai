@@ -43,7 +43,7 @@ final class DownloadPlugin: Plugin {
     }
 
     /// Built-in plugin, do nothing
-    override func savePlugin() throws {}
+    override func savePlugin(db: Database? = nil) throws {}
 
     /// Built-in plugin, do nothing
     override func deletePlugin() throws {}

@@ -59,7 +59,7 @@ enum PluginCapability: String, Codable, CaseIterable {
     case image
 
     /// Requires `encodeURL()` to return the instance's portable configuration as a URL,
-    /// a stable `syncType` to identify its decoder, and `databaseModel()` for sync transactions.
+    /// a stable `syncType` to identify its decoder, and `savePlugin(db:)` for sync transactions.
     case urlEncoding
 
     /// Enables manga and reading progress synchronization, requires no additional plugin methods.
@@ -73,7 +73,7 @@ enum PluginCapability: String, Codable, CaseIterable {
 /// Behaviors supplied by a plugin type, separate from its instance capabilities.
 enum PluginTypeCapability: String, Codable, CaseIterable {
     /// Requires `decodeURL(_:sourceId:)`, `loadStoredURL(_:in:)`, and `deleteStoredPlugin(_:in:)`.
-    /// Decoded instances must implement `databaseModel()` for sync transactions.
+    /// Decoded instances must support `savePlugin(db:)` within the caller's sync transaction.
     case urlDecoding
 
     /// Caches responses from supported operations, requires no additional plugin methods.
@@ -152,12 +152,10 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
 
     /// Saves the plugin configuration or state.
     /// Required for all registered plugins, independent of capabilities, built-in plugins may do nothing.
+    /// When a database is supplied, save directly without opening another database transaction.
+    /// - Parameter db: The caller's database transaction, or `nil` to use the application database.
     /// - Throws: An error if saving fails.
-    func savePlugin() throws { fatalError("Not Implemented") }
-
-    /// Returns the local record before it is saved in a sync transaction.
-    /// Required on instances decoded by a `PluginTypeCapability.urlDecoding` plugin type.
-    func databaseModel() throws -> any PersistableRecord { fatalError("Not Implemented") }
+    func savePlugin(db: Database? = nil) throws { fatalError("Not Implemented") }
 
     /// Deletes the plugin and cleans up resources.
     /// Required for all registered plugins, independent of capabilities, built-in plugins may do nothing.

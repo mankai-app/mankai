@@ -157,19 +157,17 @@ enum BrowsePluginAddConflictResolution {
             }), let plugin = await pluginType.decodeURL(url, sourceId: sourceId) as? BrowsablePlugin
         else { throw MankaiErrorCode.browseInvalidPlugin.makeError() }
         try Task.checkCancellation()
-        try update(try plugin.databaseModel(), plugin: plugin, mutation: mutation)
+        try update(plugin: plugin, mutation: mutation)
     }
 
-    private func update<Model: PersistableRecord>(
-        _ model: Model, plugin: BrowsablePlugin, mutation: SyncMutation
-    ) throws {
+    private func update(plugin: BrowsablePlugin, mutation: SyncMutation) throws {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncInvalidResponse.makeError()
         }
         let updated = try appDb.write { db in
             guard try SyncService.shouldApply(mutation, in: db) else { return false }
             try deleteStoredPlugins(plugin.id, in: db)
-            try model.save(db)
+            try plugin.savePlugin(db: db)
             return true
         }
         if updated {
@@ -210,13 +208,11 @@ enum BrowsePluginAddConflictResolution {
             return
         }
 
-        try save(try plugin.databaseModel(), plugin: plugin, type: type)
+        try save(plugin: plugin, type: type)
         SyncService.shared.scheduleSync()
     }
 
-    private func save<Model: PersistableRecord>(
-        _ model: Model, plugin: BrowsablePlugin, type: String
-    ) throws {
+    private func save(plugin: BrowsablePlugin, type: String) throws {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.syncInvalidResponse.makeError()
         }
@@ -228,7 +224,7 @@ enum BrowsePluginAddConflictResolution {
                 try SyncService.enqueuePlugin(
                     id: plugin.id, url: url, type: type, browsable: true, in: db)
             }
-            try model.save(db)
+            try plugin.savePlugin(db: db)
         }
     }
 
