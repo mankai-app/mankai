@@ -16,6 +16,7 @@ struct AddSourceModal: View {
         case httpPlugin
         case komgaPlugin
         case kavitaPlugin
+        case suwayomiPlugin
 
         var id: String { rawValue }
 
@@ -29,6 +30,8 @@ struct AddSourceModal: View {
                 case .komgaPlugin: String(localized: "komgaServer")
 
                 case .kavitaPlugin: String(localized: "kavitaServer")
+
+                case .suwayomiPlugin: String(localized: "suwayomiServer")
             }
         }
 
@@ -43,6 +46,8 @@ struct AddSourceModal: View {
                 case .komgaPlugin: .clear
 
                 case .kavitaPlugin: .clear
+
+                case .suwayomiPlugin: .clear
             }
         }
 
@@ -63,6 +68,10 @@ struct AddSourceModal: View {
 
                 case .kavitaPlugin:
                     Image("KavitaIcon").renderingMode(.original).resizable().scaledToFit()
+                        .frame(width: 28, height: 28)
+
+                case .suwayomiPlugin:
+                    Image("SuwayomiIcon").renderingMode(.original).resizable().scaledToFit()
                         .frame(width: 28, height: 28)
             }
         }
@@ -88,6 +97,12 @@ struct AddSourceModal: View {
     @State private var kavitaPassword = ""
     @State private var kavitaApiKey = ""
 
+    // SuwayomiPlugin States
+    @State private var suwayomiName = ""
+    @State private var suwayomiUsername = ""
+    @State private var suwayomiPassword = ""
+    @State private var suwayomiAuthMode = "none"
+
     // FsPlugin States
     @State private var selectedFolder: URL?
     @State private var isReadOnly: Bool = false
@@ -111,6 +126,7 @@ struct AddSourceModal: View {
                 Section("integrations") {
                     sourceTypeLink(.komgaPlugin)
                     sourceTypeLink(.kavitaPlugin)
+                    sourceTypeLink(.suwayomiPlugin)
                 }
             }
             .navigationBarTitleDisplayMode(.inline).navigationTitle("addSource")
@@ -242,6 +258,36 @@ struct AddSourceModal: View {
                     } footer: {
                         Text("kavitaAuthenticationHint")
                     }
+
+                case .suwayomiPlugin:
+                    Section("displayName") { TextField("default", text: $suwayomiName) }
+
+                    Section {
+                        TextField("serverUrl", text: $urlInput).keyboardType(.URL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    } header: {
+                        Text("suwayomiServerSettings")
+                    } footer: {
+                        Text("suwayomiServerIdSyncHint")
+                    }
+
+                    Section {
+                        Picker("suwayomiAuthMode", selection: $suwayomiAuthMode) {
+                            ForEach(
+                                SuwayomiConnectionConfiguration.AuthMode.allCases, id: \.rawValue
+                            ) { Text(LocalizedStringKey($0.rawValue)).tag($0.rawValue) }
+                        }
+
+                        if suwayomiAuthMode != "none" {
+                            TextField("username", text: $suwayomiUsername)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            SecureField("password", text: $suwayomiPassword)
+                        }
+                    } header: {
+                        Text("credentials")
+                    } footer: {
+                        Text("suwayomiAuthenticationHint")
+                    }
             }
         }
         .onChange(of: urlInput, initial: true) { _, url in
@@ -293,6 +339,16 @@ struct AddSourceModal: View {
                 if let password = values["password"] { kavitaPassword = password }
                 if let apiKey = values["apiKey"] { kavitaApiKey = apiKey }
 
+            case .suwayomiPlugin:
+                if let name = values["name"] { suwayomiName = name }
+                if let username = values["username"] { suwayomiUsername = username }
+                if let password = values["password"] { suwayomiPassword = password }
+                if let mode = values["authMode"],
+                    SuwayomiConnectionConfiguration.AuthMode(rawValue: mode) != nil
+                {
+                    suwayomiAuthMode = mode
+                }
+
             case .jsPlugin, .fsPlugin: break
         }
     }
@@ -317,6 +373,12 @@ struct AddSourceModal: View {
                     "apiKey": kavitaApiKey
                 ]
 
+            case .suwayomiPlugin:
+                values = [
+                    "name": suwayomiName, "username": suwayomiUsername,
+                    "password": suwayomiPassword, "authMode": suwayomiAuthMode
+                ]
+
             case .jsPlugin, .fsPlugin: return nil
         }
 
@@ -330,7 +392,7 @@ struct AddSourceModal: View {
 
             case .fsPlugin: return selectedFolder != nil
 
-            case .httpPlugin, .komgaPlugin, .kavitaPlugin:
+            case .httpPlugin, .komgaPlugin, .kavitaPlugin, .suwayomiPlugin:
                 return PluginURLConfiguration(urlInput) != nil
         }
     }
@@ -415,6 +477,18 @@ struct AddSourceModal: View {
                     guard let url = configuredPluginURL(for: type),
                         let plugin = await PluginService.shared.decodeURL(url, type: "kavita")
                             as? KavitaPlugin
+                    else {
+                        errorMessage = String(localized: "failedToParseSource")
+                        showError = true
+                        return
+                    }
+
+                    addPlugin(plugin)
+
+                case .suwayomiPlugin:
+                    guard let url = configuredPluginURL(for: type),
+                        let plugin = await PluginService.shared.decodeURL(url, type: "suwayomi")
+                            as? SuwayomiPlugin
                     else {
                         errorMessage = String(localized: "failedToParseSource")
                         showError = true

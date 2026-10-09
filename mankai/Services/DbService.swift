@@ -63,6 +63,7 @@ import GRDB
                 try HttpPluginModel.createTable(db)
                 try KomgaPluginModel.createTable(db)
                 try KavitaPluginModel.createTable(db)
+                try SuwayomiPluginModel.createTable(db)
                 try FsPluginModel.createTable(db)
                 try FsBrowsablePluginModel.createTable(db)
                 try SmbBrowsablePluginModel.createTable(db)

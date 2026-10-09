@@ -13,6 +13,7 @@ struct SourceImportItem: Identifiable {
         case http
         case komga
         case kavita
+        case suwayomi
 
         var localizedName: String {
             switch self { case .js: String(localized: "js")
@@ -22,6 +23,8 @@ struct SourceImportItem: Identifiable {
                 case .komga: String(localized: "komga")
 
                 case .kavita: String(localized: "kavita")
+
+                case .suwayomi: String(localized: "suwayomi")
             }
         }
     }

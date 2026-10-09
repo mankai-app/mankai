@@ -35,6 +35,7 @@ enum MankaiErrorDomain: String {
     case pluginJavascript = "app.mankai.plugin.javascript"
     case pluginKomga = "app.mankai.plugin.komga"
     case pluginKavita = "app.mankai.plugin.kavita"
+    case pluginSuwayomi = "app.mankai.plugin.suwayomi"
     case sync = "app.mankai.sync"
     case syncHttp = "app.mankai.sync.http"
     case syncSupabase = "app.mankai.sync.supabase"
@@ -67,6 +68,7 @@ enum MankaiErrorDomain: String {
             case .pluginJavascript: return 85
             case .pluginKomga: return 86
             case .pluginKavita: return 87
+            case .pluginSuwayomi: return 88
             case .sync: return 90
             case .syncHttp: return 91
             case .syncSupabase: return 92
@@ -206,6 +208,12 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case pluginKavitaDatabaseNotAvailable
     case pluginKavitaInvalidResponse
     case pluginKavitaRequestFailed
+
+    case pluginSuwayomiInvalidUrl
+    case pluginSuwayomiInvalidCredentials
+    case pluginSuwayomiDatabaseNotAvailable
+    case pluginSuwayomiInvalidResponse
+    case pluginSuwayomiRequestFailed
 
     case pluginJavascriptDatabaseNotAvailable
     case pluginJavascriptFailedToEncodeMetaData
@@ -442,6 +450,17 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .pluginKavita, code: 4, messageKey: "invalidResponse"),
         .pluginKavitaRequestFailed: .init(
             domain: .pluginKavita, code: 5, messageKey: "httpRequestFailed"),
+
+        .pluginSuwayomiInvalidUrl: .init(
+            domain: .pluginSuwayomi, code: 1, messageKey: "invalidUrl"),
+        .pluginSuwayomiInvalidCredentials: .init(
+            domain: .pluginSuwayomi, code: 2, messageKey: "invalidCredentials"),
+        .pluginSuwayomiDatabaseNotAvailable: .init(
+            domain: .pluginSuwayomi, code: 3, messageKey: "databaseNotAvailable"),
+        .pluginSuwayomiInvalidResponse: .init(
+            domain: .pluginSuwayomi, code: 4, messageKey: "invalidResponse"),
+        .pluginSuwayomiRequestFailed: .init(
+            domain: .pluginSuwayomi, code: 5, messageKey: "httpRequestFailed"),
 
         .pluginJavascriptDatabaseNotAvailable: .init(
             domain: .pluginJavascript, code: 1, messageKey: "databaseNotAvailable"),

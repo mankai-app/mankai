@@ -261,7 +261,9 @@ private struct SelectConfigView<ConfigurableObject: Configurable & ObservableObj
             if selectedValue != nil {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker(selection: $selectedValue) {
-                        ForEach(options, id: \.self) { option in Text(option).tag(option) }
+                        ForEach(options, id: \.self) { option in
+                            Text(LocalizedStringKey(option)).tag(option)
+                        }
                     } label: {
                         Text(LocalizedStringKey(config.name))
                     }

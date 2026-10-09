@@ -1097,6 +1097,36 @@
         }
       }
     },
+    "basic_auth" : {
+      "comment" : "Suwayomi server authentication mode.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Auth"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic認証"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本认证"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本驗證"
+          }
+        }
+      }
+    },
     "batchMangas" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -14727,6 +14757,36 @@
         }
       }
     },
+    "simple_login" : {
+      "comment" : "Suwayomi server authentication mode.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simple Login"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプルログイン"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "简单登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "簡易登入"
+          }
+        }
+      }
+    },
     "slider" : {
       "comment" : "Used as a config type label.",
       "extractionState" : "manual",
@@ -15543,6 +15603,202 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "懸疑"
+          }
+        }
+      }
+    },
+    "suwayomi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi"
+          }
+        }
+      }
+    },
+    "suwayomiAuthenticationHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the authentication mode configured on your Suwayomi server. Leave credentials empty for an open server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomiサーバーに設定されている認証モードを選択してください。認証不要のサーバーでは認証情報を空欄にしてください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择 Suwayomi 服务器配置的认证模式。无需认证的服务器可留空凭据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇 Suwayomi 伺服器設定的驗證模式。無需驗證的伺服器可留空憑證。"
+          }
+        }
+      }
+    },
+    "suwayomiAuthMode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication Mode"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証モード"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "认证模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "驗證模式"
+          }
+        }
+      }
+    },
+    "suwayomiServer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi Server"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomiサーバー"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi 服务器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi 伺服器"
+          }
+        }
+      }
+    },
+    "suwayomiServerIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server URL is used as its identifier. Changing the URL removes the server’s sync record."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーのURLを識別子として使用します。URLを変更すると、サーバーの同期レコードが削除されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器 URL 用作其标识符。更改 URL 会移除服务器的同步记录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器 URL 用作其識別碼。變更 URL 會移除伺服器的同步紀錄。"
+          }
+        }
+      }
+    },
+    "suwayomiServerSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi Server Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomiサーバー設定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi 服务器设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomi 伺服器設定"
+          }
+        }
+      }
+    },
+    "suwayomiSourceDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse and read manga from your Suwayomi server library."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suwayomiサーバーのライブラリから漫画を探して読みます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浏览和阅读 Suwayomi 服务器书库中的漫画。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽和閱讀 Suwayomi 伺服器書庫中的漫畫。"
           }
         }
       }
@@ -16933,6 +17189,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每行二頁"
+          }
+        }
+      }
+    },
+    "ui_login" : {
+      "comment" : "Suwayomi server authentication mode.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UI Login"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UIログイン"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面登录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面登入"
           }
         }
       }
