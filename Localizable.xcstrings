@@ -1425,6 +1425,62 @@
         }
       }
     },
+    "cameraAccessRequired" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow camera access in Settings to scan source QR codes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースのQRコードをスキャンするには、設定でカメラへのアクセスを許可してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在设置中允许相机访问，以扫描来源二维码。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在設定中允許相機取用，以掃描來源 QR 碼。"
+          }
+        }
+      }
+    },
+    "cameraUnavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No camera is available. Enter the import link manually."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラを利用できません。インポートリンクを手動で入力してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相机不可用。请手动输入导入链接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相機無法使用。請手動輸入匯入連結。"
+          }
+        }
+      }
+    },
     "cancel" : {
       "localizations" : {
         "en" : {
@@ -5907,6 +5963,34 @@
         }
       }
     },
+    "failedToScanQRCode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't scan the QR code. Try again or enter the import link manually."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QRコードをスキャンできませんでした。再試行するか、インポートリンクを手動で入力してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法扫描二维码。请重试或手动输入导入链接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法掃描 QR 碼。請重試或手動輸入匯入連結。"
+          }
+        }
+      }
+    },
     "failedToSearchManga" : {
       "localizations" : {
         "en" : {
@@ -7271,6 +7355,34 @@
         }
       }
     },
+    "importLink" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Link"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "インポートリンク"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入链接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入連結"
+          }
+        }
+      }
+    },
     "imports" : {
       "localizations" : {
         "en" : {
@@ -8303,6 +8415,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SMB 共用無效"
+          }
+        }
+      }
+    },
+    "invalidSourceImportLink" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a valid mankai://add-plugins import link."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有効な mankai://add-plugins インポートリンクを入力してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入有效的 mankai://add-plugins 导入链接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請輸入有效的 mankai://add-plugins 匯入連結。"
           }
         }
       }
@@ -11377,6 +11517,34 @@
         }
       }
     },
+    "noQRCodeFoundInPhoto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No QR code was found in the selected photo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した写真にQRコードが見つかりませんでした。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选照片中未找到二维码。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所選照片中找不到 QR 碼。"
+          }
+        }
+      }
+    },
     "noReadableImagesInEpub" : {
       "localizations" : {
         "en" : {
@@ -13793,6 +13961,34 @@
         }
       }
     },
+    "scanQRCode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan QR Code"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QRコードをスキャン"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描二维码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "掃描 QR 碼"
+          }
+        }
+      }
+    },
     "schoolLife" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
@@ -15209,6 +15405,62 @@
         }
       }
     },
+    "sourceImportLinkHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a source import link to preview and choose the sources you want to add."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースのインポートリンクでプレビューを開き、追加するソースを選択できます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用来源导入链接预览并选择要添加的来源。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用來源匯入連結預覽並選擇要加入的來源。"
+          }
+        }
+      }
+    },
+    "sourceImportLinkPlaceholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste or enter an import link"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "インポートリンクを貼り付けるか入力"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴或输入导入链接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上或輸入匯入連結"
+          }
+        }
+      }
+    },
     "sourceNotFound" : {
       "localizations" : {
         "en" : {
@@ -15233,6 +15485,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到來源"
+          }
+        }
+      }
+    },
+    "sourceQRCodeHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a QR code containing a source import link."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ソースのインポートリンクを含むQRコードをスキャンしてください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请扫描包含来源导入链接的二维码。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請掃描包含來源匯入連結的 QR 碼。"
           }
         }
       }

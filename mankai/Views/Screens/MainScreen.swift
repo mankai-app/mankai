@@ -86,34 +86,21 @@ struct MainScreen: View {
     }
 
     private func handleMankaiURLs(_ urls: [URL]) {
-        var plugins: [SourceImportItem] = []
+        var sourceURLs: [URL] = []
 
         for url in urls {
             guard let host = url.host?.lowercased() else { continue }
 
-            switch host { case "add-plugins":
-                let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                let sources = (components?.queryItems ?? [])
-                    .compactMap { item -> SourceImportItem? in
-                        guard let value = item.value, let decodedURL = Base62.decode(value),
-                            let pluginURL = URL(string: decodedURL)
-                        else { return nil }
-
-                        return SourceImportItem(type: item.name.lowercased(), url: pluginURL)
-                    }
-
-                guard !sources.isEmpty else {
-                    Logger.ui.warning("No plugin URLs found in URL: \(url)")
-                    continue
-                }
-
-                plugins.append(contentsOf: sources)
-                default: Logger.ui.warning("Unsupported host: \(host)")
+            switch host { case "add-plugins": sourceURLs.append(url) default:
+                Logger.ui.warning("Unsupported host: \(host)")
             }
         }
 
-        guard !plugins.isEmpty else { return }
-
-        sourceImportRequest = SourceImportRequest(sources: plugins)
+        guard !sourceURLs.isEmpty else { return }
+        guard let request = SourceImportRequest(urls: sourceURLs) else {
+            Logger.ui.warning("No source import URLs found")
+            return
+        }
+        sourceImportRequest = request
     }
 }

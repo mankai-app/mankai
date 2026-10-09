@@ -59,20 +59,17 @@ struct AddSourceModal: View {
                 case .fsPlugin: Image(systemName: "folder.fill")
 
                 case .httpPlugin:
-                    Image("SakuraIconPreview").renderingMode(.original).resizable().scaledToFit()
+                    Image("SakuraIconPreview").resizable().scaledToFit()
                         .frame(width: 28, height: 28)
 
                 case .komgaPlugin:
-                    Image("KomgaIcon").renderingMode(.original).resizable().scaledToFit()
-                        .frame(width: 28, height: 28)
+                    Image("KomgaIcon").resizable().scaledToFit().frame(width: 28, height: 28)
 
                 case .kavitaPlugin:
-                    Image("KavitaIcon").renderingMode(.original).resizable().scaledToFit()
-                        .frame(width: 28, height: 28)
+                    Image("KavitaIcon").resizable().scaledToFit().frame(width: 28, height: 28)
 
                 case .suwayomiPlugin:
-                    Image("SuwayomiIcon").renderingMode(.original).resizable().scaledToFit()
-                        .frame(width: 28, height: 28)
+                    Image("SuwayomiIcon").resizable().scaledToFit().frame(width: 28, height: 28)
             }
         }
     }
@@ -132,6 +129,13 @@ struct AddSourceModal: View {
             .navigationBarTitleDisplayMode(.inline).navigationTitle("addSource")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink {
+                        SourceQRCodeScannerModal { dismiss() }
+                    } label: {
+                        Image(systemName: "qrcode.viewfinder")
+                    }
+                }
             }
         }
         .alert("failedToAddSource", isPresented: $showError) {

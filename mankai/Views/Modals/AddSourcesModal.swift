@@ -7,18 +7,23 @@
 
 import SwiftUI
 
-struct SourceImportItem: Identifiable {
-    let id = UUID()
-    let type: String
-    let url: URL
-}
-
-struct SourceImportRequest: Identifiable {
-    let id = UUID()
-    let sources: [SourceImportItem]
-}
-
 struct AddSourcesModal: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let sources: [SourceImportItem]
+
+    var body: some View {
+        NavigationStack {
+            AddSourcesView(sources: sources) { dismiss() }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
+                }
+        }
+        .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
+    }
+}
+
+struct AddSourcesView: View {
     private struct Candidate: Identifiable {
         let source: SourceImportItem
         var plugin: Plugin?
@@ -27,9 +32,8 @@ struct AddSourcesModal: View {
         var id: UUID { source.id }
     }
 
-    @Environment(\.dismiss) private var dismiss
-
     let sources: [SourceImportItem]
+    let onAdded: () -> Void
 
     @State private var candidates: [Candidate] = []
     @State private var selectedSourceIds: Set<UUID> = []
@@ -39,98 +43,91 @@ struct AddSourcesModal: View {
     @State private var duplicatePluginIDs: [String] = []
 
     var body: some View {
-        NavigationStack {
-            List(candidates) { candidate in
-                if candidate.isLoading {
-                    ProgressView().frame(maxWidth: .infinity, alignment: .center)
-                } else if let plugin = candidate.plugin {
-                    Button {
-                        if selectedSourceIds.contains(candidate.id) {
-                            selectedSourceIds.remove(candidate.id)
-                        } else {
-                            selectedSourceIds.insert(candidate.id)
-                        }
-                    } label: {
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(
-                                systemName: selectedSourceIds.contains(candidate.id)
-                                    ? "checkmark.circle.fill" : "circle"
-                            )
-                            .font(.title3)
-                            .foregroundStyle(
-                                selectedSourceIds.contains(candidate.id)
-                                    ? Color.accentColor : .secondary)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack(spacing: 8) {
-                                    Text(plugin.name ?? plugin.id).foregroundStyle(.primary)
-
-                                    if let typeName = plugin.typeName {
-                                        Text(typeName).smallTagStyle()
-                                    }
-
-                                    if let version = plugin.version {
-                                        Text(verbatim: "v\(version)").smallTagStyle()
-                                    }
-                                }
-
-                                if let description = plugin.description {
-                                    Text(description).font(.caption).foregroundStyle(.secondary)
-                                        .lineLimit(2)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .contentShape(Rectangle())
+        List(candidates) { candidate in
+            if candidate.isLoading {
+                ProgressView().frame(maxWidth: .infinity, alignment: .center)
+            } else if let plugin = candidate.plugin {
+                Button {
+                    if selectedSourceIds.contains(candidate.id) {
+                        selectedSourceIds.remove(candidate.id)
+                    } else {
+                        selectedSourceIds.insert(candidate.id)
                     }
-                    .buttonStyle(.plain)
-                } else {
+                } label: {
                     HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "exclamationmark.circle.fill").font(.title3)
-                            .foregroundStyle(.red)
+                        Image(
+                            systemName: selectedSourceIds.contains(candidate.id)
+                                ? "checkmark.circle.fill" : "circle"
+                        )
+                        .font(.title3)
+                        .foregroundStyle(
+                            selectedSourceIds.contains(candidate.id)
+                                ? Color.accentColor : .secondary)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("failedToParseSource").foregroundStyle(.red)
+                            HStack(spacing: 8) {
+                                Text(plugin.name ?? plugin.id).foregroundStyle(.primary)
 
-                            Text(candidate.source.url.absoluteString).font(.caption2)
-                                .foregroundStyle(.secondary).lineLimit(2)
+                                if let typeName = plugin.typeName { Text(typeName).smallTagStyle() }
+
+                                if let version = plugin.version {
+                                    Text(verbatim: "v\(version)").smallTagStyle()
+                                }
+                            }
+
+                            if let description = plugin.description {
+                                Text(description).font(.caption).foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            } else {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "exclamationmark.circle.fill").font(.title3)
+                        .foregroundStyle(.red)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("failedToParseSource").foregroundStyle(.red)
+
+                        Text(candidate.source.url.absoluteString).font(.caption2)
+                            .foregroundStyle(.secondary).lineLimit(2)
                     }
                 }
             }
-            .navigationTitle("addSources").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("add") { addSelectedPlugins() }
-                        .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
-                }
-            }
-            .task { await loadCandidates() }
-            .alert(
-                "failedToAddSource",
-                isPresented: Binding(
-                    get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
-            ) {
-                Button("ok", role: .cancel) {}
-            } message: {
-                if let errorMessage { Text(errorMessage) }
-            }
-            .alert("duplicateSourceTitle", isPresented: duplicatePluginsArePresented) {
-                Button("overwrite", role: .destructive) {
-                    duplicatePluginIDs = []
-                    performAddSelectedPlugins(overwriteDuplicates: true)
-                }
-                Button("cancel", role: .cancel) { duplicatePluginIDs = [] }
-            } message: {
-                Text(
-                    String(
-                        format: String(localized: "duplicateSourceIdMessageFormat"),
-                        duplicatePluginIDs.joined(separator: ", ")))
+        }
+        .navigationTitle("addSources").navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("add") { addSelectedPlugins() }
+                    .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
             }
         }
-        .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
+        .task { await loadCandidates() }
+        .alert(
+            "failedToAddSource",
+            isPresented: Binding(
+                get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
+        ) {
+            Button("ok", role: .cancel) {}
+        } message: {
+            if let errorMessage { Text(errorMessage) }
+        }
+        .alert("duplicateSourceTitle", isPresented: duplicatePluginsArePresented) {
+            Button("overwrite", role: .destructive) {
+                duplicatePluginIDs = []
+                performAddSelectedPlugins(overwriteDuplicates: true)
+            }
+            Button("cancel", role: .cancel) { duplicatePluginIDs = [] }
+        } message: {
+            Text(
+                String(
+                    format: String(localized: "duplicateSourceIdMessageFormat"),
+                    duplicatePluginIDs.joined(separator: ", ")))
+        }
     }
 
     private func loadCandidates() async {
@@ -208,7 +205,7 @@ struct AddSourcesModal: View {
         }
 
         if failures.isEmpty {
-            dismiss()
+            onAdded()
         } else {
             selectedSourceIds = Set(failures.map(\.id))
             errorMessage = failures.map(\.message).joined(separator: "\n")
