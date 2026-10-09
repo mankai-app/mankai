@@ -203,13 +203,14 @@ enum BrowsePluginAddConflictResolution {
 
     /// Saves portable settings and their pending mutation in the same transaction.
     func savePlugin(_ plugin: BrowsablePlugin) throws {
-        guard plugin.supports(.urlEncoding), let type = plugin.syncType else {
+        if plugin.supports(.urlEncoding), let type = plugin.syncType {
+            try save(plugin: plugin, type: type)
+            SyncService.shared.scheduleSync()
+        } else {
             try plugin.savePlugin()
-            return
         }
 
-        try save(plugin: plugin, type: type)
-        SyncService.shared.scheduleSync()
+        objectWillChange.send()
     }
 
     private func save(plugin: BrowsablePlugin, type: String) throws {

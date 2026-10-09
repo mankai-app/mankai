@@ -160,7 +160,6 @@ final class JsPlugin: Plugin, Configurable {
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
         objectWillChange.send()
-        try PluginService.shared.savePlugin(self)
     }
 
     func resetConfigs() throws {
@@ -169,7 +168,6 @@ final class JsPlugin: Plugin, Configurable {
             _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
         objectWillChange.send()
-        try PluginService.shared.savePlugin(self)
     }
 
     static func fromJson(_ json: [String: Any]) -> JsPlugin? {

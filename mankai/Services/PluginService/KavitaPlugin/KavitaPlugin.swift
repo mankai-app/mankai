@@ -111,13 +111,7 @@ final class KavitaPlugin: Plugin, Configurable {
             baseUrl: updatedModel.baseUrl, username: updatedModel.username,
             password: updatedModel.password, apiKey: updatedModel.apiKey)
 
-        let previousModel = model
         model = updatedModel
-
-        do { try PluginService.shared.savePlugin(self) } catch {
-            model = previousModel
-            throw error
-        }
 
         session = KavitaSession(configuration: configuration)
         (PluginService.shared.getPlugin(id) as? CacheWrapper)?.clearAllCache()

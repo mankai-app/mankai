@@ -112,13 +112,7 @@ final class SuwayomiPlugin: Plugin, Configurable {
             baseUrl: updatedModel.baseUrl, username: updatedModel.username,
             password: updatedModel.password, authMode: updatedModel.authMode)
 
-        let previousModel = model
         model = updatedModel
-
-        do { try PluginService.shared.savePlugin(self) } catch {
-            model = previousModel
-            throw error
-        }
 
         session = SuwayomiSession(configuration: configuration)
         (PluginService.shared.getPlugin(id) as? CacheWrapper)?.clearAllCache()

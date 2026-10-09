@@ -126,7 +126,6 @@ class HttpPlugin: Plugin, Configurable {
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
         objectWillChange.send()
-        try PluginService.shared.savePlugin(self)
     }
 
     func resetConfigs() throws {
@@ -135,7 +134,6 @@ class HttpPlugin: Plugin, Configurable {
             _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
         objectWillChange.send()
-        try PluginService.shared.savePlugin(self)
     }
 
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {

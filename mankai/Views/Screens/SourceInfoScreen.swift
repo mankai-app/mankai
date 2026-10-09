@@ -17,6 +17,7 @@ struct SourceInfoScreen: View {
     @State private var errorMessage = ""
     @State private var errorTitle = ""
 
+    @State private var hasConfigChanges = false
     @State private var showResetConfirmation = false
     @State private var showRemoveConfirmation = false
 
@@ -188,11 +189,29 @@ struct SourceInfoScreen: View {
                 }
             }
         }
-        .navigationTitle(plugin.name ?? plugin.id)
+        .onReceive(plugin.objectWillChange) { _ in
+            if plugin is any Configurable { hasConfigChanges = true }
+        }
+        .onDisappear { savePluginIfNeeded() }.navigationTitle(plugin.name ?? plugin.id)
         .alert(errorTitle, isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)
+        }
+    }
+
+    private func savePluginIfNeeded() {
+        guard hasConfigChanges, PluginService.shared.getPlugin(plugin.id) === plugin else { return }
+
+        do {
+            try PluginService.shared.savePlugin(plugin)
+            hasConfigChanges = false
+        } catch {
+            Logger.pluginService.error(
+                "Failed to save plugin configuration: \(plugin.id)", error: error)
+            errorTitle = String(localized: "failedToSetConfigValue")
+            errorMessage = error.localizedDescription
+            showErrorAlert = true
         }
     }
 

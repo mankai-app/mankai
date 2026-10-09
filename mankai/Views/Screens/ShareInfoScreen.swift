@@ -19,6 +19,7 @@ struct ShareInfoScreen: View {
 
     @State private var errorTitle: LocalizedStringKey = "failedToSaveShare"
     @State private var errorMessage: String?
+    @State private var hasSettingsChanges = false
     @State private var showingRemoveConfirmation = false
 
     init(share: BrowsablePlugin) {
@@ -121,7 +122,7 @@ struct ShareInfoScreen: View {
             if isEditable {
                 Section {
                     TextField("default", text: $name)
-                        .onChange(of: name, initial: false) { saveSettings() }
+                        .onChange(of: name, initial: false) { updateSettings() }
                 } header: {
                     Text("displayName")
                 }
@@ -184,8 +185,7 @@ struct ShareInfoScreen: View {
             }
         }
         .navigationTitle(name.isEmpty ? (share.name ?? share.id) : name)
-        .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { browseService.objectWillChange.send() }
+        .navigationBarTitleDisplayMode(.inline).onDisappear { saveSettings() }
         .alert(errorTitle, isPresented: errorIsPresented) {
             Button("ok", role: .cancel) { errorMessage = nil }
         } message: {
@@ -196,39 +196,51 @@ struct ShareInfoScreen: View {
     @ViewBuilder private var credentialFields: some View {
         TextField("username", text: $username).textInputAutocapitalization(.never)
             .autocorrectionDisabled().textContentType(.username)
-            .onChange(of: username, initial: false) { saveSettings() }
+            .onChange(of: username, initial: false) { updateSettings() }
 
         SecureField("password", text: $password).textContentType(.password)
-            .onChange(of: password, initial: false) { saveSettings() }
+            .onChange(of: password, initial: false) { updateSettings() }
+    }
+
+    private func updateSettings() {
+        share.displayName = Optional(name).trimmed
+
+        let trimmedUsername = Optional(username).trimmed
+        let trimmedPassword = Optional(password).trimmed
+
+        switch share { case let smbShare as SmbBrowsablePlugin:
+            var configuration = smbShare.configuration
+            configuration.username = trimmedUsername
+            configuration.password = trimmedPassword
+            smbShare.configuration = configuration
+            case let webDavShare as WebDavBrowsablePlugin:
+                var configuration = webDavShare.configuration
+                configuration.username = trimmedUsername
+                configuration.password = trimmedPassword
+                webDavShare.configuration = configuration
+            case let opdsShare as OpdsBrowsablePlugin:
+                var configuration = opdsShare.configuration
+                configuration.username = trimmedUsername
+                configuration.password = trimmedPassword
+                opdsShare.configuration = configuration
+            default: break
+        }
+
+        hasSettingsChanges = true
     }
 
     private func saveSettings() {
+        guard isEditable, hasSettingsChanges, browseService.getPlugin(share.id) === share else {
+            return
+        }
+
         do {
-            share.displayName = Optional(name).trimmed
-
-            let trimmedUsername = Optional(username).trimmed
-            let trimmedPassword = Optional(password).trimmed
-
-            switch share { case let smbShare as SmbBrowsablePlugin:
-                var configuration = smbShare.configuration
-                configuration.username = trimmedUsername
-                configuration.password = trimmedPassword
-                smbShare.configuration = configuration
-                case let webDavShare as WebDavBrowsablePlugin:
-                    var configuration = webDavShare.configuration
-                    configuration.username = trimmedUsername
-                    configuration.password = trimmedPassword
-                    webDavShare.configuration = configuration
-                case let opdsShare as OpdsBrowsablePlugin:
-                    var configuration = opdsShare.configuration
-                    configuration.username = trimmedUsername
-                    configuration.password = trimmedPassword
-                    opdsShare.configuration = configuration
-                default: break
-            }
-
             try browseService.savePlugin(share)
-        } catch { presentError(error) }
+            hasSettingsChanges = false
+        } catch {
+            Logger.browseService.error("Failed to save share settings: \(share.id)", error: error)
+            presentError(error)
+        }
     }
 
     private func removeShare() {
