@@ -5,6 +5,9 @@ on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 permissions:
   contents: read
@@ -120,11 +123,21 @@ jobs:
         run: |
           test -s releases/mankai.ipa
           test -s releases/mankai.dmg
+          release_flags=()
+          case "$RELEASE_TAG" in
+            *-alpha.*|*-beta.*|*-rc.*)
+              release_flags=(--prerelease --latest=false)
+              ;;
+          esac
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" releases/mankai.ipa releases/mankai.dmg --clobber
+            if [ "${#release_flags[@]}" -gt 0 ]; then
+              gh release edit "$RELEASE_TAG" "${release_flags[@]}"
+            fi
           else
             gh release create "$RELEASE_TAG" releases/mankai.ipa releases/mankai.dmg \
               --verify-tag \
               --generate-notes \
-              --title "$RELEASE_TAG"
+              --title "$RELEASE_TAG" \
+              "${release_flags[@]}"
           fi
