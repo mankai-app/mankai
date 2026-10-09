@@ -46,7 +46,7 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 ### App Features
 
-- [x] **Source Installation Deep Links** - Review and add one or more sources through a deep link.
+- [x] **Source import links and QR codes** - Review and add one or more sources from links, QR codes, QR images, or pasted links.
 - [x] **Export** - Export downloaded chapters as MMA archives or separate PDF files for each chapter and share them.
 - [ ] ~~**Sharing** - Share manga as an image.~~
 - [x] **Page curl animations** - Choose realistic page-turning animations in the paged reader for a more immersive reading experience.
@@ -84,16 +84,16 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 For setup instructions, usage guides, and troubleshooting, visit the [Mankai documentation](https://mankai.app).
 
-| Guide                                                             | What you will find                                                     |
-| :---------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| [Installation](https://mankai.app/guides/installation/)           | Installation options for your device.                                  |
-| [Quick start](https://mankai.app/guides/quick-start/)             | Add a source, read your first book, and save your place.               |
-| [Add books and sources](https://mankai.app/guides/sources/)       | Set up sources, import books, and connect local or network shares.     |
-| [Collections and downloads](https://mankai.app/guides/library/)   | Manage saved titles, reading history, and offline chapters.            |
-| [Reading and reader settings](https://mankai.app/guides/reading/) | Reading layouts, navigation, and reader controls.                      |
-| [Image processing](https://mankai.app/guides/image-processing/)   | Configure upscaling, downsampling, page colors, and remote processors. |
-| [Sync across devices](https://mankai.app/guides/sync/)            | Configure syncing for your collection and reading progress.            |
-| [Troubleshooting](https://mankai.app/guides/troubleshooting/)     | Resolve common setup and reading issues.                               |
+| Guide                                                             | What you will find                                                                 |
+| :---------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| [Installation](https://mankai.app/guides/installation/)           | Installation options for your device.                                              |
+| [Quick start](https://mankai.app/guides/quick-start/)             | Add a source, read your first book, and save your place.                           |
+| [Add books and sources](https://mankai.app/guides/sources/)       | Add sources manually or with links and QR codes, import books, and connect shares. |
+| [Collections and downloads](https://mankai.app/guides/library/)   | Manage saved titles, reading history, and offline chapters.                        |
+| [Reading and reader settings](https://mankai.app/guides/reading/) | Reading layouts, navigation, and reader controls.                                  |
+| [Image processing](https://mankai.app/guides/image-processing/)   | Configure upscaling, downsampling, page colors, and remote processors.             |
+| [Sync across devices](https://mankai.app/guides/sync/)            | Configure syncing for your collection and reading progress.                        |
+| [Troubleshooting](https://mankai.app/guides/troubleshooting/)     | Resolve common setup and reading issues.                                           |
 
 ## Sources and APIs
 
@@ -103,6 +103,7 @@ To let Mankai's HTTP plugin interact with your server, implement the [Mankai Com
 
 | Reference                                                        | Build                                                                     |
 | :--------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| [Add-source links](https://mankai.app/api/source-links/)         | Import links and QR codes for adding one or more sources.                 |
 | [JavaScript plugins](https://mankai.app/api/javascript-plugins/) | A JavaScript source plugin with browsing, search, chapters, and images.   |
 | [Mankai Compatible API](https://mankai.app/api/http-api/)        | A server implementing compatible HTTP endpoints for Mankai's HTTP plugin. |
 | [Editor API](https://mankai.app/api/editor-api/)                 | Editing support for a Mankai Compatible source.                           |

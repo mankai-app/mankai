@@ -38,7 +38,7 @@ final class SuwayomiPlugin: Plugin, Configurable {
 
     init(
         id: String? = nil, baseUrl: String, name: String = "", username: String = "",
-        password: String = "", authMode: String = "basic_auth"
+        password: String = "", authMode: String = "none"
     ) throws {
         let configuration = try SuwayomiConnectionConfiguration(
             baseUrl: baseUrl, username: username, password: password, authMode: authMode)
@@ -131,7 +131,7 @@ final class SuwayomiPlugin: Plugin, Configurable {
         return try? SuwayomiPlugin(
             id: sourceId, baseUrl: configuration.baseURL.absoluteString, name: values["name"] ?? "",
             username: values["username"] ?? "", password: values["password"] ?? "",
-            authMode: values["authMode"] ?? "basic_auth")
+            authMode: values["authMode"] ?? "none")
     }
 
     private static func fromDataModel(_ model: SuwayomiPluginModel) throws -> SuwayomiPlugin {
