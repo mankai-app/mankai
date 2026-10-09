@@ -14,6 +14,8 @@ final class KavitaPlugin: Plugin, Configurable {
 
     override class var syncType: String? { "kavita" }
 
+    override class var typeName: String? { String(localized: "kavita") }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -31,8 +33,6 @@ final class KavitaPlugin: Plugin, Configurable {
         let name = model.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? "Kavita (\(session.configuration.baseURL.host ?? ""))" : name
     }
-
-    override var tags: [String] { [String(localized: "kavita")] }
 
     override var description: String? { String(localized: "kavitaSourceDescription") }
 

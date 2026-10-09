@@ -84,6 +84,8 @@ class CacheWrapper: Plugin {
 
     override var name: String? { plugin.name }
 
+    override var typeName: String? { plugin.typeName }
+
     override var version: String? { plugin.version }
 
     override var tags: [String] { plugin.tags }

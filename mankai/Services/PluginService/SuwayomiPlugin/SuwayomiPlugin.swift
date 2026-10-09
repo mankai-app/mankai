@@ -14,6 +14,8 @@ final class SuwayomiPlugin: Plugin, Configurable {
 
     override class var syncType: String? { "suwayomi" }
 
+    override class var typeName: String? { String(localized: "suwayomi") }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -31,8 +33,6 @@ final class SuwayomiPlugin: Plugin, Configurable {
         let name = model.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? "Suwayomi (\(session.configuration.baseURL.host ?? ""))" : name
     }
-
-    override var tags: [String] { [String(localized: "suwayomi")] }
 
     override var description: String? { String(localized: "suwayomiSourceDescription") }
 

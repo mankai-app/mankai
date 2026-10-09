@@ -8,29 +8,8 @@
 import SwiftUI
 
 struct SourceImportItem: Identifiable {
-    enum Kind: String {
-        case js
-        case http
-        case komga
-        case kavita
-        case suwayomi
-
-        var localizedName: String {
-            switch self { case .js: String(localized: "js")
-
-                case .http: String(localized: "mankaiCompatible")
-
-                case .komga: String(localized: "komga")
-
-                case .kavita: String(localized: "kavita")
-
-                case .suwayomi: String(localized: "suwayomi")
-            }
-        }
-    }
-
     let id = UUID()
-    let kind: Kind
+    let type: String
     let url: URL
 }
 
@@ -86,7 +65,9 @@ struct AddSourcesModal: View {
                                 HStack(spacing: 8) {
                                     Text(plugin.name ?? plugin.id).foregroundStyle(.primary)
 
-                                    Text(candidate.source.kind.localizedName).smallTagStyle()
+                                    if let typeName = plugin.typeName {
+                                        Text(typeName).smallTagStyle()
+                                    }
 
                                     if let version = plugin.version {
                                         Text(verbatim: "v\(version)").smallTagStyle()
@@ -159,7 +140,7 @@ struct AddSourcesModal: View {
             for (index, source) in sources.enumerated() {
                 group.addTask {
                     let plugin = await PluginService.shared.decodeURL(
-                        source.url.absoluteString, type: source.kind.rawValue)
+                        source.url.absoluteString, type: source.type)
 
                     return (index, plugin)
                 }

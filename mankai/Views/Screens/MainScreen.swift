@@ -95,16 +95,15 @@ struct MainScreen: View {
                 let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                 let sources = (components?.queryItems ?? [])
                     .compactMap { item -> SourceImportItem? in
-                        guard let type = SourceImportItem.Kind(rawValue: item.name.lowercased()),
-                            let value = item.value, let decodedURL = Base62.decode(value),
+                        guard let value = item.value, let decodedURL = Base62.decode(value),
                             let pluginURL = URL(string: decodedURL)
                         else { return nil }
 
-                        return SourceImportItem(kind: type, url: pluginURL)
+                        return SourceImportItem(type: item.name.lowercased(), url: pluginURL)
                     }
 
                 guard !sources.isEmpty else {
-                    Logger.ui.warning("No supported plugins found in URL: \(url)")
+                    Logger.ui.warning("No plugin URLs found in URL: \(url)")
                     continue
                 }
 

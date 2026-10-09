@@ -27,6 +27,8 @@ import ReerCodable
 class HttpPlugin: Plugin, Configurable {
     override class var syncType: String? { "http" }
 
+    override class var typeName: String? { String(localized: "mankaiCompatible") }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -91,8 +93,6 @@ class HttpPlugin: Plugin, Configurable {
 
     private var setupTask: Task<Void, Error>?
     private let setupLock = NSLock()
-
-    override var tags: [String] { [String(localized: "mankaiCompatible")] }
 
     // MARK: - Init
 

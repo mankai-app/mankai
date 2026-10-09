@@ -14,6 +14,8 @@ final class KomgaPlugin: Plugin, Configurable {
 
     override class var syncType: String? { "komga" }
 
+    override class var typeName: String? { String(localized: "komga") }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -31,8 +33,6 @@ final class KomgaPlugin: Plugin, Configurable {
         let name = model.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? "Komga (\(session.configuration.baseURL.host ?? ""))" : name
     }
-
-    override var tags: [String] { [String(localized: "komga")] }
 
     override var description: String? { String(localized: "komgaSourceDescription") }
 

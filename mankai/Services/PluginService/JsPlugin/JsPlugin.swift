@@ -40,6 +40,8 @@ enum ScriptType: String {
 final class JsPlugin: Plugin, Configurable {
     override class var syncType: String? { "js" }
 
+    override class var typeName: String? { String(localized: "js") }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -105,8 +107,6 @@ final class JsPlugin: Plugin, Configurable {
     private var _scripts: [ScriptType: String]
     private var _funcName: [ScriptType: String] = [:]
     private var _scriptsNoExport: [ScriptType: String] = [:]
-
-    override var tags: [String] { [String(localized: "js")] }
 
     // MARK: - Init
 

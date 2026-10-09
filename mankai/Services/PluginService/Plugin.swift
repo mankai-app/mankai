@@ -93,6 +93,9 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// Stable type identifier carried in portable sync payloads.
     class var syncType: String? { nil }
 
+    /// The localized name of this plugin type, when available.
+    class var typeName: String? { nil }
+
     var syncType: String? { type(of: self).syncType }
 
     /// Restores the saved instances owned by this plugin type.
@@ -120,9 +123,11 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
 
     var name: String? { nil }
 
+    var typeName: String? { type(of: self).typeName }
+
     var version: String? { nil }
 
-    var tags: [String] { [] }
+    var tags: [String] { typeName.map { [$0] } ?? [] }
 
     var description: String? { nil }
 
