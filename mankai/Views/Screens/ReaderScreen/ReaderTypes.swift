@@ -12,6 +12,15 @@ let READER_OVERSCROLL_THRESHOLD: CGFloat = 65
 let READER_OVERSCROLL_MINIMUM_SPACING: CGFloat = 24
 let READER_OVERSCROLL_INDICATOR_SIZE: CGFloat = 48
 
+@MainActor func hideReaderScrollEdgeEffects(_ scrollView: UIScrollView) {
+    if #available(iOS 26.0, *) {
+        scrollView.topEdgeEffect.isHidden = true
+        scrollView.bottomEdgeEffect.isHidden = true
+        scrollView.leftEdgeEffect.isHidden = true
+        scrollView.rightEdgeEffect.isHidden = true
+    }
+}
+
 func readerOverscrollLayoutSpacing(safeAreaInset: CGFloat) -> CGFloat {
     max(
         max(READER_OVERSCROLL_MINIMUM_SPACING, safeAreaInset) - safeAreaInset,

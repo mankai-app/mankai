@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WrappingHStack
 
 struct ShareSettingsScreen: View {
     @ObservedObject private var browseService = BrowseService.shared
@@ -13,6 +14,12 @@ struct ShareSettingsScreen: View {
     @State private var showingRemoveConfirmation = false
     @State private var shareIdsToRemove: [String] = []
     @State private var errorMessage: String?
+
+    private func displayTags(for share: BrowsablePlugin) -> [String] {
+        var tags = [shareTypeName(for: share)]
+        if share is AppDirBrowsablePlugin { tags.append(String(localized: "builtin")) }
+        return tags
+    }
 
     var body: some View {
         List {
@@ -29,12 +36,8 @@ struct ShareSettingsScreen: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(share.name ?? share.id)
 
-                            HStack(spacing: 8) {
-                                Text(shareTypeName(for: share)).smallTagStyle()
-
-                                if share is AppDirBrowsablePlugin {
-                                    Text("builtin").smallTagStyle()
-                                }
+                            WrappingHStack(displayTags(for: share), id: \.self, lineSpacing: 4) {
+                                tag in Text(tag).smallTagStyle()
                             }
                         }
                     } icon: {

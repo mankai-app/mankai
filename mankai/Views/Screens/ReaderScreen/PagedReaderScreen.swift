@@ -292,6 +292,7 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
         pageContainerScrollView.contentInsetAdjustmentBehavior = .never
         pageContainerScrollView.showsVerticalScrollIndicator = false
         pageContainerScrollView.showsHorizontalScrollIndicator = false
+        hideReaderScrollEdgeEffects(pageContainerScrollView)
         leadingOverscrollView.translatesAutoresizingMaskIntoConstraints = false
         trailingOverscrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(pageContainerScrollView)
@@ -448,6 +449,7 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
         else { return }
 
         pageTransitionScrollView = transitionScrollView
+        hideReaderScrollEdgeEffects(transitionScrollView)
         transitionScrollView.panGestureRecognizer.addTarget(
             self, action: #selector(handlePageTransitionPan(_:)))
         pageTransitionScrollObservation = transitionScrollView.observe(
@@ -767,6 +769,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
+        hideReaderScrollEdgeEffects(scrollView)
         view.addSubview(scrollView)
 
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
