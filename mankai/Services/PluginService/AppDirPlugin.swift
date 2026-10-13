@@ -15,7 +15,8 @@ final class AppDirPlugin: ReadWriteFsPlugin {
 
     private init() {
         let fileManager = FileManager.default
-        let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let mangaDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
             .appendingPathComponent("mangas")
 
         if !fileManager.fileExists(atPath: mangaDir.path) {

@@ -19,16 +19,18 @@ import GRDB
     lazy var appDb: DatabasePool? = {
         Logger.dbService.debug("Initializing appDb")
         guard
-            let documentsURL = FileManager.default
-                .urls(for: .documentDirectory, in: .userDomainMask).first
+            let applicationSupportURL = FileManager.default
+                .urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         else {
-            Logger.dbService.error("Could not find document directory")
+            Logger.dbService.error("Could not find application support directory")
             return nil
         }
-        let fullUrl = documentsURL.appendingPathComponent("db.sqlite3")
+        let fullUrl = applicationSupportURL.appendingPathComponent("db.sqlite3")
         Logger.dbService.info("Database path: \(fullUrl.path(percentEncoded: false))")
 
         do {
+            try FileManager.default.createDirectory(
+                at: applicationSupportURL, withIntermediateDirectories: true)
             var config = Configuration()
             config.busyMode = .timeout(5.0)
             let dbPool = try DatabasePool(

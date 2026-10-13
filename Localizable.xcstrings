@@ -12727,6 +12727,35 @@
         }
       }
     },
+    "putMangaFilesHere" : {
+      "comment" : "Filename of an empty placeholder indicating where users should put manga files.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put manga files here"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ここに漫画ファイルを入れてください"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将漫画文件放在这里"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將漫畫檔案放在這裡"
+          }
+        }
+      }
+    },
     "queued" : {
       "localizations" : {
         "en" : {

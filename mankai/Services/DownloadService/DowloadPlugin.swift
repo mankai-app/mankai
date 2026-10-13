@@ -34,7 +34,8 @@ final class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Initializing DownloadPlugin")
 
         let fileManager = FileManager.default
-        downloadDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        downloadDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first!
             .appendingPathComponent("downloads")
 
         if !fileManager.fileExists(atPath: downloadDir.path) {

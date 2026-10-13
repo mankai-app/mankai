@@ -17,7 +17,6 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
     private init() throws {
         let fileManager = FileManager.default
         let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("books")
 
         if !fileManager.fileExists(atPath: mangaDir.path) {
             do {
@@ -26,6 +25,16 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
                 Logger.appDirBrowsablePlugin.error(
                     "Failed to create directory \(mangaDir.path): \(error)")
             }
+        }
+
+        let placeholderName = String(localized: "putMangaFilesHere")
+        let placeholderPath = mangaDir.appendingPathComponent(placeholderName)
+            .path(percentEncoded: false)
+        if !fileManager.fileExists(atPath: placeholderPath),
+            !fileManager.createFile(atPath: placeholderPath, contents: nil)
+        {
+            Logger.appDirBrowsablePlugin.error(
+                "Failed to create placeholder file \(placeholderPath)")
         }
 
         Logger.appDirBrowsablePlugin.info(
