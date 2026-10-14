@@ -12,6 +12,8 @@ struct DebugScreen: View {
     @State private var jsonInput: String = ""
     @State private var isError: Bool = false
     @State private var showClearCacheDirAlert = false
+    @State private var showClearDownloadsDirAlert = false
+    @State private var showClearMangasDirAlert = false
 
     var body: some View {
         List {
@@ -193,8 +195,64 @@ struct DebugScreen: View {
                     Text("clearCacheDirMessage")
                 }
             }
+
+            Section("storage") {
+                Button(role: .destructive) {
+                    showClearDownloadsDirAlert = true
+                } label: {
+                    Label("clearDownloadsDir", systemImage: "trash")
+                }
+                .confirmationDialog(
+                    "clearDownloadsDir", isPresented: $showClearDownloadsDirAlert,
+                    titleVisibility: .visible
+                ) {
+                    Button("clear", role: .destructive) { clearDownloadsDir() }
+                    Button("cancel", role: .cancel) {}
+                } message: {
+                    Text("clearDownloadsDirMessage")
+                }
+
+                Button(role: .destructive) {
+                    showClearMangasDirAlert = true
+                } label: {
+                    Label("clearMangasDir", systemImage: "trash")
+                }
+                .confirmationDialog(
+                    "clearMangasDir", isPresented: $showClearMangasDirAlert,
+                    titleVisibility: .visible
+                ) {
+                    Button("clear", role: .destructive) { clearMangasDir() }
+                    Button("cancel", role: .cancel) {}
+                } message: {
+                    Text("clearMangasDirMessage")
+                }
+            }
         }
         .navigationTitle("debug").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @MainActor private func clearDownloadsDir() {
+        let fileManager = FileManager.default
+        let downloadDir = DownloadPlugin.shared.downloadDir
+
+        do {
+            try DbService.shared.closeDownloadDb()
+            let contents = try fileManager.contentsOfDirectory(
+                at: downloadDir, includingPropertiesForKeys: nil)
+            for url in contents { try fileManager.removeItem(at: url) }
+        } catch { Logger.ui.error("Failed to clear download directory: \(error)") }
+    }
+
+    @MainActor private func clearMangasDir() {
+        let fileManager = FileManager.default
+        let mangaDir = AppDirPlugin.shared.url
+
+        do {
+            try AppDirPlugin.shared.closeDatabase()
+            let contents = try fileManager.contentsOfDirectory(
+                at: mangaDir, includingPropertiesForKeys: nil)
+            for url in contents { try fileManager.removeItem(at: url) }
+        } catch { Logger.ui.error("Failed to clear manga directory: \(error)") }
     }
 
     @MainActor private func clearCacheDir() {

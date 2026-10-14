@@ -11,8 +11,17 @@ import GRDB
 import UIKit
 
 class ReadWriteFsPlugin: ReadFsPlugin, Editable {
-    private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: false)
-    override var db: DatabasePool? { return _db }
+    private var _db: DatabasePool?
+    override var db: DatabasePool? {
+        if let db = _db { return db }
+        _db = DbService.shared.openFsDb(_dbPath, readOnly: false)
+        return _db
+    }
+
+    func closeDatabase() throws {
+        try DbService.shared.closeFsDb(_dbPath)
+        _db = nil
+    }
 
     convenience init(url: URL) throws {
         guard url.startAccessingSecurityScopedResource() else {

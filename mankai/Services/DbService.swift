@@ -115,6 +115,12 @@ import GRDB
         }
     }
 
+    func closeFsDb(_ path: String) throws {
+        try fsDb[path]?.close()
+        fsDb.removeValue(forKey: path)
+        Logger.dbService.debug("Closed FsDb at \(path)")
+    }
+
     private var downloadDb: DatabasePool?
 
     func openDownloadDb() -> DatabasePool? {
@@ -143,6 +149,12 @@ import GRDB
             Logger.dbService.error("Failed to open DownloadDb at \(path)", error: error)
             return nil
         }
+    }
+
+    func closeDownloadDb() throws {
+        try downloadDb?.close()
+        downloadDb = nil
+        Logger.dbService.debug("Closed DownloadDb pool")
     }
 
     private var browsablePluginDb: DatabasePool?
