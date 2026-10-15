@@ -14,8 +14,8 @@ struct FsMangaModel {
     var status: Int?
     var description: String?
     var updatedAt: Date?
-    var authors: String
-    var genres: String
+    var authors: [String]
+    var genres: [Genre]
     var latestChapterId: Int?
 
     static func createTable(_ db: Database) throws {

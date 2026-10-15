@@ -242,13 +242,8 @@ class ReadFsPlugin: Plugin {
             mangaDict["updatedAt"] = Int64(updatedAt.timeIntervalSince1970 * 1000)
         }
 
-        let authors = mangaModel.authors.components(separatedBy: "|")
-            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        mangaDict["authors"] = authors
-
-        let genres = mangaModel.genres.components(separatedBy: "|")
-            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        mangaDict["genres"] = genres
+        mangaDict["authors"] = mangaModel.authors
+        mangaDict["genres"] = mangaModel.genres.map { $0.rawValue }
 
         if let chapter = latestChapter {
             mangaDict["latestChapter"] = [
@@ -305,14 +300,17 @@ class ReadFsPlugin: Plugin {
             let offset = Int((page - 1) * ReadFsPluginConstants.pageLimit)
             let limit = Int(ReadFsPluginConstants.pageLimit)
 
-            let searchColumn = isAuthor ? "authors" : "title"
-            var query = FsMangaModel.filter(
-                sql: "LOWER(\(searchColumn)) LIKE ?", arguments: [searchQuery])
+            let searchFilter =
+                isAuthor
+                ? "EXISTS (SELECT 1 FROM json_each(authors) WHERE LOWER(value) LIKE ?)"
+                : "LOWER(title) LIKE ?"
+            var query = FsMangaModel.filter(sql: searchFilter, arguments: [searchQuery])
 
             // Filter by genre if not "all"
             if genre != .all {
-                let genreQuery = "%\(genre.rawValue.lowercased())%"
-                query = query.filter(sql: "LOWER(genres) LIKE ?", arguments: [genreQuery])
+                query = query.filter(
+                    sql: "EXISTS (SELECT 1 FROM json_each(genres) WHERE value = ?)",
+                    arguments: [genre.rawValue])
             }
 
             // Filter by status if not "any"
@@ -340,8 +338,9 @@ class ReadFsPlugin: Plugin {
 
             // Filter by genre if not "all"
             if genre != .all {
-                let genreQuery = "%\(genre.rawValue)%"
-                query = query.filter(sql: "LOWER(genres) LIKE ?", arguments: [genreQuery])
+                query = query.filter(
+                    sql: "EXISTS (SELECT 1 FROM json_each(genres) WHERE value = ?)",
+                    arguments: [genre.rawValue])
             }
 
             // Filter by status if not "any"

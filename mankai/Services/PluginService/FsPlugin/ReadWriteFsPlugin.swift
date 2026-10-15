@@ -71,16 +71,14 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             if mangaModel == nil {
                 mangaModel = FsMangaModel(
                     id: id, title: manga.title, status: manga.status.map { Int($0.rawValue) },
-                    description: manga.description, updatedAt: Date(),
-                    authors: manga.authors.joined(separator: "|"),
-                    genres: manga.genres.map { $0.rawValue }.joined(separator: "|"),
-                    latestChapterId: nil)
+                    description: manga.description, updatedAt: Date(), authors: manga.authors,
+                    genres: manga.genres, latestChapterId: nil)
             } else {
                 if let title = manga.title { mangaModel?.title = title }
                 if let status = manga.status { mangaModel?.status = Int(status.rawValue) }
                 if let description = manga.description { mangaModel?.description = description }
-                mangaModel?.authors = manga.authors.joined(separator: "|")
-                mangaModel?.genres = manga.genres.map { $0.rawValue }.joined(separator: "|")
+                mangaModel?.authors = manga.authors
+                mangaModel?.genres = manga.genres
                 mangaModel?.updatedAt = Date()
             }
 
