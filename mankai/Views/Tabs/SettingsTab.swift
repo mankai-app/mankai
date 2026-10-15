@@ -37,14 +37,14 @@ struct SettingsTab: View {
                 }
 
                 Section("libraryAndData") {
-                    NavigationLink(destination: ShareSettingsScreen()) {
-                        Label("shares", systemImage: "folder.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
-                    }
-
                     NavigationLink(destination: SourceSettingsScreen()) {
                         Label("sources", systemImage: "square.stack.3d.up.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .red))
+                    }
+
+                    NavigationLink(destination: ShareSettingsScreen()) {
+                        Label("shares", systemImage: "folder.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
 
                     NavigationLink(destination: SyncSettingsScreen()) {

@@ -203,7 +203,20 @@ struct DownloadMangaTaskRow: View {
                 }
                 .buttonStyle(.plain)
 
-                if status == .paused {
+                if status == .failed {
+                    Button {
+                        perform {
+                            for task in download.orderedChapters where task.status == .failed {
+                                try await DownloadService.shared.retryChapter(
+                                    mangaId: download.id, chapterId: task.chapter.chapterId)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.clockwise.circle.fill").font(.title2)
+                            .frame(height: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.borderless)
+                } else if status == .paused {
                     Button {
                         perform { try await DownloadService.shared.resumeManga(id: download.id) }
                     } label: {
@@ -300,7 +313,7 @@ struct DownloadChapterTaskRow: View {
                             mangaId: download.id, chapterId: task.chapter.chapterId)
                     }
                 } label: {
-                    Image(systemName: "arrow.clockwise.circle").font(.title2)
+                    Image(systemName: "arrow.clockwise.circle.fill").font(.title2)
                 }
             }
         }
