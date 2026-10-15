@@ -9,21 +9,6 @@ import Foundation
 import GRDB
 import ReerCodable
 
-@Codable private struct HttpPluginMetadata {
-    let id: String
-    let name: String?
-    let version: String?
-    let description: String?
-    @DecodingDefault([]) let authors: [String]
-    let repository: String?
-    @DecodingDefault([]) let availableGenres: [Genre]
-    let authenticationEnabled: Bool?
-    @DecodingDefault(false) let editorEnabled: Bool
-    @DecodingDefault([]) let configs: [Config]
-    let cooldown: Cooldown?
-    @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
-}
-
 class HttpPlugin: Plugin, Configurable {
     override class var syncType: String? { "http" }
 
@@ -137,12 +122,14 @@ class HttpPlugin: Plugin, Configurable {
     }
 
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {
-        guard let metadata = try? HttpPluginMetadata.decoded(from: json) else { return nil }
+        guard let metadata = try? HttpPluginModel.Metadata.decoded(from: json) else { return nil }
 
         return fromMetadata(baseUrl: baseUrl, metadata: metadata)
     }
 
-    private static func fromMetadata(baseUrl: String, metadata: HttpPluginMetadata) -> HttpPlugin? {
+    private static func fromMetadata(baseUrl: String, metadata: HttpPluginModel.Metadata)
+        -> HttpPlugin?
+    {
         guard let authenticationEnabled = metadata.authenticationEnabled else { return nil }
 
         if metadata.editorEnabled, !(self is EditableHttpPlugin.Type) {
@@ -177,7 +164,7 @@ class HttpPlugin: Plugin, Configurable {
         guard let configuration = PluginURLConfiguration(urlString) else { return nil }
 
         guard let (data, _) = try? await URLSession.shared.data(from: configuration.baseURL),
-            let metadata = try? HttpPluginMetadata.decoded(from: data),
+            let metadata = try? HttpPluginModel.Metadata.decoded(from: data),
             let plugin = fromMetadata(
                 baseUrl: configuration.baseURL.absoluteString, metadata: metadata)
         else { return nil }
@@ -200,26 +187,18 @@ class HttpPlugin: Plugin, Configurable {
     }
 
     static func fromDataModel(_ httpPluginModel: HttpPluginModel) -> HttpPlugin? {
-        guard let metaData = httpPluginModel.meta.data(using: .utf8),
-            let metadata = try? HttpPluginMetadata.decoded(from: metaData)
-        else { return nil }
-
-        let configValues = httpPluginModel.configValues.data(using: .utf8)
-            .flatMap { try? [ConfigValue].decoded(from: $0) }
-
-        let plugin = fromMetadata(baseUrl: httpPluginModel.baseUrl, metadata: metadata)
+        let plugin = fromMetadata(baseUrl: httpPluginModel.baseUrl, metadata: httpPluginModel.meta)
         plugin?._id = httpPluginModel.id
 
-        // Update config values if they exist
-        if let configValues = configValues, let plugin = plugin {
-            plugin.setConfigValues(configValues)
-        }
+        plugin?.setConfigValues(httpPluginModel.configValues)
 
         return plugin
     }
 
     override class func loadStoredURL(_ id: String, in db: Database) throws -> String? {
-        guard let model = try HttpPluginModel.fetchOne(db, key: id) else { return nil }
+        guard let row = try HttpPluginModel.filter(key: id).asRequest(of: Row.self).fetchOne(db),
+            let model = try? HttpPluginModel(row: row)
+        else { return nil }
         return fromDataModel(model)?.encodedURL
     }
 
@@ -238,7 +217,8 @@ class HttpPlugin: Plugin, Configurable {
 
         do {
             try dbPool.read { db in
-                let httpPluginModels = try HttpPluginModel.fetchAll(db)
+                let httpPluginModels = try HttpPluginModel.all().asRequest(of: Row.self)
+                    .fetchAll(db).compactMap { try? HttpPluginModel(row: $0) }
 
                 for httpPluginModel in httpPluginModels {
                     if let httpPlugin = HttpPlugin.fromDataModel(httpPluginModel) {
@@ -278,7 +258,9 @@ class HttpPlugin: Plugin, Configurable {
                 throw MankaiErrorCode.pluginHttpInvalidUrl.makeError()
             }
             let (metaData, _) = try await URLSession.shared.data(from: metaUrl)
-            guard let metadata = try? HttpPluginMetadata.decoded(from: metaData) else { return }
+            guard let metadata = try? HttpPluginModel.Metadata.decoded(from: metaData) else {
+                return
+            }
 
             _name = metadata.name
             _version = metadata.version
@@ -322,30 +304,19 @@ class HttpPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
-        let model = try makeModel()
+        let model = makeModel()
         try dbPool.write { db in try model.save(db) }
     }
 
-    private func makeModel() throws -> HttpPluginModel {
-        let metadata = HttpPluginMetadata(
+    private func makeModel() -> HttpPluginModel {
+        let metadata = HttpPluginModel.Metadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, availableGenres: availableGenres,
             authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
             configs: configs, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
-        let metaData = try metadata.encodedData()
-        guard let metaString = String(data: metaData, encoding: .utf8) else {
-            throw MankaiErrorCode.pluginHttpFailedToEncodeMetaData.makeError()
-        }
-
-        // Create config values JSON
-        let configValuesData = try Array(_configValues.values).encodedData()
-        guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
-            throw MankaiErrorCode.pluginHttpFailedToEncodeConfigValuesData.makeError()
-        }
-
         return HttpPluginModel(
-            id: id, baseUrl: baseUrl, meta: metaString, configValues: configValuesString)
+            id: id, baseUrl: baseUrl, meta: metadata, configValues: Array(_configValues.values))
     }
 
     override func deletePlugin() throws {

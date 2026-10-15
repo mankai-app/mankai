@@ -10,17 +10,6 @@ import CoreImage
 import Foundation
 import ReerCodable
 
-@Codable private struct RemoteImageProcessorMetadata {
-    let id: String
-    let name: String?
-    let version: String?
-    let description: String?
-    @DecodingDefault([]) let authors: [String]
-    let repository: String?
-    @DecodingDefault(false) let authenticationEnabled: Bool
-    @DecodingDefault([]) let configs: [Config]
-}
-
 final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked Sendable {
     static let type = "remote"
     static let titleKey: LocalizedStringResource = "remoteImageProcessor"
@@ -32,7 +21,7 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
 
     let instanceID: String
     let serverURL: String
-    private let metadata: RemoteImageProcessorMetadata
+    private let metadata: ImageProcessorModel.RemoteMetadata
     @MainActor private var storedConfigValues: [ConfigValue]
     private let authManager: AuthManager
     @MainActor private(set) var username: String
@@ -69,7 +58,7 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
     }
 
     @MainActor private init(
-        instanceID: String, serverURL: String, metadata: RemoteImageProcessorMetadata,
+        instanceID: String, serverURL: String, metadata: ImageProcessorModel.RemoteMetadata,
         configValues: [ConfigValue], username: String = "", password: String = ""
     ) {
         self.instanceID = instanceID
@@ -101,8 +90,8 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
             )
         }
 
-        let metadata: RemoteImageProcessorMetadata
-        do { metadata = try RemoteImageProcessorMetadata.decoded(from: data) } catch {
+        let metadata: ImageProcessorModel.RemoteMetadata
+        do { metadata = try ImageProcessorModel.RemoteMetadata.decoded(from: data) } catch {
             throw MankaiErrorCode.imageProcessingRemoteInvalidMetadata.makeError(
                 underlyingError: error)
         }
@@ -132,28 +121,24 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
             configValues: queryValues)
     }
 
-    @MainActor func encode(id: String, order: Int, isEnabled: Bool) throws -> ImageProcessorModel {
-        let configuration = Configuration(
-            serverURL: serverURL, metadata: metadata, configValues: storedConfigValues,
-            username: username, password: password)
-        let data = try configuration.encodedData()
-        return ImageProcessorModel(
+    @MainActor func makeModel(id: String, order: Int, isEnabled: Bool) -> ImageProcessorModel {
+        ImageProcessorModel(
             id: id, type: Self.type, order: order, isEnabled: isEnabled,
-            configuration: String(decoding: data, as: UTF8.self))
+            configuration: .init(
+                serverURL: serverURL, metadata: metadata, configValues: storedConfigValues,
+                username: username, password: password))
     }
 
-    @MainActor static func decode(_ model: ImageProcessorModel) throws -> any ImageProcessor {
-        let configuration: Configuration
-        do { configuration = try Configuration.decoded(from: Data(model.configuration.utf8)) } catch
-        {
-            throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError(
-                underlyingError: error)
-        }
-
+    @MainActor static func fromDataModel(_ model: ImageProcessorModel) throws -> any ImageProcessor
+    {
+        let configuration = model.configuration
+        guard let serverURL = configuration.serverURL, let metadata = configuration.metadata,
+            let configValues = configuration.configValues, let username = configuration.username,
+            let password = configuration.password
+        else { throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError() }
         return Self(
-            instanceID: model.id, serverURL: configuration.serverURL,
-            metadata: configuration.metadata, configValues: configuration.configValues,
-            username: configuration.username, password: configuration.password)
+            instanceID: model.id, serverURL: serverURL, metadata: metadata,
+            configValues: configValues, username: username, password: password)
     }
 
     @MainActor func getConfig(_ key: String) -> Any {
@@ -243,14 +228,6 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
     }
 
     private static let renderingContext = CIContext(options: [.cacheIntermediates: false])
-
-    private struct Configuration: Codable {
-        let serverURL: String
-        let metadata: RemoteImageProcessorMetadata
-        let configValues: [ConfigValue]
-        let username: String
-        let password: String
-    }
 
     private struct ProcessContext: Codable {
         let pointSize: PointSize

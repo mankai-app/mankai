@@ -10,7 +10,7 @@ import GRDB
 struct MangaModel {
     var mangaId: String
     var pluginId: String
-    var info: String
+    var info: Manga
 
     static func createTable(_ db: Database) throws {
         try db.create(table: MangaModel.databaseTableName, ifNotExists: true) {

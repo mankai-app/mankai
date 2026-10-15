@@ -52,7 +52,7 @@ import GRDB
                         (DownsampleImageProcessor.defaultProcessor, true)
                     ]
                     for (order, entry) in defaults.enumerated() {
-                        let model = try entry.processor.encode(
+                        let model = entry.processor.makeModel(
                             id: UUID().uuidString, order: order, isEnabled: entry.isEnabled)
                         try model.insert(db)
                     }

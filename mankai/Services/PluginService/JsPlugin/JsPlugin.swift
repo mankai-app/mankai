@@ -21,22 +21,6 @@ enum ScriptType: String {
     case getImage
 }
 
-@Codable private struct JsPluginMetadata {
-    let id: String
-    let name: String?
-    let version: String?
-    let description: String?
-    @DecodingDefault([]) let authors: [String]
-    let repository: String?
-    let updatesUrl: String?
-    @DecodingDefault([]) let availableGenres: [Genre]
-    @DecodingDefault([:]) let scripts: [String: String]
-    @DecodingDefault([]) let configs: [Config]
-    let getImageHeaders: [String: String]?
-    let cooldown: Cooldown?
-    @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
-}
-
 final class JsPlugin: Plugin, Configurable {
     override class var syncType: String? { "js" }
 
@@ -171,12 +155,12 @@ final class JsPlugin: Plugin, Configurable {
     }
 
     static func fromJson(_ json: [String: Any]) -> JsPlugin? {
-        guard let metadata = try? JsPluginMetadata.decoded(from: json) else { return nil }
+        guard let metadata = try? JsPluginModel.Metadata.decoded(from: json) else { return nil }
 
         return fromMetadata(metadata)
     }
 
-    private static func fromMetadata(_ metadata: JsPluginMetadata) -> JsPlugin? {
+    private static func fromMetadata(_ metadata: JsPluginModel.Metadata) -> JsPlugin? {
         let scripts = metadata.scripts.reduce(into: [ScriptType: String]()) { result, entry in
             if let scriptType = ScriptType(rawValue: entry.key) { result[scriptType] = entry.value }
         }
@@ -200,7 +184,7 @@ final class JsPlugin: Plugin, Configurable {
 
         guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
 
-        guard let metadata = try? JsPluginMetadata.decoded(from: data),
+        guard let metadata = try? JsPluginModel.Metadata.decoded(from: data),
             let plugin = fromMetadata(metadata)
         else { return nil }
 
@@ -223,27 +207,19 @@ final class JsPlugin: Plugin, Configurable {
     }
 
     static func fromDataModel(_ jsPluginModel: JsPluginModel) -> JsPlugin? {
-        guard let metaData = jsPluginModel.meta.data(using: .utf8),
-            let metadata = try? JsPluginMetadata.decoded(from: metaData)
-        else { return nil }
-
-        let configValues = jsPluginModel.configValues.data(using: .utf8)
-            .flatMap { try? [ConfigValue].decoded(from: $0) }
-
-        let plugin = fromMetadata(metadata)
+        let plugin = fromMetadata(jsPluginModel.meta)
         plugin?.sourceURL = jsPluginModel.sourceURL
         plugin?._id = jsPluginModel.id
 
-        // Update config values if they exist
-        if let configValues = configValues, let plugin = plugin {
-            plugin.setConfigValues(configValues)
-        }
+        plugin?.setConfigValues(jsPluginModel.configValues)
 
         return plugin
     }
 
     override class func loadStoredURL(_ id: String, in db: Database) throws -> String? {
-        guard let model = try JsPluginModel.fetchOne(db, key: id) else { return nil }
+        guard let row = try JsPluginModel.filter(key: id).asRequest(of: Row.self).fetchOne(db),
+            let model = try? JsPluginModel(row: row)
+        else { return nil }
         return fromDataModel(model)?.encodedURL
     }
 
@@ -262,7 +238,8 @@ final class JsPlugin: Plugin, Configurable {
 
         do {
             try dbPool.read { db in
-                let jsPluginModels = try JsPluginModel.fetchAll(db)
+                let jsPluginModels = try JsPluginModel.all().asRequest(of: Row.self).fetchAll(db)
+                    .compactMap { try? JsPluginModel(row: $0) }
 
                 for jsPluginModel in jsPluginModels {
                     if let jsPlugin = JsPlugin.fromDataModel(jsPluginModel) {
@@ -288,34 +265,23 @@ final class JsPlugin: Plugin, Configurable {
             throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
-        let model = try makeModel()
+        let model = makeModel()
         try dbPool.write { db in try model.save(db) }
     }
 
-    private func makeModel() throws -> JsPluginModel {
+    private func makeModel() -> JsPluginModel {
         let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
             dict[pair.key.rawValue] = pair.value
         }
 
-        let metadata = JsPluginMetadata(
+        let metadata = JsPluginModel.Metadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, updatesUrl: updatesUrl, availableGenres: availableGenres,
             scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
             cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
-        let metaData = try metadata.encodedData()
-        guard let metaString = String(data: metaData, encoding: .utf8) else {
-            throw MankaiErrorCode.pluginJavascriptFailedToEncodeMetaData.makeError()
-        }
-
-        // Create config values JSON
-        let configValuesData = try Array(_configValues.values).encodedData()
-        guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
-            throw MankaiErrorCode.pluginJavascriptFailedToEncodeConfigValuesData.makeError()
-        }
-
         return JsPluginModel(
-            id: id, meta: metaString, configValues: configValuesString, sourceURL: sourceURL)
+            id: id, meta: metadata, configValues: Array(_configValues.values), sourceURL: sourceURL)
     }
 
     override func deletePlugin() throws {

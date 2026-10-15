@@ -10,7 +10,7 @@ import GRDB
 struct OpdsBrowsableBookModel {
     var pluginId: String
     var bookId: String
-    var info: String
+    var info: OpdsBookEntry
 
     static func createTable(_ db: Database) throws {
         try db.create(table: OpdsBrowsableBookModel.databaseTableName, ifNotExists: true) {

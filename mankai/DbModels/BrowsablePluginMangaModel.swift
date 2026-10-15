@@ -12,7 +12,7 @@ struct BrowsablePluginMangaModel {
     var parserId: String
     var pluginId: String
     var path: String
-    var info: String
+    var info: DetailedManga
 
     static func createTable(_ db: Database) throws {
         try db.create(table: BrowsablePluginMangaModel.databaseTableName, ifNotExists: true) {

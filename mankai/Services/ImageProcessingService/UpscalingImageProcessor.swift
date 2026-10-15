@@ -63,34 +63,19 @@ final class UpscalingImageProcessor: ImageProcessor, ObservableObject, @unchecke
         ImageProcessingService.shared.update(id: instanceID, processor: self)
     }
 
-    @MainActor func encode(id: String, order: Int, isEnabled: Bool) throws -> ImageProcessorModel {
-        let configuration = try JSONEncoder()
-            .encode(Configuration(context: context, threshold: threshold))
-        return ImageProcessorModel(
+    @MainActor func makeModel(id: String, order: Int, isEnabled: Bool) -> ImageProcessorModel {
+        ImageProcessorModel(
             id: id, type: Self.type, order: order, isEnabled: isEnabled,
-            configuration: String(decoding: configuration, as: UTF8.self))
+            configuration: .init(context: context, threshold: threshold))
     }
 
-    @MainActor static func decode(_ model: ImageProcessorModel) throws -> any ImageProcessor {
-        let configuration: Configuration
-        do {
-            configuration = try JSONDecoder()
-                .decode(Configuration.self, from: Data(model.configuration.utf8))
-        } catch {
-            throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError(
-                underlyingError: error)
-        }
-        guard (0...127).contains(configuration.context), configuration.threshold.isFinite,
-            configuration.threshold > 0
+    @MainActor static func fromDataModel(_ model: ImageProcessorModel) throws -> any ImageProcessor
+    {
+        guard let context = model.configuration.context,
+            let threshold = model.configuration.threshold, (0...127).contains(context),
+            threshold.isFinite, threshold > 0
         else { throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError() }
-        return Self(
-            instanceID: model.id, context: configuration.context, threshold: configuration.threshold
-        )
-    }
-
-    private struct Configuration: Codable {
-        let context: Int
-        let threshold: Double
+        return Self(instanceID: model.id, context: context, threshold: threshold)
     }
 
     func process(image: CIImage, pointSize: CGSize) async throws -> CIImage {

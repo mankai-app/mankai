@@ -61,28 +61,19 @@ final class DownsampleImageProcessor: ImageProcessor, ObservableObject, @uncheck
         ImageProcessingService.shared.update(id: instanceID, processor: self)
     }
 
-    @MainActor func encode(id: String, order: Int, isEnabled: Bool) throws -> ImageProcessorModel {
-        let configuration = try JSONEncoder().encode(Configuration(aggressiveness: aggressiveness))
-        return ImageProcessorModel(
+    @MainActor func makeModel(id: String, order: Int, isEnabled: Bool) -> ImageProcessorModel {
+        ImageProcessorModel(
             id: id, type: Self.type, order: order, isEnabled: isEnabled,
-            configuration: String(decoding: configuration, as: UTF8.self))
+            configuration: .init(aggressiveness: aggressiveness))
     }
 
-    @MainActor static func decode(_ model: ImageProcessorModel) throws -> any ImageProcessor {
-        let configuration: Configuration
-        do {
-            configuration = try JSONDecoder()
-                .decode(Configuration.self, from: Data(model.configuration.utf8))
-        } catch {
-            throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError(
-                underlyingError: error)
-        }
-        guard configuration.aggressiveness.isFinite, (0...1).contains(configuration.aggressiveness)
+    @MainActor static func fromDataModel(_ model: ImageProcessorModel) throws -> any ImageProcessor
+    {
+        guard let aggressiveness = model.configuration.aggressiveness, aggressiveness.isFinite,
+            (0...1).contains(aggressiveness)
         else { throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError() }
-        return Self(instanceID: model.id, aggressiveness: configuration.aggressiveness)
+        return Self(instanceID: model.id, aggressiveness: aggressiveness)
     }
-
-    private struct Configuration: Codable { let aggressiveness: Double }
 
     func process(image: CIImage, pointSize: CGSize) async throws -> CIImage {
         let aggressiveness = await MainActor.run { aggressiveness }

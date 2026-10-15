@@ -417,14 +417,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
-        let encoder = JSONEncoder()
-        let models = try books.map { book -> OpdsBrowsableBookModel in
-            let data = try encoder.encode(book)
-            guard let info = String(data: data, encoding: .utf8) else {
-                throw CocoaError(.fileWriteInapplicableStringEncoding)
-            }
-            return OpdsBrowsableBookModel(pluginId: id, bookId: book.id, info: info)
-        }
+        let models = books.map { OpdsBrowsableBookModel(pluginId: id, bookId: $0.id, info: $0) }
 
         try await db.write { db in for model in models { try model.upsert(db) } }
     }
@@ -440,15 +433,11 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
             try OpdsBrowsableBookModel.filter(
                 Column("pluginId") == pluginId && ids.contains(Column("bookId"))
             )
-            .fetchAll(db)
+            .asRequest(of: Row.self).fetchAll(db)
+            .compactMap { try? OpdsBrowsableBookModel(row: $0) }
         }
         let booksById: [String: OpdsBookEntry] = Dictionary(
-            uniqueKeysWithValues: models.compactMap { model -> (String, OpdsBookEntry)? in
-                guard let data = model.info.data(using: .utf8),
-                    let book = try? JSONDecoder().decode(OpdsBookEntry.self, from: data)
-                else { return nil }
-                return (model.bookId, book)
-            })
+            uniqueKeysWithValues: models.map { ($0.bookId, $0.info) })
 
         return ids.compactMap { booksById[$0] }
     }

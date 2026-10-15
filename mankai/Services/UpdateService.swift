@@ -326,15 +326,7 @@ import Foundation
             libraryItem.datetime = Date()
             libraryItemChanged = true
         }
-        var mangaModel: MangaModel?
-        do {
-            mangaModel = try MangaSnapshotService.shared.makeSnapshot(
-                for: manga, pluginId: pluginId)
-        } catch {
-            Logger.updateService.warning(
-                "Failed to encode manga snapshot \(mangaId) from plugin \(pluginId): \(error.localizedDescription)"
-            )
-        }
+        let mangaModel = MangaSnapshotService.shared.makeSnapshot(for: manga, pluginId: pluginId)
 
         return Persistence(libraryItem: libraryItemChanged ? libraryItem : nil, manga: mangaModel)
     }

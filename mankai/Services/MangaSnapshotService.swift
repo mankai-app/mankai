@@ -51,13 +51,7 @@ import GRDB
             }
 
             var mangas: [String: Manga] = [:]
-            for snapshot in snapshots {
-                do { mangas[snapshot.mangaId] = try snapshot.decode() } catch {
-                    Logger.mangaSnapshotService.error(
-                        "Failed to decode manga snapshot \(snapshot.mangaId) from plugin \(pluginId)",
-                        error: error)
-                }
-            }
+            for snapshot in snapshots { mangas[snapshot.mangaId] = snapshot.info }
             return mangas
         } catch {
             Logger.mangaSnapshotService.error(
@@ -66,11 +60,9 @@ import GRDB
         }
     }
 
-    /// Encodes manga metadata for local persistence.
-    func makeSnapshot(for manga: Manga, pluginId: String) throws -> MangaModel {
-        let data = try JSONEncoder().encode(manga)
-        return MangaModel(
-            mangaId: manga.id, pluginId: pluginId, info: String(decoding: data, as: UTF8.self))
+    /// Wraps manga metadata for local persistence.
+    func makeSnapshot(for manga: Manga, pluginId: String) -> MangaModel {
+        MangaModel(mangaId: manga.id, pluginId: pluginId, info: manga)
     }
 
     /// Inserts or replaces a snapshot in its own database transaction.
@@ -90,9 +82,7 @@ import GRDB
 
             for snapshot in snapshots {
                 try snapshot.upsert(db)
-                if let manga = try? snapshot.decode() {
-                    upserts.append(Upsert(manga: manga, pluginId: snapshot.pluginId))
-                }
+                upserts.append(Upsert(manga: snapshot.info, pluginId: snapshot.pluginId))
             }
 
             return upserts
@@ -109,13 +99,12 @@ import GRDB
             throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
-        let upsert = try await appDb.write { db -> Upsert? in
+        let upsert = try await appDb.write { db in
             try snapshot.update(db)
-            guard let manga = try? snapshot.decode() else { return nil }
-            return Upsert(manga: manga, pluginId: snapshot.pluginId)
+            return Upsert(manga: snapshot.info, pluginId: snapshot.pluginId)
         }
 
-        if let upsert { publish(.upserted([upsert])) }
+        publish(.upserted([upsert]))
         return upsert
     }
 
@@ -139,17 +128,20 @@ import GRDB
         try MangaModel.filter(
             mangaIds.contains(Column("mangaId")) && Column("pluginId") == pluginId
         )
-        .fetchAll(db)
+        .asRequest(of: Row.self).fetchAll(db)
+        .compactMap { row in
+            do { return try MangaModel(row: row) } catch {
+                let mangaId: String = row["mangaId"]
+                Logger.mangaSnapshotService.error(
+                    "Failed to decode manga snapshot \(mangaId) from plugin \(pluginId)",
+                    error: error)
+                return nil
+            }
+        }
     }
 
     private func publish(_ change: Change) {
         changeSubject.send(change)
         objectWillChange.send()
-    }
-}
-
-extension MangaModel {
-    fileprivate func decode() throws -> Manga {
-        try JSONDecoder().decode(Manga.self, from: Data(info.utf8))
     }
 }

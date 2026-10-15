@@ -25,18 +25,19 @@ struct ImageProcessorInstance: Identifiable {
         order = model.order
         isEnabled = model.isEnabled
         switch model.type { case UpscalingImageProcessor.type:
-            processor = try UpscalingImageProcessor.decode(model)
+            processor = try UpscalingImageProcessor.fromDataModel(model)
             case DownsampleImageProcessor.type:
-                processor = try DownsampleImageProcessor.decode(model)
+                processor = try DownsampleImageProcessor.fromDataModel(model)
             case MonochromeToneImageProcessor.type:
-                processor = try MonochromeToneImageProcessor.decode(model)
-            case RemoteImageProcessor.type: processor = try RemoteImageProcessor.decode(model)
+                processor = try MonochromeToneImageProcessor.fromDataModel(model)
+            case RemoteImageProcessor.type:
+                processor = try RemoteImageProcessor.fromDataModel(model)
             default: throw MankaiErrorCode.imageProcessingUnknownProcessorType.makeError()
         }
     }
 
-    @MainActor func encode() throws -> ImageProcessorModel {
-        try processor.encode(id: id, order: order, isEnabled: isEnabled)
+    @MainActor func makeModel() -> ImageProcessorModel {
+        processor.makeModel(id: id, order: order, isEnabled: isEnabled)
     }
 }
 
@@ -56,16 +57,22 @@ struct ImageProcessorInstance: Identifiable {
             return
         }
         do {
-            let models = try dbPool.read { db in try ImageProcessorModel.fetchAll(db) }
-            processors = models.sorted { ($0.order, $0.id) < ($1.order, $1.id) }
-                .compactMap { model in
-                    do { return try ImageProcessorInstance(model: model) } catch {
+            let rows = try dbPool.read { db in
+                try ImageProcessorModel.all().asRequest(of: Row.self).fetchAll(db)
+            }
+            processors =
+                rows.compactMap { row in
+                    do {
+                        return try ImageProcessorInstance(model: ImageProcessorModel(row: row))
+                    } catch {
+                        let type: String = row["type"]
                         Logger.imageProcessingService.error(
-                            "Failed to decode image processor \(model.type)", error: error)
+                            "Failed to decode image processor \(type)", error: error)
                         errorMessage = error.localizedDescription
                         return nil
                     }
                 }
+                .sorted { ($0.order, $0.id) < ($1.order, $1.id) }
             Logger.imageProcessingService.info("Loaded \(processors.count) image processors")
         } catch {
             report(
@@ -82,7 +89,7 @@ struct ImageProcessorInstance: Identifiable {
         }
         do {
             let order = (processors.map(\.order).max() ?? -1) + 1
-            let model = try processor.encode(id: UUID().uuidString, order: order, isEnabled: true)
+            let model = processor.makeModel(id: UUID().uuidString, order: order, isEnabled: true)
             let instance = try ImageProcessorInstance(model: model)
             try dbPool.write { db in try model.insert(db) }
             processors.append(instance)
@@ -151,7 +158,7 @@ struct ImageProcessorInstance: Identifiable {
                     .imageProcessingDatabaseNotAvailable, context: "Changing image processor order")
                 return
             }
-            let models = try reordered.map { try $0.encode() }
+            let models = reordered.map { $0.makeModel() }
             try dbPool.write { db in for model in models { try model.update(db) } }
             processors = reordered
             Logger.imageProcessingService.info("Changed image processor order")
@@ -254,7 +261,7 @@ struct ImageProcessorInstance: Identifiable {
                     context: "Saving image processor \(instance.type)")
                 return
             }
-            let model = try instance.encode()
+            let model = instance.makeModel()
             try dbPool.write { db in try model.update(db) }
             if let index = processors.firstIndex(where: { $0.id == instance.id }) {
                 processors[index] = instance

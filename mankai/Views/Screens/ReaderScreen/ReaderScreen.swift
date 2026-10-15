@@ -1229,7 +1229,7 @@ struct ReaderScreen: View {
 
         do {
             if !usesDownloadedMetadata {
-                let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
+                let mangaModel = MangaSnapshotService.shared.makeSnapshot(
                     for: manga.toManga(), pluginId: plugin.id)
                 _ = try? await MangaSnapshotService.shared.upsert(mangaModel)
             }

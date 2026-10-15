@@ -88,24 +88,15 @@ final class MonochromeToneImageProcessor: ImageProcessor, ObservableObject, @unc
         ImageProcessingService.shared.update(id: instanceID, processor: self)
     }
 
-    @MainActor func encode(id: String, order: Int, isEnabled: Bool) throws -> ImageProcessorModel {
-        let configuration = try JSONEncoder()
-            .encode(Configuration(color: colorOverride, intensity: strength))
-        return ImageProcessorModel(
+    @MainActor func makeModel(id: String, order: Int, isEnabled: Bool) -> ImageProcessorModel {
+        ImageProcessorModel(
             id: id, type: Self.type, order: order, isEnabled: isEnabled,
-            configuration: String(decoding: configuration, as: UTF8.self))
+            configuration: .init(color: colorOverride, intensity: strength))
     }
 
-    @MainActor static func decode(_ model: ImageProcessorModel) throws -> any ImageProcessor {
-        let configuration: Configuration
-        do {
-            configuration = try JSONDecoder()
-                .decode(Configuration.self, from: Data(model.configuration.utf8))
-        } catch {
-            throw MankaiErrorCode.imageProcessingInvalidConfiguration.makeError(
-                underlyingError: error)
-        }
-
+    @MainActor static func fromDataModel(_ model: ImageProcessorModel) throws -> any ImageProcessor
+    {
+        let configuration = model.configuration
         let strength = configuration.intensity ?? Self.defaultStrength
         let colorOverride: String?
         if let color = configuration.color {
@@ -155,11 +146,6 @@ final class MonochromeToneImageProcessor: ImageProcessor, ObservableObject, @unc
                 ]
             )
             .cropped(to: extent)
-    }
-
-    private struct Configuration: Codable {
-        let color: String?
-        let intensity: Double?
     }
 
     private struct RGB {

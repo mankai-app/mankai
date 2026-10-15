@@ -532,44 +532,44 @@ where Session: BrowsableSession, Session.Config == Config {
         guard let db else { return nil }
         let pluginId = id
         let row = try await db.read { db in
-            try BrowsablePluginMangaModel.filter(
-                Column("mangaId") == mangaId && Column("parserId") == parserId
-                    && Column("pluginId") == pluginId
-            )
-            .fetchOne(db)
+            let row =
+                try BrowsablePluginMangaModel.filter(
+                    Column("mangaId") == mangaId && Column("parserId") == parserId
+                        && Column("pluginId") == pluginId
+                )
+                .asRequest(of: Row.self).fetchOne(db)
+            return row.flatMap { try? BrowsablePluginMangaModel(row: $0) }
         }
-        return Self.decodeCachedManga(row)
+        return Self.cachedManga(from: row)
     }
 
     private func fetchCachedManga(path: String, parserId: String) async throws -> CachedManga? {
         guard let db else { return nil }
         let pluginId = id
         let row = try await db.read { db in
-            try BrowsablePluginMangaModel.filter(
-                Column("path") == path && Column("parserId") == parserId
-                    && Column("pluginId") == pluginId
-            )
-            .fetchOne(db)
+            let row =
+                try BrowsablePluginMangaModel.filter(
+                    Column("path") == path && Column("parserId") == parserId
+                        && Column("pluginId") == pluginId
+                )
+                .asRequest(of: Row.self).fetchOne(db)
+            return row.flatMap { try? BrowsablePluginMangaModel(row: $0) }
         }
-        return Self.decodeCachedManga(row)
+        return Self.cachedManga(from: row)
     }
 
-    private static func decodeCachedManga(_ row: BrowsablePluginMangaModel?) -> CachedManga? {
-        guard let row, let data = row.info.data(using: .utf8),
-            let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
-        else { return nil }
-        return CachedManga(mangaId: row.mangaId, path: row.path, manga: stored)
+    private static func cachedManga(from row: BrowsablePluginMangaModel?) -> CachedManga? {
+        guard let row else { return nil }
+        return CachedManga(mangaId: row.mangaId, path: row.path, manga: row.info)
     }
 
     private func storeManga(_ manga: DetailedManga, mangaId: String, parserId: String, path: String)
         async
     {
-        guard let db, let infoData = try? JSONEncoder().encode(manga),
-            let infoString = String(data: infoData, encoding: .utf8)
-        else { return }
+        guard let db else { return }
 
         let model = BrowsablePluginMangaModel(
-            mangaId: mangaId, parserId: parserId, pluginId: id, path: path, info: infoString)
+            mangaId: mangaId, parserId: parserId, pluginId: id, path: path, info: manga)
         try? await db.write { db in try model.upsert(db) }
     }
 

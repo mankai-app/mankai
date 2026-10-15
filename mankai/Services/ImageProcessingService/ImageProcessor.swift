@@ -22,9 +22,9 @@ protocol ImageProcessor: Sendable {
     /// Applies this processor's operation to the current pipeline image.
     func process(image: CIImage, pointSize: CGSize) async throws -> CIImage
 
-    /// Encodes this processor's settings and its service-owned execution metadata.
-    @MainActor func encode(id: String, order: Int, isEnabled: Bool) throws -> ImageProcessorModel
-    @MainActor static func decode(_ model: ImageProcessorModel) throws -> any ImageProcessor
+    /// Wraps this processor's settings and its service-owned execution metadata.
+    @MainActor func makeModel(id: String, order: Int, isEnabled: Bool) -> ImageProcessorModel
+    @MainActor static func fromDataModel(_ model: ImageProcessorModel) throws -> any ImageProcessor
 }
 
 extension ImageProcessor {
