@@ -36,6 +36,7 @@ func readerOverscrollProgress(_ distance: CGFloat, spacing: CGFloat) -> CGFloat 
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?
+    let usesDownloadedMetadata: Bool
     let chapterGroupIndex: Int
     let chapter: Chapter
     let initialPage: Int?

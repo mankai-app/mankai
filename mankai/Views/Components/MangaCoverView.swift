@@ -45,7 +45,12 @@ struct MangaCoverView: View {
 
             if let tag = tag, !tag.isEmpty { tagView(tag) }
         }
-        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius)).task { await loadImage() }
+        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
+        .task(id: coverUrl) {
+            image = nil
+
+            await loadImage()
+        }
     }
 
     @ViewBuilder private func tagView(_ tag: String) -> some View {
@@ -85,16 +90,21 @@ struct MangaCoverView: View {
 
         do {
             let data: Data
-            if plugin.supports(.image) {
+
+            if URL(string: coverUrl)?.scheme == "mankai-download" {
+                data = try await DownloadPlugin.shared.getImage(coverUrl)
+            } else if plugin.supports(.image) {
                 do {
                     try Task.checkCancellation()
                     data = try await plugin.getImage(coverUrl)
                 } catch is CancellationError { throw CancellationError() } catch {
-                    data = try await DownloadPlugin.shared.getImage(coverUrl)
+                    data = try await DownloadPlugin.shared.getCover(coverUrl, pluginId: plugin.id)
                 }
             } else {
-                data = try await DownloadPlugin.shared.getImage(coverUrl)
+                data = try await DownloadPlugin.shared.getCover(coverUrl, pluginId: plugin.id)
             }
+
+            try Task.checkCancellation()
 
             let thumbnail = Self.downsampledThumbnail(data: data)
             image = thumbnail

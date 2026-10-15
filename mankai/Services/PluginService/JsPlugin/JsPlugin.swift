@@ -514,7 +514,11 @@ final class JsPlugin: Plugin, Configurable {
         var request = URLRequest(url: url)
         for (key, value) in headers { request.setValue(value, forHTTPHeaderField: key) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let response = response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
+            throw MankaiErrorCode.pluginImageRequestFailed.makeError(
+                additionalUserInfo: MankaiErrorUserInfoKey.httpResponseInfo(response))
+        }
 
         return data
     }

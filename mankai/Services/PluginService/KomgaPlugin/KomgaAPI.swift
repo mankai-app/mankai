@@ -211,7 +211,7 @@ actor KomgaSession {
             throw MankaiErrorCode.pluginKomgaRequestFailed.makeError(
                 messageOverride:
                     "\(String(localized: "httpRequestFailed")) (\(response.statusCode))",
-                additionalUserInfo: [MankaiErrorUserInfoKey.httpStatusCode: response.statusCode])
+                additionalUserInfo: MankaiErrorUserInfoKey.httpResponseInfo(response))
         }
 
         return data

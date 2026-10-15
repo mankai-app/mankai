@@ -313,9 +313,7 @@ import Foundation
                 Logger.authManager.error("AuthManager request failed: \(errorMsg)")
                 throw MankaiErrorCode.authRequestFailed.makeError(
                     messageOverride: errorMsg,
-                    additionalUserInfo: [
-                        MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode
-                    ])
+                    additionalUserInfo: MankaiErrorUserInfoKey.httpResponseInfo(httpResponse))
             }
         } else {
             Logger.authManager.error("AuthManager invalid response type")

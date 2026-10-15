@@ -85,7 +85,18 @@ struct MankaiErrorDefinition {
 
 enum MankaiErrorUserInfoKey {
     static let httpStatusCode = "MankaiHTTPStatusCode"
+    static let retryAfter = "MankaiRetryAfter"
     static let pluginId = "MankaiPluginID"
+
+    static func httpResponseInfo(_ response: HTTPURLResponse) -> [String: Any] {
+        var info: [String: Any] = [httpStatusCode: response.statusCode]
+
+        if let value = response.value(forHTTPHeaderField: "Retry-After") {
+            info[retryAfter] = value
+        }
+
+        return info
+    }
 }
 
 enum MankaiErrorCode: CaseIterable, Hashable {
@@ -159,6 +170,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case downloadDatabaseNotAvailable
     case downloadPluginNotFound
     case downloadDisabled
+    case downloadEmptyChapter
+    case downloadInvalidImage
     case exportNoChaptersSelected
     case exportChaptersNotDownloaded
     case exportNoFilesCreated
@@ -170,10 +183,10 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
     case pluginMangaNotFound
     case pluginDuplicateId
+    case pluginImageRequestFailed
     case pluginDummyCannotBeUsed
     case pluginDownloadDatabaseNotAvailable
     case pluginDownloadMangaNotFound
-    case pluginDownloadFailedToLoadMangaDetails
     case pluginDownloadMangaMetaMissing
     case pluginDownloadChapterNotFound
     case pluginDownloadFailedToLoadImage
@@ -362,6 +375,10 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .download, code: 1, messageKey: "downloadDatabaseNotAvailable"),
         .downloadPluginNotFound: .init(domain: .download, code: 2, messageKey: "sourceNotFound"),
         .downloadDisabled: .init(domain: .download, code: 3, messageKey: "downloadDisabled"),
+        .downloadEmptyChapter: .init(
+            domain: .download, code: 4, messageKey: "downloadEmptyChapter"),
+        .downloadInvalidImage: .init(
+            domain: .download, code: 5, messageKey: "downloadInvalidImage"),
         .exportNoChaptersSelected: .init(
             domain: .export, code: 1, messageKey: "exportNoChaptersSelected"),
         .exportChaptersNotDownloaded: .init(
@@ -381,14 +398,13 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .pluginMangaNotFound: .init(domain: .plugin, code: 1, messageKey: "mangaNotFound"),
         .pluginDuplicateId: .init(
             domain: .plugin, code: 2, messageKey: "duplicateSourceIdMessageFormat"),
+        .pluginImageRequestFailed: .init(domain: .plugin, code: 3, messageKey: "httpRequestFailed"),
         .pluginDummyCannotBeUsed: .init(
             domain: .pluginDummy, code: 1, messageKey: "dummySourceCannotBeUsed"),
         .pluginDownloadDatabaseNotAvailable: .init(
             domain: .pluginDownload, code: 1, messageKey: "databaseNotAvailable"),
         .pluginDownloadMangaNotFound: .init(
             domain: .pluginDownload, code: 2, messageKey: "mangaNotFound"),
-        .pluginDownloadFailedToLoadMangaDetails: .init(
-            domain: .pluginDownload, code: 3, messageKey: "failedToLoadMangaDetails"),
         .pluginDownloadMangaMetaMissing: .init(
             domain: .pluginDownload, code: 4, messageKey: "mangaMetaMissing"),
         .pluginDownloadChapterNotFound: .init(

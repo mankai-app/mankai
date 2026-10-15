@@ -431,7 +431,18 @@ class HttpPlugin: Plugin, Configurable {
             if path.hasPrefix(baseUrl) {
                 path = String(path.dropFirst(baseUrl.count))
             } else {
-                let (data, _) = try await URLSession.shared.data(from: URL(string: url)!)
+                guard let imageURL = URL(string: url) else {
+                    throw MankaiErrorCode.pluginHttpInvalidUrl.makeError()
+                }
+
+                let (data, response) = try await URLSession.shared.data(from: imageURL)
+                if let response = response as? HTTPURLResponse,
+                    !(200...299).contains(response.statusCode)
+                {
+                    throw MankaiErrorCode.pluginImageRequestFailed.makeError(
+                        additionalUserInfo: MankaiErrorUserInfoKey.httpResponseInfo(response))
+                }
+
                 return data
             }
         }

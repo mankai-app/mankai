@@ -277,7 +277,7 @@ actor KavitaSession {
             throw MankaiErrorCode.pluginKavitaRequestFailed.makeError(
                 messageOverride:
                     "\(String(localized: "httpRequestFailed")) (\(response.statusCode))",
-                additionalUserInfo: [MankaiErrorUserInfoKey.httpStatusCode: response.statusCode])
+                additionalUserInfo: MankaiErrorUserInfoKey.httpResponseInfo(response))
         }
     }
 }

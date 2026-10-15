@@ -40,7 +40,9 @@ struct MangaDetailsScreen: View {
     @State private var libraryItem: LibraryModel? = nil
 
     /// Offline access
-    private var downloadMangaId: String { return "\(plugin.id)+\(manga.id)" }
+    private var downloadMangaId: String {
+        DownloadMangaModel.makeId(pluginId: plugin.id, mangaId: manga.id)
+    }
 
     @State private var downloadManga: DetailedManga?
     @State private var downloadedChapterIds: Set<String>?
@@ -88,6 +90,7 @@ struct MangaDetailsScreen: View {
         showingChaptersModal = false
         readerRoute = ReaderRoute(
             plugin: plugin, manga: mangaData, downloadManga: downloadManga,
+            usesDownloadedMetadata: detailedManga == nil,
             chapterGroupIndex: readerChapterGroupIndex, chapter: chapter, initialPage: page)
     }
 
@@ -139,10 +142,12 @@ struct MangaDetailsScreen: View {
                         mangaId: manga.id, pluginId: plugin.id, datetime: Date(), updates: false,
                         latestChapter: manga.latestChapter, shouldSync: plugin.supports(.sync))
 
-                    let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
-                        for: manga, pluginId: plugin.id)
+                    if let detailedManga {
+                        let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
+                            for: detailedManga.toManga(), pluginId: plugin.id)
+                        try await MangaSnapshotService.shared.upsert(mangaModel)
+                    }
 
-                    try await MangaSnapshotService.shared.upsert(mangaModel)
                     let _ = try await LibraryService.shared.save(libraryItem: newLibraryItem)
                 }
             } catch { Logger.ui.error("Failed to delete or create library item") }
@@ -501,13 +506,15 @@ struct MangaDetailsScreen: View {
             if let detailedManga = detailedManga {
                 SelectChaptersModal(
                     plugin: plugin, detailedManga: detailedManga,
-                    alreadyDownloaded: downloadedChapterIds,
                     downloadChapters: { chapters in
                         Task {
                             do {
-                                _ = try await DownloadService.shared.queue(
+                                try await DownloadService.shared.queue(
                                     plugin: plugin, manga: detailedManga, chapters: chapters)
-                            } catch { Logger.ui.error("Failed to queue download", error: error) }
+                            } catch {
+                                Logger.ui.error("Failed to queue download", error: error)
+                                NotificationService.shared.showError(error.localizedDescription)
+                            }
                         }
                     })
             }
@@ -533,6 +540,7 @@ struct MangaDetailsScreen: View {
         .navigationDestination(item: $readerRoute) { params in
             ReaderScreen(
                 plugin: params.plugin, manga: params.manga, downloadManga: params.downloadManga,
+                usesDownloadedMetadata: params.usesDownloadedMetadata,
                 chapterGroupIndex: params.chapterGroupIndex, chapter: params.chapter,
                 initialPage: params.initialPage)
         }
@@ -652,6 +660,13 @@ struct MangaDetailsScreen: View {
                     group.chapters.filter { !($0.locked ?? false) }.map(\.id)
                 })
         } catch {
+            if MankaiErrorCode.pluginDownloadMangaNotFound.matches(error) {
+                downloadManga = nil
+                downloadedChapterIds = []
+
+                return
+            }
+
             if detailedManga == nil {
                 Logger.ui.error("Failed to load detailed manga", error: error)
             }

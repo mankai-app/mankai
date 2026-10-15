@@ -434,7 +434,7 @@ actor SuwayomiSession {
             throw MankaiErrorCode.pluginSuwayomiRequestFailed.makeError(
                 messageOverride:
                     "\(String(localized: "httpRequestFailed")) (\(response.statusCode))",
-                additionalUserInfo: [MankaiErrorUserInfoKey.httpStatusCode: response.statusCode])
+                additionalUserInfo: MankaiErrorUserInfoKey.httpResponseInfo(response))
         }
         return data
     }

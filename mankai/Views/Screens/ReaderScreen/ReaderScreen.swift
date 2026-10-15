@@ -363,6 +363,7 @@ struct ReaderScreen: View {
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?
+    let usesDownloadedMetadata: Bool
     let chapterGroupIndex: Int
     let chapter: Chapter
     var initialPage: Int?
@@ -428,12 +429,14 @@ struct ReaderScreen: View {
     @State private var lastSavedPosition: ReaderSavedPosition?
 
     init(
-        plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, chapterGroupIndex: Int,
-        chapter: Chapter, initialPage: Int? = nil
+        plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?,
+        usesDownloadedMetadata: Bool, chapterGroupIndex: Int, chapter: Chapter,
+        initialPage: Int? = nil
     ) {
         self.plugin = plugin
         self.manga = manga
         self.downloadManga = downloadManga
+        self.usesDownloadedMetadata = usesDownloadedMetadata
         self.chapterGroupIndex = chapterGroupIndex
         self.chapter = chapter
         self.initialPage = initialPage
@@ -1084,8 +1087,7 @@ struct ReaderScreen: View {
         for retry in 0...3 {
             do {
                 let data: Data
-                let isDownloaded =
-                    (try? await DownloadPlugin.shared.isImageDownloaded(url)) ?? false
+                let isDownloaded = URL(string: url)?.scheme == "mankai-download"
                 try Task.checkCancellation()
 
                 if isDownloaded {
@@ -1226,9 +1228,12 @@ struct ReaderScreen: View {
             chapterTitle: chapter.title, page: page, shouldSync: plugin.supports(.sync))
 
         do {
-            let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
-                for: manga.toManga(), pluginId: plugin.id)
-            _ = try? await MangaSnapshotService.shared.upsert(mangaModel)
+            if !usesDownloadedMetadata {
+                let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
+                    for: manga.toManga(), pluginId: plugin.id)
+                _ = try? await MangaSnapshotService.shared.upsert(mangaModel)
+            }
+
             _ = try await ProgressService.shared.save(progress: progress)
             lastSavedPosition = position
         } catch { Logger.ui.error("Failed to save reader position", error: error) }

@@ -29,7 +29,7 @@ class CacheWrapper: Plugin {
         init(_ value: AnyObject) { self.value = value }
     }
 
-    private let plugin: Plugin
+    private(set) var plugin: Plugin
 
     private var configurablePlugin: any Configurable {
         guard let configurablePlugin = plugin as? any Configurable else {

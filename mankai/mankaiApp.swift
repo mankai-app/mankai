@@ -16,6 +16,12 @@ import SwiftUI
 
         _ = DbService.shared.appDb
 
+        Task {
+            do { try await DownloadService.shared.start() } catch {
+                Logger.downloadService.error("Failed to restore downloads: \(error)")
+            }
+        }
+
         // Initialize SyncService to start periodic syncing
         _ = SyncService.shared
 

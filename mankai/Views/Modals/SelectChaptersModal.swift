@@ -12,17 +12,27 @@ struct SelectChaptersModal: View {
     @Environment(\.dismiss) var dismiss
     let plugin: Plugin
     let detailedManga: DetailedManga
-    let alreadyDownloaded: Set<String>?
+
+    @ObservedObject private var downloadService = DownloadService.shared
+
     let downloadChapters: (ChapterGroups) -> Void
 
     // Chapter-group index -> set of selected chapter IDs.
     @State private var selectedChapters: [Int: Set<String>] = [:]
     @State private var expandedGroupIndex: Int? = nil
 
-    private var totalSelectedCount: Int { selectedChapters.values.reduce(0) { $0 + $1.count } }
+    private var totalSelectedCount: Int { buildDownloadPayload().flatMap(\.chapters).count }
 
-    private func isDownloaded(chapterId: String) -> Bool {
-        alreadyDownloaded?.contains(chapterId) == true
+    private func state(chapterId: String) -> DownloadState? {
+        downloadService.chapterState(
+            pluginId: plugin.id, mangaId: detailedManga.id, chapterId: chapterId)
+    }
+
+    private func isSelectable(_ chapter: Chapter) -> Bool {
+        let downloadState = state(chapterId: chapter.id)
+
+        return downloadService.isReady && chapter.locked != true
+            && (downloadState == nil || downloadState == .cancelled)
     }
 
     private func isSelected(chapterId: String, groupIndex: Int) -> Bool {
@@ -30,13 +40,15 @@ struct SelectChaptersModal: View {
     }
 
     private func toggleChapter(_ chapter: Chapter, groupIndex: Int) {
+        guard isSelectable(chapter) else { return }
+
         var set = selectedChapters[groupIndex] ?? []
         if set.contains(chapter.id) { set.remove(chapter.id) } else { set.insert(chapter.id) }
         selectedChapters[groupIndex] = set
     }
 
     private func selectAllInGroup(_ groupIndex: Int, chapters: [Chapter]) {
-        let selectable = chapters.filter { !isDownloaded(chapterId: $0.id) }
+        let selectable = chapters.filter(isSelectable)
         let selectableIds = Set(selectable.map { $0.id })
         let currentSelected = selectedChapters[groupIndex] ?? []
 
@@ -56,7 +68,9 @@ struct SelectChaptersModal: View {
             result.append(
                 ChapterGroup(
                     id: group.id, title: group.title,
-                    chapters: group.chapters.filter { selectedIds.contains($0.id) }))
+                    chapters: group.chapters.filter {
+                        selectedIds.contains($0.id) && isSelectable($0)
+                    }))
         }
         return result
     }
@@ -67,14 +81,20 @@ struct SelectChaptersModal: View {
                 ForEach(Array(detailedManga.chapters.enumerated()), id: \.offset) {
                     groupIndex, group in
                     Section {
-                        chapterGroupRow(
-                            groupIndex: groupIndex, groupTitle: group.title,
-                            chapters: group.chapters)
-
-                        if expandedGroupIndex == groupIndex {
+                        DisclosureGroup(
+                            isExpanded: Binding(
+                                get: { expandedGroupIndex == groupIndex },
+                                set: { isExpanded in
+                                    expandedGroupIndex = isExpanded ? groupIndex : nil
+                                })
+                        ) {
                             ForEach(group.chapters, id: \.id) { chapter in
                                 chapterRow(chapter: chapter, groupIndex: groupIndex)
                             }
+                        } label: {
+                            chapterGroupRow(
+                                groupIndex: groupIndex, groupTitle: group.title,
+                                chapters: group.chapters)
                         }
                     }
                 }
@@ -101,13 +121,18 @@ struct SelectChaptersModal: View {
                             totalSelectedCount)) : nil)
         }
         .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
+        .task {
+            do { try await downloadService.start() } catch {
+                NotificationService.shared.showError(error.localizedDescription)
+            }
+        }
     }
 
     @ViewBuilder private func chapterGroupRow(
         groupIndex: Int, groupTitle: String, chapters: [Chapter]
     ) -> some View {
-        // calculate selectable chapters (those not already downloaded)
-        let selectableChapters = chapters.filter { !isDownloaded(chapterId: $0.id) }
+        // calculate selectable chapters (those without an existing download)
+        let selectableChapters = chapters.filter(isSelectable)
         let selectableCount = selectableChapters.count
 
         // calculate currently selected count among selectable ones
@@ -135,71 +160,58 @@ struct SelectChaptersModal: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                // Fully downloaded state
+                // No selectable chapters
                 Image(systemName: "checkmark.circle.fill").resizable().frame(width: 20, height: 20)
                     .foregroundColor(.gray)
             }
 
-            // Group Title and Info (Tapping this area toggles expansion)
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(LocalizedStringKey(groupTitle)).foregroundColor(.primary)
-
-                        Text(
-                            String.localizedStringWithFormat(
-                                String(localized: "chapterCountFormat"), chapters.count)
-                        )
-                        .smallTagStyle()
-                    }
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(LocalizedStringKey(groupTitle)).foregroundColor(.primary)
 
                     Text(
-                        String(
-                            format: String(localized: "selectedChapterCountFormat"),
-                            selectedSelectableCount)
+                        String.localizedStringWithFormat(
+                            String(localized: "chapterCountFormat"), chapters.count)
                     )
-                    .font(.caption).foregroundColor(.accentColor)
+                    .smallTagStyle()
                 }
 
-                Spacer()
+                Text(
+                    String(
+                        format: String(localized: "selectedChapterCountFormat"),
+                        selectedSelectableCount)
+                )
+                .font(.caption).foregroundColor(.accentColor)
+            }
 
-                Image(systemName: "chevron.right").font(.footnote).foregroundColor(.secondary)
-                    .rotationEffect(.degrees(expandedGroupIndex == groupIndex ? 90 : 0))
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation {
-                    if expandedGroupIndex == groupIndex {
-                        expandedGroupIndex = nil
-                    } else {
-                        expandedGroupIndex = groupIndex
-                    }
-                }
-            }
+            Spacer()
         }
         .padding(.trailing, 4)
     }
 
     @ViewBuilder private func chapterRow(chapter: Chapter, groupIndex: Int) -> some View {
-        let downloaded = isDownloaded(chapterId: chapter.id)
-        let selected = isSelected(chapterId: chapter.id, groupIndex: groupIndex)
+        let downloadState = state(chapterId: chapter.id)
+        let hasDownload = downloadState != nil && downloadState != .cancelled
+        let selected = hasDownload || isSelected(chapterId: chapter.id, groupIndex: groupIndex)
+        let selectable = isSelectable(chapter)
 
         Button(action: { toggleChapter(chapter, groupIndex: groupIndex) }) {
             HStack {
-                Image(
-                    systemName: downloaded
-                        ? "checkmark.circle.fill" : selected ? "checkmark.circle.fill" : "circle"
-                )
-                .foregroundColor(downloaded ? .gray : selected ? .accentColor : .secondary)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(hasDownload ? .gray : selected ? .accentColor : .secondary)
 
                 Text(chapter.title ?? chapter.id)
-                    .foregroundColor(downloaded ? .secondary : .primary)
+                    .foregroundColor(hasDownload ? .secondary : .primary)
 
                 Spacer()
 
-                if downloaded { Text("downloaded").font(.caption).foregroundColor(.secondary) }
+                if let downloadState, downloadState != .cancelled {
+                    Text(downloadState.label).font(.caption).foregroundColor(.secondary)
+                } else if chapter.locked == true {
+                    Image(systemName: "lock.fill").foregroundStyle(.secondary)
+                }
             }
         }
-        .disabled(downloaded)
+        .disabled(!selectable)
     }
 }
