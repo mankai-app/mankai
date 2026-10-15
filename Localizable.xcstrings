@@ -1313,34 +1313,6 @@
         }
       }
     },
-    "cache" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cache"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キャッシュ"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缓存"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快取"
-          }
-        }
-      }
-    },
     "cacheDescription" : {
       "localizations" : {
         "en" : {
@@ -2027,62 +1999,6 @@
         }
       }
     },
-    "clearCacheDir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Cache Directory"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キャッシュディレクトリを消去"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除缓存目录"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除快取目錄"
-          }
-        }
-      }
-    },
-    "clearCacheDirMessage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will remove all cached files, including the index cache. Are you sure you want to continue?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "インデックスキャッシュを含むすべてのキャッシュファイルが削除されます。続けてもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这将移除所有缓存文件，包括索引缓存。确定要继续吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "這將移除所有快取檔案，包含索引快取。你確定要繼續嗎？"
-          }
-        }
-      }
-    },
     "clearCacheMessage" : {
       "localizations" : {
         "en" : {
@@ -2107,62 +2023,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你確定要清除快取嗎？"
-          }
-        }
-      }
-    },
-    "clearDownloadsDir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Downloads Directory"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ダウンロードディレクトリを消去"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除下载目录"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除下載目錄"
-          }
-        }
-      }
-    },
-    "clearDownloadsDirMessage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will remove all files in the downloads directory. Are you sure you want to continue?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ダウンロードディレクトリ内のすべてのファイルが削除されます。続けてもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这将移除下载目录中的所有文件。确定要继续吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "這將移除下載目錄中的所有檔案。你確定要繼續嗎？"
           }
         }
       }
@@ -2275,62 +2135,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "索引可加快瀏覽速度。清除後將需要重新建立，可能會暫時減慢速度。你確定要繼續嗎？"
-          }
-        }
-      }
-    },
-    "clearMangasDir" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Manga Directory"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マンガディレクトリを消去"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除漫画目录"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除漫畫目錄"
-          }
-        }
-      }
-    },
-    "clearMangasDirMessage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will remove all files in the manga directory. Are you sure you want to continue?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マンガディレクトリ内のすべてのファイルが削除されます。続けてもよろしいですか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这将移除漫画目录中的所有文件。确定要继续吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "這將移除漫畫目錄中的所有檔案。你確定要繼續嗎？"
           }
         }
       }
@@ -9059,34 +8863,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "JavaScript 外掛模組設定"
-          }
-        }
-      }
-    },
-    "jsRuntime" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JS Runtime"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JSランタイム"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JS 运行环境"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JS 執行環境"
           }
         }
       }
@@ -17568,34 +17344,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "任務"
-          }
-        }
-      }
-    },
-    "testJs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Test JS"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JSをテスト"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "测试 JS"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "測試 JS"
           }
         }
       }

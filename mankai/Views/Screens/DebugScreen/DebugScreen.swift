@@ -11,9 +11,6 @@ struct DebugScreen: View {
     @State var plugin: JsPlugin?
     @State private var jsonInput: String = ""
     @State private var isError: Bool = false
-    @State private var showClearCacheDirAlert = false
-    @State private var showClearDownloadsDirAlert = false
-    @State private var showClearMangasDirAlert = false
 
     var body: some View {
         List {
@@ -130,143 +127,8 @@ struct DebugScreen: View {
                     }
                     .alert("error", isPresented: $isError) { Button("ok", role: .cancel) {} }
                 }
-
-                Section("jsRuntime") {
-                    Button("testJs") {
-                        Task {
-                            // Test LOG
-                            let _ = try? await JsRuntime.shared.execute(
-                                "console.log('Hello from JS!!!')", from: "DEBUG")
-
-                            // Test Fetch
-                            let result =
-                                try? await JsRuntime.shared.execute(
-                                    "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
-                                ) as Any
-                            Logger.jsRuntime.debug("\(result ?? "nil")")
-
-                            // Test t2s/s2t
-                            let t2s = try? await JsRuntime.shared.execute(
-                                "return await t2s('繁體轉簡體')")
-                            Logger.jsRuntime.debug("t2s: \(t2s ?? "nil")")
-
-                            let s2t = try? await JsRuntime.shared.execute(
-                                "return await s2t('简体转繁体')")
-                            Logger.jsRuntime.debug("s2t: \(s2t ?? "nil")")
-
-                            // Test setValue/getValue/removeValue
-                            let jsPlugin =
-                                PluginService.shared.plugins.first(where: { $0 is JsPlugin })
-                                as! JsPlugin
-                            let setValue = try? await JsRuntime.shared.execute(
-                                "return await setValue('test', 'test')", from: "DEBUG",
-                                plugin: jsPlugin)
-                            Logger.jsRuntime.debug("setValue: \(setValue ?? "nil")")
-
-                            let getValue = try? await JsRuntime.shared.execute(
-                                "return await getValue('test')", from: "DEBUG", plugin: jsPlugin)
-                            Logger.jsRuntime.debug("getValue: \(getValue ?? "nil")")
-
-                            let removeValue = try? await JsRuntime.shared.execute(
-                                "return await removeValue('test')", from: "DEBUG", plugin: jsPlugin)
-                            Logger.jsRuntime.debug("removeValue: \(removeValue ?? "nil")")
-
-                            let getValueAfterRemove = try? await JsRuntime.shared.execute(
-                                "return await getValue('test')", from: "DEBUG", plugin: jsPlugin)
-                            Logger.jsRuntime.debug(
-                                "getValueAfterRemove: \(getValueAfterRemove ?? "nil")")
-                        }
-                    }
-                }
-            }
-
-            Section("cache") {
-                Button(role: .destructive) {
-                    showClearCacheDirAlert = true
-                } label: {
-                    Label("clearCacheDir", systemImage: "trash")
-                }
-                .confirmationDialog(
-                    "clearCacheDir", isPresented: $showClearCacheDirAlert, titleVisibility: .visible
-                ) {
-                    Button("clear", role: .destructive) { clearCacheDir() }
-                    Button("cancel", role: .cancel) {}
-                } message: {
-                    Text("clearCacheDirMessage")
-                }
-            }
-
-            Section("storage") {
-                Button(role: .destructive) {
-                    showClearDownloadsDirAlert = true
-                } label: {
-                    Label("clearDownloadsDir", systemImage: "trash")
-                }
-                .confirmationDialog(
-                    "clearDownloadsDir", isPresented: $showClearDownloadsDirAlert,
-                    titleVisibility: .visible
-                ) {
-                    Button("clear", role: .destructive) { clearDownloadsDir() }
-                    Button("cancel", role: .cancel) {}
-                } message: {
-                    Text("clearDownloadsDirMessage")
-                }
-
-                Button(role: .destructive) {
-                    showClearMangasDirAlert = true
-                } label: {
-                    Label("clearMangasDir", systemImage: "trash")
-                }
-                .confirmationDialog(
-                    "clearMangasDir", isPresented: $showClearMangasDirAlert,
-                    titleVisibility: .visible
-                ) {
-                    Button("clear", role: .destructive) { clearMangasDir() }
-                    Button("cancel", role: .cancel) {}
-                } message: {
-                    Text("clearMangasDirMessage")
-                }
             }
         }
         .navigationTitle("debug").navigationBarTitleDisplayMode(.inline)
-    }
-
-    @MainActor private func clearDownloadsDir() {
-        let fileManager = FileManager.default
-        let downloadDir = DownloadPlugin.shared.downloadDir
-
-        do {
-            try DbService.shared.closeDownloadDb()
-            let contents = try fileManager.contentsOfDirectory(
-                at: downloadDir, includingPropertiesForKeys: nil)
-            for url in contents { try fileManager.removeItem(at: url) }
-        } catch { Logger.ui.error("Failed to clear download directory: \(error)") }
-    }
-
-    @MainActor private func clearMangasDir() {
-        let fileManager = FileManager.default
-        let mangaDir = AppDirPlugin.shared.url
-
-        do {
-            try AppDirPlugin.shared.closeDatabase()
-            let contents = try fileManager.contentsOfDirectory(
-                at: mangaDir, includingPropertiesForKeys: nil)
-            for url in contents { try fileManager.removeItem(at: url) }
-        } catch { Logger.ui.error("Failed to clear manga directory: \(error)") }
-    }
-
-    @MainActor private func clearCacheDir() {
-        DbService.shared.closeBrowsablePluginDb()
-        DbService.shared.closeOpdsBrowsablePluginDb()
-
-        let fileManager = FileManager.default
-        guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
-        else { return }
-
-        do {
-            let contents = try fileManager.contentsOfDirectory(
-                at: cacheDir, includingPropertiesForKeys: nil)
-            for url in contents { try fileManager.removeItem(at: url) }
-        } catch { Logger.ui.error("Failed to clear cache directory: \(error)") }
     }
 }
