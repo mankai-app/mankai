@@ -25,6 +25,7 @@ struct SourceSearchScreen: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var searchTask: Task<Void, Never>?
+    @State private var readerRoute: ReaderRoute?
 
     private var supportsGenreFilter: Bool {
         plugin.supports(.search) && plugin.supports(.searchByGenre)
@@ -61,7 +62,7 @@ struct SourceSearchScreen: View {
     var body: some View {
         ScrollView {
             LazyVStack {
-                MangasListView(mangas: allMangas, plugin: plugin)
+                MangasListView(mangas: allMangas, plugin: plugin, onRead: { readerRoute = $0 })
 
                 if isLoading { ProgressView().frame(maxWidth: .infinity).padding() }
 
@@ -80,6 +81,13 @@ struct SourceSearchScreen: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(title: Text(plugin.name ?? plugin.id), subtitle: Text(query))
+        .navigationDestination(item: $readerRoute) { route in
+            ReaderScreen(
+                plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
+                usesDownloadedMetadata: route.usesDownloadedMetadata,
+                chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
+                initialPage: route.initialPage)
+        }
         .toolbar {
             if supportsGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .primaryAction) {

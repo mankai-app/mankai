@@ -26,6 +26,7 @@ struct SourceLibraryScreen: View {
     @State private var searchSuggestions: [String] = []
     @State private var searchTask: Task<Void, Never>? = nil
     @State private var navigateToSearch: Bool = false
+    @State private var readerRoute: ReaderRoute?
 
     private var supportsGenreFilter: Bool {
         plugin.supports(.list) && plugin.supports(.listByGenre)
@@ -63,7 +64,8 @@ struct SourceLibraryScreen: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack {
-                    MangasListView(mangas: allMangas, plugin: plugin).id("mangasList")
+                    MangasListView(mangas: allMangas, plugin: plugin, onRead: { readerRoute = $0 })
+                        .id("mangasList")
 
                     if isLoading {
                         ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).padding()
@@ -90,6 +92,13 @@ struct SourceLibraryScreen: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $readerRoute) { route in
+            ReaderScreen(
+                plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
+                usesDownloadedMetadata: route.usesDownloadedMetadata,
+                chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
+                initialPage: route.initialPage)
+        }
         .capabilitySearchable(
             enabled: plugin.supports(.search), text: $searchQuery, prompt: "searchManga"
         ) {

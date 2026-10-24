@@ -58,6 +58,7 @@ struct HomeTab: View {
     @State private var navigateToManga: Manga? = nil
     @State private var navigateToPlugin: Plugin? = nil
     @State private var navigateToDetails: Bool = false
+    @State private var readerRoute: ReaderRoute?
 
     private var hasActiveFilters: Bool {
         if dataSource == .downloads { return false }
@@ -130,7 +131,8 @@ struct HomeTab: View {
                                 keys: library.filteredOrders,
                                 progressEntries: library.progressEntries,
                                 libraryItems: library.libraryItems, showsUnreadTag: true,
-                                allowUnsupportedDetailsNavigation: isDownloadsMode)
+                                allowUnsupportedDetailsNavigation: isDownloadsMode,
+                                onRead: { readerRoute = $0 })
                         }
                         .padding()
                     }
@@ -224,6 +226,13 @@ struct HomeTab: View {
 
                     showingDownloads = false
                 }
+            }
+            .navigationDestination(item: $readerRoute) { route in
+                ReaderScreen(
+                    plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
+                    usesDownloadedMetadata: route.usesDownloadedMetadata,
+                    chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
+                    initialPage: route.initialPage)
             }
             .navigationDestination(isPresented: $navigateToDetails) {
                 if let plugin = navigateToPlugin, let manga = navigateToManga {

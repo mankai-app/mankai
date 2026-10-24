@@ -13,6 +13,8 @@ struct MangaItemView: View {
     var progress: ProgressModel? = nil
     var libraryItem: LibraryModel? = nil
     var showsUnreadTag: Bool = false
+    var allowUnsupportedDetailsNavigation: Bool = false
+    var onRead: (ReaderRoute) -> Void
 
     private var latestChapter: Chapter? {
         guard let libraryItem else { return manga.latestChapter }
@@ -29,13 +31,28 @@ struct MangaItemView: View {
     }
 
     var body: some View {
+        if plugin.supports(.mangaDetails) || allowUnsupportedDetailsNavigation {
+            NavigationLink(destination: MangaDetailsScreen(plugin: plugin, manga: manga)) {
+                itemContent
+            }
+            .buttonStyle(.plain)
+        } else {
+            itemContent
+        }
+    }
+
+    private var itemContent: some View {
         VStack(alignment: .center, spacing: 8) {
-            // Cover Image
             MangaCoverView(
                 coverUrl: manga.cover, plugin: plugin, tag: coverTag?.text,
                 tagColor: coverTag?.color
             )
             .aspectRatio(3 / 4, contentMode: .fit)
+            .modifier(
+                MangaItemContextMenu(
+                    manga: manga, plugin: plugin, progress: progress, libraryItem: libraryItem,
+                    allowUnsupportedDetailsNavigation: allowUnsupportedDetailsNavigation,
+                    onRead: onRead))
 
             VStack(alignment: .center) {
                 // Title

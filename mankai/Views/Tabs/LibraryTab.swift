@@ -18,6 +18,7 @@ struct LibraryTab: View {
     @State var searchTask: Task<Void, Never>? = nil
     @State var navigateToSearch: Bool = false
     @State private var isUpdateMangaModalPresented = false
+    @State private var readerRoute: ReaderRoute?
 
     var body: some View {
         NavigationStack {
@@ -29,7 +30,9 @@ struct LibraryTab: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(plugins) { plugin in SourceListMangasRowListView(plugin: plugin)
+                            ForEach(plugins) { plugin in
+                                SourceListMangasRowListView(
+                                    plugin: plugin, onRead: { readerRoute = $0 })
                             }
                         }
                         .padding()
@@ -56,6 +59,13 @@ struct LibraryTab: View {
                 getSearchSuggestions(for: newQuery)
             }
             .onDisappear { searchTask?.cancel() }
+            .navigationDestination(item: $readerRoute) { route in
+                ReaderScreen(
+                    plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
+                    usesDownloadedMetadata: route.usesDownloadedMetadata,
+                    chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
+                    initialPage: route.initialPage)
+            }
             .navigationDestination(
                 isPresented: $navigateToSearch, destination: { SearchScreen(query: query) }
             )
@@ -149,6 +159,7 @@ extension View {
 
 private struct SourceListMangasRowListView: View {
     @ObservedObject var plugin: Plugin
+    let onRead: (ReaderRoute) -> Void
     @State var mangas: [Manga]? = nil
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
@@ -171,7 +182,7 @@ private struct SourceListMangasRowListView: View {
     }
 
     var body: some View {
-        MangasRowListView(mangas: mangas, plugin: plugin).onAppear { loadMangas() }
+        MangasRowListView(mangas: mangas, plugin: plugin, onRead: onRead).onAppear { loadMangas() }
             .onReceive(plugin.objectWillChange) { loadMangas() }
             .alert("failedToLoadMangas", isPresented: $showErrorAlert) {
                 Button("ok") { errorMessage = "" }

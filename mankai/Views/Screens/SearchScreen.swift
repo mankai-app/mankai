@@ -14,17 +14,26 @@ struct SearchScreen: View {
         SettingsDefaults.hideBuiltInPlugins
 
     @State private var plugins: [Plugin] = []
+    @State private var readerRoute: ReaderRoute?
 
     var body: some View {
         ScrollView {
             LazyVStack {
                 ForEach(plugins) { plugin in
-                    SourceSearchMangasRowListView(query: query, plugin: plugin)
+                    SourceSearchMangasRowListView(
+                        query: query, plugin: plugin, onRead: { readerRoute = $0 })
                 }
             }
             .padding()
         }
         .scrollClipDisabled()
+        .navigationDestination(item: $readerRoute) { route in
+            ReaderScreen(
+                plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
+                usesDownloadedMetadata: route.usesDownloadedMetadata,
+                chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
+                initialPage: route.initialPage)
+        }
         .overlay {
             if plugins.isEmpty {
                 ContentUnavailableView(
@@ -49,6 +58,7 @@ struct SourceSearchMangasRowListView: View {
     let query: String
 
     @ObservedObject var plugin: Plugin
+    let onRead: (ReaderRoute) -> Void
     @State var mangas: [Manga]? = nil
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
@@ -69,8 +79,8 @@ struct SourceSearchMangasRowListView: View {
     }
 
     var body: some View {
-        MangasRowListView(mangas: mangas, plugin: plugin, query: query).onAppear { loadMangas() }
-            .onReceive(plugin.objectWillChange) { loadMangas() }
+        MangasRowListView(mangas: mangas, plugin: plugin, query: query, onRead: onRead)
+            .onAppear { loadMangas() }.onReceive(plugin.objectWillChange) { loadMangas() }
             .alert("failedToSearchManga", isPresented: $showErrorAlert) {
                 Button("ok") { errorMessage = "" }
             } message: {

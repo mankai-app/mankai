@@ -19,11 +19,13 @@ struct MangasListView: View {
     let libraryItems: [String: LibraryModel]?
     let showsUnreadTag: Bool
     let allowUnsupportedDetailsNavigation: Bool
+    let onRead: (ReaderRoute) -> Void
 
     /// Simple initializer for single plugin case
-    init(mangas: [Manga], plugin: Plugin) {
+    init(mangas: [Manga], plugin: Plugin, onRead: @escaping (ReaderRoute) -> Void) {
         self.mangas = mangas
         self.plugin = plugin
+        self.onRead = onRead
         mangasDict = nil
         pluginsDict = nil
         keys = nil
@@ -38,7 +40,7 @@ struct MangasListView: View {
         mangas: [String: Manga], plugins: [String: Plugin], keys: [String],
         progressEntries: [String: ProgressModel]? = nil,
         libraryItems: [String: LibraryModel]? = nil, showsUnreadTag: Bool = false,
-        allowUnsupportedDetailsNavigation: Bool = false
+        allowUnsupportedDetailsNavigation: Bool = false, onRead: @escaping (ReaderRoute) -> Void
     ) {
         self.mangas = nil
         plugin = nil
@@ -49,6 +51,7 @@ struct MangasListView: View {
         self.libraryItems = libraryItems
         self.showsUnreadTag = showsUnreadTag
         self.allowUnsupportedDetailsNavigation = allowUnsupportedDetailsNavigation
+        self.onRead = onRead
     }
 
     var body: some View {
@@ -62,31 +65,17 @@ struct MangasListView: View {
             if let mangas = mangas, let plugin = plugin {
                 // Simple case: array of mangas with single plugin
                 ForEach(mangas, id: \.id) { manga in
-                    if plugin.supports(.mangaDetails) {
-                        NavigationLink(
-                            destination: MangaDetailsScreen(plugin: plugin, manga: manga)
-                        ) { MangaItemView(manga: manga, plugin: plugin) }
-                    } else {
-                        MangaItemView(manga: manga, plugin: plugin)
-                    }
+                    MangaItemView(manga: manga, plugin: plugin, onRead: onRead)
                 }
             } else if let mangasDict = mangasDict, let pluginsDict = pluginsDict, let keys = keys {
                 // Complex case: dictionaries with keys
                 ForEach(keys, id: \.self) { key in
                     if let manga = mangasDict[key], let plugin = pluginsDict[key] {
-                        if plugin.supports(.mangaDetails) || allowUnsupportedDetailsNavigation {
-                            NavigationLink(
-                                destination: MangaDetailsScreen(plugin: plugin, manga: manga)
-                            ) {
-                                MangaItemView(
-                                    manga: manga, plugin: plugin, progress: progressEntries?[key],
-                                    libraryItem: libraryItems?[key], showsUnreadTag: showsUnreadTag)
-                            }
-                        } else {
-                            MangaItemView(
-                                manga: manga, plugin: plugin, progress: progressEntries?[key],
-                                libraryItem: libraryItems?[key], showsUnreadTag: showsUnreadTag)
-                        }
+                        MangaItemView(
+                            manga: manga, plugin: plugin, progress: progressEntries?[key],
+                            libraryItem: libraryItems?[key], showsUnreadTag: showsUnreadTag,
+                            allowUnsupportedDetailsNavigation: allowUnsupportedDetailsNavigation,
+                            onRead: onRead)
                     }
                 }
             }
