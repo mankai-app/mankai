@@ -31,7 +31,7 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "27.2-beta"
+          xcode-version: "27.2"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
