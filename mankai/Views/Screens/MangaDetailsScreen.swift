@@ -12,10 +12,13 @@ struct MangaDetailsScreen: View {
     @ObservedObject var plugin: Plugin
     let manga: Manga
 
+    @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
+
     @State private var detailedManga: DetailedManga? = nil
     @State private var hasFinishedInitialLoad = false
 
     @State private var showingChaptersModal = false
+    @State private var isChaptersPaneVisible = false
     @State private var selectedChapterGroupIndex: Int? = nil
     @State private var isReversed = true
 
@@ -59,6 +62,12 @@ struct MangaDetailsScreen: View {
 
     private var hasReadableChapter: Bool {
         mangaData?.chapters.flatMap(\.chapters).contains(where: canRead) == true
+    }
+
+    private var shouldPresentChaptersModal: Bool {
+        if #available(iOS 27.1, *), isDuo { return !isChaptersPaneVisible }
+
+        return horizontalSizeClass == .compact
     }
 
     private func canRead(_ chapter: Chapter) -> Bool {
@@ -324,7 +333,7 @@ struct MangaDetailsScreen: View {
                         groupIndex, group in
                         Button(action: {
                             selectedChapterGroupIndex = groupIndex
-                            showingChaptersModal = horizontalSizeClass == .compact
+                            showingChaptersModal = shouldPresentChaptersModal
                         }) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -389,84 +398,88 @@ struct MangaDetailsScreen: View {
         .disabled(!isAvailable)
     }
 
+    @ViewBuilder private var chaptersPane: some View {
+        if let selectedChapterGroup {
+            let chapters = selectedChapterGroup.chapters
+            let displayedChapters: [Chapter] = isReversed ? Array(chapters.reversed()) : chapters
+            ScrollViewReader { proxy in
+                List {
+                    Section {
+                        if chapters.isEmpty {
+                            Text("noChaptersAvailable").foregroundStyle(.secondary)
+                        } else {
+                            ForEach(displayedChapters, id: \.id) { chapter in chapterRow(chapter) }
+                        }
+                    } header: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(LocalizedStringKey(selectedChapterGroup.title))
+                                Text(
+                                    String.localizedStringWithFormat(
+                                        String(localized: "chapterCountFormat"), chapters.count)
+                                )
+                                .font(.caption).foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            HStack {
+                                Button(action: { isReversed.toggle() }) {
+                                    Image(systemName: isReversed ? "arrow.up" : "arrow.down")
+                                        .font(.headline)
+                                }
+                                .buttonStyle(.plain)
+
+                                if plugin is Editable, detailedManga?.editable ?? true {
+                                    Button(action: { isUpdateChaptersModalPresented = true }) {
+                                        Image(systemName: "pencil").font(.headline)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity).onAppear { scrollToProgress(proxy: proxy) }
+                .onChange(of: progress, initial: false) { _, _ in scrollToProgress(proxy: proxy) }
+                .onChange(of: selectedChapterGroupIndex) {
+                    if let progress = progress {
+                        proxy.scrollTo(progress.chapterId, anchor: .center)
+                    }
+                }
+            }
+        } else {
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.systemGroupedBackground))
+        }
+    }
+
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
+            if #available(iOS 27.1, *), isDuo {
+                ArrangementView {
+                    info.padding(.trailing, isChaptersPaneVisible ? 12 : 0)
+                } secondary: {
+                    chaptersPane.onGeometryChange(for: Bool.self) { geometry in
+                        geometry.size.width > 0 && geometry.size.height > 0
+                    } action: { isVisible in
+                        isChaptersPaneVisible = isVisible
+                    }
+                    .onDisappear { isChaptersPaneVisible = false }.padding(.leading, 12)
+                }
+                .arrangementViewStyle(.split.axes(.horizontal))
+                .background(Color(.systemGroupedBackground).ignoresSafeArea())
+                .onChange(of: isChaptersPaneVisible) { _, isVisible in
+                    if isVisible { showingChaptersModal = false }
+                }
+            } else if horizontalSizeClass == .regular {
                 GeometryReader { geometry in
                     let infoWidth = max(400, geometry.size.width / 3)
                     let chaptersWidth = max(0, geometry.size.width - infoWidth)
 
                     HStack(spacing: 0) {
                         info.frame(minWidth: 400).frame(width: infoWidth)
-
-                        if let selectedChapterGroup {
-                            let chapters = selectedChapterGroup.chapters
-                            let displayedChapters: [Chapter] =
-                                isReversed ? Array(chapters.reversed()) : chapters
-                            ScrollViewReader { proxy in
-                                List {
-                                    Section {
-                                        if chapters.isEmpty {
-                                            Text("noChaptersAvailable").foregroundStyle(.secondary)
-                                        } else {
-                                            ForEach(displayedChapters, id: \.id) { chapter in
-                                                chapterRow(chapter)
-                                            }
-                                        }
-                                    } header: {
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text(LocalizedStringKey(selectedChapterGroup.title))
-                                                Text(
-                                                    String.localizedStringWithFormat(
-                                                        String(localized: "chapterCountFormat"),
-                                                        chapters.count)
-                                                )
-                                                .font(.caption).foregroundStyle(.secondary)
-                                            }
-
-                                            Spacer()
-
-                                            HStack {
-                                                Button(action: { isReversed.toggle() }) {
-                                                    Image(
-                                                        systemName: isReversed
-                                                            ? "arrow.up" : "arrow.down"
-                                                    )
-                                                    .font(.headline)
-                                                }
-                                                .buttonStyle(.plain)
-
-                                                if plugin is Editable,
-                                                    detailedManga?.editable ?? true
-                                                {
-                                                    Button(action: {
-                                                        isUpdateChaptersModalPresented = true
-                                                    }) {
-                                                        Image(systemName: "pencil").font(.headline)
-                                                    }
-                                                    .buttonStyle(.plain)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .onAppear { scrollToProgress(proxy: proxy) }
-                                .onChange(of: progress, initial: false) { _, _ in
-                                    scrollToProgress(proxy: proxy)
-                                }
-                                .onChange(of: selectedChapterGroupIndex) {
-                                    if let progress = progress {
-                                        proxy.scrollTo(progress.chapterId, anchor: .center)
-                                    }
-                                }
-                            }
-                            .frame(width: chaptersWidth)
-                        } else {
-                            ProgressView().frame(width: chaptersWidth).frame(maxHeight: .infinity)
-                                .background(Color(.systemGroupedBackground))
-                        }
+                        chaptersPane.frame(width: chaptersWidth)
                     }
                 }
             } else {

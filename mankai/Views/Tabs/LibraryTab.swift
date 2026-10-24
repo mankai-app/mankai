@@ -34,6 +34,7 @@ struct LibraryTab: View {
                         }
                         .padding()
                     }
+                    .scrollClipDisabled()
                 }
             }
             .navigationTitle("library").onAppear { updatePlugins() }

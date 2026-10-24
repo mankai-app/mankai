@@ -147,6 +147,46 @@ private struct ReaderLegacyTabBarModifier: ViewModifier {
     }
 }
 
+private struct ReaderSystemBarsModifier: ViewModifier {
+    @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
+
+    let fullscreenDisplay: Bool
+    @Binding var isChromeVisible: Bool
+
+    private var usesSwiftUIVisibility: Bool {
+        if #available(iOS 27.1, *) { return isDuo && fullscreenDisplay }
+        return false
+    }
+
+    func body(content: Content) -> some View {
+        let readerContent =
+            content.persistentSystemOverlays(
+                fullscreenDisplay && !isChromeVisible ? .hidden : .automatic
+            )
+            .modifier(ReaderLegacyTabBarModifier())
+
+        Group {
+            if #available(iOS 27.1, *), usesSwiftUIVisibility {
+                readerContent.toolbarVisibility(.hidden, for: .tabBar)
+                    .toolbarVisibility(!isChromeVisible ? .hidden : .automatic, for: .navigationBar)
+                    .toolbarVisibility(
+                        fullscreenDisplay && !isChromeVisible ? .hidden : .automatic,
+                        for: .statusBar)
+            } else {
+                readerContent.statusBarHidden(fullscreenDisplay && !isChromeVisible)
+            }
+        }
+        // Keep the gradient controller mounted for both visibility paths.
+        .overlay {
+            ReaderNavigationBarController(
+                isNavigationBarHidden: !isChromeVisible,
+                usesSwiftUIVisibility: usesSwiftUIVisibility
+            ) { isChromeVisible = true }
+            .ignoresSafeArea(edges: .top).allowsHitTesting(false)
+        }
+    }
+}
+
 private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
     @Binding var isEnabled: Bool
     let coverURL: String?
@@ -204,6 +244,7 @@ private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
 
 private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     let isNavigationBarHidden: Bool
+    let usesSwiftUIVisibility: Bool
     let onWillDisappear: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(onWillDisappear: onWillDisappear) }
@@ -214,7 +255,8 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: Controller, context: Context) {
         context.coordinator.onWillDisappear = onWillDisappear
-        controller.setNavigationBarHidden(isNavigationBarHidden, animated: true)
+        controller.setNavigationBarHidden(
+            isNavigationBarHidden, usesSwiftUIVisibility: usesSwiftUIVisibility, animated: true)
     }
 
     static func dismantleUIViewController(_ controller: Controller, coordinator _: Coordinator) {
@@ -233,6 +275,7 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     final class Controller: UIViewController {
         private let showChrome: () -> Void
         private var shouldHideNavigationBar = false
+        private var usesSwiftUIVisibility = false
         private var isAnimatingNavigationBar = false
         private var navigationBarGradientView: UIView?
 
@@ -297,9 +340,16 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             applyNavigationBarVisibility(animated: false)
         }
 
-        func setNavigationBarHidden(_ isHidden: Bool, animated: Bool) {
-            guard shouldHideNavigationBar != isHidden else { return }
+        func setNavigationBarHidden(_ isHidden: Bool, usesSwiftUIVisibility: Bool, animated: Bool) {
+            guard
+                shouldHideNavigationBar != isHidden
+                    || self.usesSwiftUIVisibility != usesSwiftUIVisibility
+            else { return }
+            if usesSwiftUIVisibility && !self.usesSwiftUIVisibility {
+                navigationController?.navigationBar.transform = .identity
+            }
             shouldHideNavigationBar = isHidden
+            self.usesSwiftUIVisibility = usesSwiftUIVisibility
             applyNavigationBarVisibility(animated: animated)
         }
 
@@ -340,8 +390,11 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             _ navigationBar: UINavigationBar, transform: CGAffineTransform, animated: Bool
         ) {
             let changes = {
-                navigationBar.transform = transform
-                self.navigationBarGradientView?.transform = transform
+                if !self.usesSwiftUIVisibility { navigationBar.transform = transform }
+                self.navigationBarGradientView?.transform =
+                    self.usesSwiftUIVisibility ? .identity : transform
+                self.navigationBarGradientView?.alpha =
+                    self.usesSwiftUIVisibility && self.shouldHideNavigationBar ? 0 : 1
             }
 
             guard animated else {
@@ -370,6 +423,8 @@ struct ReaderScreen: View {
 
     @AppStorage(SettingsKey.readerType.rawValue) private var readerTypeRawValue: Int =
         SettingsDefaults.readerType.rawValue
+    @AppStorage(SettingsKey.fullscreenDisplay.rawValue) private var fullscreenDisplay: Bool =
+        SettingsDefaults.fullscreenDisplay
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
@@ -596,7 +651,8 @@ struct ReaderScreen: View {
 
     private var renderConfiguration: ReaderRenderConfiguration {
         ReaderRenderConfiguration(
-            readingDirection: readingDirection, defaultGroupSize: defaultGroupSize,
+            fullscreenDisplay: fullscreenDisplay, readingDirection: readingDirection,
+            defaultGroupSize: defaultGroupSize,
 
             tapNavigation: readerType == .continuous ? continuousTapNavigation : pagedTapNavigation,
 
@@ -678,13 +734,10 @@ struct ReaderScreen: View {
                 isEnabled: $showCoverOnExternalDisplay,
                 coverURL: manga.cover ?? downloadManga?.cover, plugin: plugin)
         )
-        .modifier(ReaderLegacyTabBarModifier())
-        .overlay {
-            ReaderNavigationBarController(isNavigationBarHidden: !isChromeVisible) {
-                isChromeVisible = true
-            }
-            .ignoresSafeArea(edges: .top).allowsHitTesting(false)
-        }
+        .modifier(
+            ReaderSystemBarsModifier(
+                fullscreenDisplay: fullscreenDisplay, isChromeVisible: $isChromeVisible)
+        )
         .sheet(isPresented: $isShowingChapters) {
             ChaptersModal(
                 plugin: plugin, manga: manga, chapterGroupIndex: chapterGroupIndex,
@@ -709,6 +762,9 @@ struct ReaderScreen: View {
         .task(id: chapterLoadKey) { await loadChapter(for: chapterLoadKey) }
         .task(id: adjacencyKey) { await updateAdjacencyScores(for: adjacencyKey) }
         .task(id: saveRequestGeneration) { await performScheduledSave() }
+        .onChange(of: fullscreenDisplay) { _, _ in
+            if readerType == .continuous { scheduleCurrentPageNavigationCommand() }
+        }
         .onChange(of: groupingKey) { oldValue, _ in
             if oldValue.readingDirection != readingDirection {
                 checkedPairs.removeAll()

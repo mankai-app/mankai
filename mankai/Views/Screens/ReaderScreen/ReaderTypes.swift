@@ -21,6 +21,28 @@ let READER_OVERSCROLL_INDICATOR_SIZE: CGFloat = 48
     }
 }
 
+@MainActor func readerContentSafeAreaInsets(
+    in view: UIView, fullscreenDisplay: Bool, navigationBarHeight: CGFloat = 0
+) -> UIEdgeInsets {
+    var insets = view.safeAreaInsets
+
+    if fullscreenDisplay {
+        if !UIDevice.isIPhone || UIDevice.isDuo {
+            insets = .zero
+        } else if let window = view.window {
+            let windowInsets = window.safeAreaInsets
+            let hasCutoutLayout =
+                windowInsets.top > 40 || windowInsets.left > 0 || windowInsets.right > 0
+                || windowInsets.bottom > 0
+            if !hasCutoutLayout { insets = .zero }
+        }
+    }
+
+    insets.top = max(0, insets.top - navigationBarHeight)
+
+    return insets
+}
+
 func readerOverscrollLayoutSpacing(safeAreaInset: CGFloat) -> CGFloat {
     max(
         max(READER_OVERSCROLL_MINIMUM_SPACING, safeAreaInset) - safeAreaInset,
@@ -145,6 +167,7 @@ struct ReaderRenderState {
 
 struct ReaderRenderConfiguration: Equatable {
     // Common
+    let fullscreenDisplay: Bool
     let readingDirection: ReadingDirection
     let defaultGroupSize: Int
 

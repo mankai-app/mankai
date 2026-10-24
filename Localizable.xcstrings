@@ -6677,6 +6677,62 @@
         }
       }
     },
+    "fullscreenDisplay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fullscreen Display"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全画面表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全屏显示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全螢幕顯示"
+          }
+        }
+      }
+    },
+    "fullscreenDisplayDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the full display where possible and hide system bars when reader controls are hidden."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可能な場合は画面全体に表示し、読書用コントロールを非表示にするとシステムバーも隠します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尽可能使用整个屏幕显示内容，并在隐藏阅读控件时隐藏系统栏。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "盡可能使用整個螢幕顯示內容，並在隱藏閱讀控制項時隱藏系統列。"
+          }
+        }
+      }
+    },
     "general" : {
       "localizations" : {
         "en" : {

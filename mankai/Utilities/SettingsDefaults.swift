@@ -20,6 +20,7 @@ enum SettingsDefaults {
     static let diskCacheSizeLimit: DiskCacheLimit = .oneGB
 
     // Shared Reader Settings
+    static let fullscreenDisplay: Bool = true
     static let imageLayout: ImageLayout = .auto
     static let respectMangaReadingDirection: Bool = true
     static let smartGrouping: Bool = false
@@ -28,7 +29,7 @@ enum SettingsDefaults {
 
     /// Default Reader
     @MainActor static var readerType: ReaderType {
-        UIDevice.isIPad || UIDevice.isDuo ? .paged : .continuous
+        UIDevice.isIPad || UIDevice.isDuo || UIDevice.isMac ? .paged : .continuous
     }
 
     // Continuous Reader Defaults

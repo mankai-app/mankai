@@ -92,6 +92,7 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
     private var actions: ReaderRenderActions
 
     private var pageViewController: UIPageViewController!
+    private let contentPages = NSHashTable<PageContentViewController>.weakObjects()
     private let pageContainerScrollView = UIScrollView()
     private let leadingOverscrollView = UIView()
     private let trailingOverscrollView = UIView()
@@ -171,6 +172,9 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
     ) {
         let chapterChanged = renderedChapterID != state.chapterID
         let contentChanged = renderedRevision != state.revision
+        let groupsChanged = renderState.groups != state.groups
+        let fullscreenChanged =
+            self.configuration.fullscreenDisplay != configuration.fullscreenDisplay
         let presentationChanged =
             self.configuration.navigationOrientation != configuration.navigationOrientation
             || self.configuration.readingDirection != configuration.readingDirection
@@ -184,10 +188,16 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
 
         if chapterChanged { currentGroup = 0 }
 
-        if presentationChanged { recreatePageViewController() }
+        if presentationChanged || groupsChanged { recreatePageViewController() }
 
-        if chapterChanged || contentChanged || presentationChanged {
+        if chapterChanged || contentChanged || presentationChanged || groupsChanged {
             applyCurrentState(force: true)
+        }
+
+        if fullscreenChanged {
+            for page in contentPages.allObjects {
+                page.setFullscreenDisplay(configuration.fullscreenDisplay)
+            }
         }
 
         if let command = state.navigationCommand,
@@ -220,14 +230,21 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
         }
         currentGroup = min(max(currentGroup, 0), renderState.groups.count - 1)
 
-        if let visiblePage = pageViewController.viewControllers?.first
-            as? PageContentViewController, visiblePage.pageIndex == currentGroup,
-            visiblePage.urls == renderState.groups[currentGroup].urls
-        {
-            visiblePage.apply(
-                images: images(for: renderState.groups[currentGroup]),
+        // Prefetched pages retain their image snapshots until explicitly refreshed.
+        for page in contentPages.allObjects {
+            guard renderState.groups.indices.contains(page.pageIndex),
+                page.urls == renderState.groups[page.pageIndex].urls
+            else { continue }
+
+            page.apply(
+                images: images(for: renderState.groups[page.pageIndex]),
                 readingDirection: configuration.readingDirection)
-        } else {
+        }
+
+        let visiblePage = pageViewController.viewControllers?.first as? PageContentViewController
+        if visiblePage?.pageIndex != currentGroup
+            || visiblePage?.urls != renderState.groups[currentGroup].urls
+        {
             showGroup(currentGroup, direction: .forward, animated: false)
         }
     }
@@ -605,8 +622,13 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
             direction = targetGroup > currentGroup ? .forward : .reverse
         }
 
+        let visiblePage = pageViewController.viewControllers?.first as? PageContentViewController
         currentGroup = targetGroup
-        showGroup(targetGroup, direction: direction, animated: command.animated)
+        if visiblePage?.pageIndex != targetGroup
+            || visiblePage?.urls != renderState.groups[targetGroup].urls
+        {
+            showGroup(targetGroup, direction: direction, animated: command.animated)
+        }
         lastAppliedNavigationGeneration = command.generation
     }
 
@@ -623,12 +645,16 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
         guard renderState.groups.indices.contains(groupIndex) else {
             return PageContentViewController(
                 pageIndex: 0, urls: [], images: [:],
-                readingDirection: configuration.readingDirection)
+                readingDirection: configuration.readingDirection,
+                fullscreenDisplay: configuration.fullscreenDisplay)
         }
         let group = renderState.groups[groupIndex]
-        return PageContentViewController(
+        let page = PageContentViewController(
             pageIndex: groupIndex, urls: group.urls, images: images(for: group),
-            readingDirection: configuration.readingDirection)
+            readingDirection: configuration.readingDirection,
+            fullscreenDisplay: configuration.fullscreenDisplay)
+        contentPages.add(page)
+        return page
     }
 
     private func images(for group: ReaderGroup) -> [String: ReaderImageState] {
@@ -717,10 +743,15 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
     let urls: [String]
     private var images: [String: ReaderImageState]
     private var readingDirection: ReadingDirection
+    private var fullscreenDisplay: Bool
+    private var navigationBarHeight: CGFloat?
 
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
     private var contentCenterXConstraint: NSLayoutConstraint!
+    private var contentTopConstraint: NSLayoutConstraint!
+    private var contentBottomConstraint: NSLayoutConstraint!
+    private var contentHeightConstraint: NSLayoutConstraint!
     private var imageViews: [String: UIImageView] = [:]
     private var imageWidthConstraints: [String: NSLayoutConstraint] = [:]
     private var loadingIndicators: [String: UIActivityIndicatorView] = [:]
@@ -729,12 +760,13 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
 
     init(
         pageIndex: Int, urls: [String], images: [String: ReaderImageState],
-        readingDirection: ReadingDirection
+        readingDirection: ReadingDirection, fullscreenDisplay: Bool
     ) {
         self.pageIndex = pageIndex
         self.urls = urls
         self.images = images
         self.readingDirection = readingDirection
+        self.fullscreenDisplay = fullscreenDisplay
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -760,6 +792,12 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         updateContent()
     }
 
+    func setFullscreenDisplay(_ fullscreenDisplay: Bool) {
+        guard self.fullscreenDisplay != fullscreenDisplay else { return }
+        self.fullscreenDisplay = fullscreenDisplay
+        if isViewLoaded { view.setNeedsLayout() }
+    }
+
     private func setupUI() {
         view.backgroundColor = .systemBackground
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -780,15 +818,17 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
 
         contentCenterXConstraint = contentStackView.centerXAnchor.constraint(
             equalTo: scrollView.centerXAnchor)
+        contentTopConstraint = contentStackView.topAnchor.constraint(equalTo: scrollView.topAnchor)
+        contentBottomConstraint = contentStackView.bottomAnchor.constraint(
+            equalTo: scrollView.bottomAnchor)
+        contentHeightConstraint = contentStackView.heightAnchor.constraint(
+            equalTo: scrollView.heightAnchor)
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            contentStackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentStackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentCenterXConstraint,
-            contentStackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor), contentTopConstraint,
+            contentBottomConstraint, contentCenterXConstraint, contentHeightConstraint
         ])
 
         let orderedURLs = readingDirection == .rightToLeft ? Array(urls.reversed()) : urls
@@ -847,45 +887,60 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         var totalRatio: CGFloat = 0
 
         for url in urls {
+            let ratio: CGFloat
             if case .success(let image) = images[url] {
-                let ratio = image.size.width / image.size.height
-                ratios[url] = ratio
-                totalRatio += ratio
+                ratio = image.size.width / image.size.height
+            } else {
+                ratio = 1
             }
+            ratios[url] = ratio
+            totalRatio += ratio
         }
 
-        let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame
-        contentCenterXConstraint.constant = safeAreaFrame.midX - view.bounds.midX
-        let availableHeight = max(view.bounds.height, 1)
-        let availableWidth = max(safeAreaFrame.width, 1)
+        if navigationBarHeight == nil {
+            navigationBarHeight = navigationController?.navigationBar.frame.height
+        }
+        let contentInsets = readerContentSafeAreaInsets(
+            in: view, fullscreenDisplay: fullscreenDisplay,
+            navigationBarHeight: navigationBarHeight ?? 0)
+        let contentFrame = view.bounds.inset(by: contentInsets)
+        let availableHeight = max(contentFrame.height, 1)
+        let availableWidth = max(contentFrame.width, 1)
+        let imageHeight = min(availableHeight, availableWidth / totalRatio)
+        let imageWidth = imageHeight * totalRatio
+
+        // Keep the visible images at the screen center unless they overlap a safe edge.
+        let centerX = min(
+            max(view.bounds.midX, contentFrame.minX + imageWidth / 2),
+            contentFrame.maxX - imageWidth / 2)
+        let centerY = min(
+            max(view.bounds.midY, contentFrame.minY + imageHeight / 2),
+            contentFrame.maxY - imageHeight / 2)
+        contentCenterXConstraint.constant = centerX - view.bounds.midX
+        contentTopConstraint.constant = centerY - view.bounds.minY - availableHeight / 2
+        contentBottomConstraint.constant = centerY - view.bounds.maxY + availableHeight / 2
+        contentHeightConstraint.constant = availableHeight - view.bounds.height
 
         for url in urls {
             guard let imageView = imageViews[url], let loadingIndicator = loadingIndicators[url],
                 let errorIcon = errorIcons[url], let widthConstraint = imageWidthConstraints[url]
             else { continue }
 
+            widthConstraint.constant = imageHeight * ratios[url, default: 1]
             switch images[url] ?? .loading { case .success(let image):
                 if imageSubscriptions[url] == nil { observe(image, for: url) }
                 imageView.image = image.image
                 imageView.isHidden = false
                 loadingIndicator.stopAnimating()
                 errorIcon.isHidden = true
-                let ratio = image.size.width / image.size.height
-                var imageWidth = availableHeight * ratio
-                if totalRatio > 0, availableHeight * totalRatio > availableWidth {
-                    imageWidth = ratio / totalRatio * availableWidth
-                }
-                widthConstraint.constant = imageWidth
                 case .failed:
                     imageView.isHidden = true
                     loadingIndicator.stopAnimating()
                     errorIcon.isHidden = false
-                    widthConstraint.constant = availableWidth / CGFloat(urls.count)
                 case .loading:
                     imageView.isHidden = true
                     loadingIndicator.startAnimating()
                     errorIcon.isHidden = true
-                    widthConstraint.constant = availableWidth / CGFloat(urls.count)
             }
         }
     }

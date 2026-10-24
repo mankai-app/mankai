@@ -24,6 +24,7 @@ struct SearchScreen: View {
             }
             .padding()
         }
+        .scrollClipDisabled()
         .overlay {
             if plugins.isEmpty {
                 ContentUnavailableView(

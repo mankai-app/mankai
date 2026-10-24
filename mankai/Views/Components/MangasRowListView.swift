@@ -60,6 +60,7 @@ struct MangasRowListView: View {
                             }
                         }
                     }
+                    .scrollClipDisabled()
                     .frame(minHeight: horizontalSizeClass == .regular ? 240 : 200)
                 }
             } else {

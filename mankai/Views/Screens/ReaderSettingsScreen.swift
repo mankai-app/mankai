@@ -10,8 +10,11 @@ import SwiftUI
 struct ReaderSettingsScreen: View {
     private let showsHeader: Bool
 
+    @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
     @AppStorage(SettingsKey.readerType.rawValue) private var readerTypeRawValue: Int =
         SettingsDefaults.readerType.rawValue
+    @AppStorage(SettingsKey.fullscreenDisplay.rawValue) private var fullscreenDisplay: Bool =
+        SettingsDefaults.fullscreenDisplay
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
@@ -51,9 +54,14 @@ struct ReaderSettingsScreen: View {
                     Text("respectMangaReadingDirectionDescription").font(.caption)
                         .foregroundColor(.secondary)
                 }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("fullscreenDisplay", isOn: $fullscreenDisplay)
+                    Text("fullscreenDisplayDescription").font(.caption).foregroundColor(.secondary)
+                }
             }
 
-            if #available(iOS 27.0, *) {
+            if #available(iOS 27.0, *), isDuo {
                 Section("externalDisplay") {
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("showCoverOnExternalDisplay", isOn: $showCoverOnExternalDisplay)

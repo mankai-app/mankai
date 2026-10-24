@@ -42,6 +42,17 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private var isResizing = false
 
+    private var contentSafeAreaInsets: UIEdgeInsets {
+        if navigationBarHeight == nil {
+            navigationBarHeight = navigationController?.navigationBar.frame.height
+        }
+        return readerContentSafeAreaInsets(
+            in: view, fullscreenDisplay: configuration.fullscreenDisplay,
+            navigationBarHeight: navigationBarHeight ?? 0)
+    }
+
+    private var contentLayoutFrame: CGRect { view.bounds.inset(by: contentSafeAreaInsets) }
+
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let containerView = UIView()
@@ -277,8 +288,9 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate _: Bool) {
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-        let topSpacing = readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.top)
-        let bottomSpacing = readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.bottom)
+        let topSpacing = readerOverscrollLayoutSpacing(safeAreaInset: contentSafeAreaInsets.top)
+        let bottomSpacing = readerOverscrollLayoutSpacing(
+            safeAreaInset: contentSafeAreaInsets.bottom)
 
         if readerOverscrollProgress(max(-offsetY, 0), spacing: topSpacing) >= 1,
             renderState.previousChapter == .available
@@ -380,9 +392,9 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func updateOverscrollLayout() {
         topOverscrollPositionConstraint.constant = -readerOverscrollLayoutSpacing(
-            safeAreaInset: view.safeAreaInsets.top)
+            safeAreaInset: contentSafeAreaInsets.top)
         bottomOverscrollPositionConstraint.constant = readerOverscrollLayoutSpacing(
-            safeAreaInset: view.safeAreaInsets.bottom)
+            safeAreaInset: contentSafeAreaInsets.bottom)
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
@@ -473,7 +485,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private func calculateFrames(ratios: [String: CGFloat], mode: CGFloat) -> (
         [String: CGRect], CGFloat
     ) {
-        let width = view.safeAreaLayoutGuide.layoutFrame.width
+        let width = contentLayoutFrame.width
         guard width > 0 else { return ([:], 0) }
 
         let isRightToLeft = configuration.readingDirection == .rightToLeft
@@ -531,16 +543,13 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
         for url in renderState.urls { reconcileImageView(url: url, frame: frames[url] ?? .zero) }
 
-        if navigationBarHeight == nil {
-            navigationBarHeight = navigationController?.navigationBar.frame.height
-        }
-        startY = max(0, view.safeAreaInsets.top - (navigationBarHeight ?? 0))
-        containerLeadingConstraint.constant = view.safeAreaInsets.left
+        startY = contentSafeAreaInsets.top
+        containerLeadingConstraint.constant = contentSafeAreaInsets.left
         containerTopConstraint.constant = startY
-        containerWidthConstraint.constant = view.safeAreaLayoutGuide.layoutFrame.width
+        containerWidthConstraint.constant = contentLayoutFrame.width
         containerHeightConstraint.constant = finalY
         contentHeightConstraint.constant = max(
-            finalY + startY + view.safeAreaInsets.bottom, view.bounds.height)
+            finalY + startY + contentSafeAreaInsets.bottom, view.bounds.height)
         topOverscrollView.isHidden = false
         bottomOverscrollView.isHidden = false
     }
@@ -622,10 +631,10 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
         let topProgress = readerOverscrollProgress(
             max(-offsetY, 0),
-            spacing: readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.top))
+            spacing: readerOverscrollLayoutSpacing(safeAreaInset: contentSafeAreaInsets.top))
         let bottomProgress = readerOverscrollProgress(
             max(offsetY - maximumY, 0),
-            spacing: readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.bottom))
+            spacing: readerOverscrollLayoutSpacing(safeAreaInset: contentSafeAreaInsets.bottom))
 
         topOverscrollView.transform = CGAffineTransform(translationX: 0, y: max(-offsetY, 0))
         bottomOverscrollView.transform = CGAffineTransform(

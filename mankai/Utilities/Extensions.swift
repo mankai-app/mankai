@@ -33,6 +33,8 @@ extension UIDevice {
 
     static var isIPhone: Bool { UIDevice.current.userInterfaceIdiom == .phone }
 
+    static var isMac: Bool { UIDevice.current.userInterfaceIdiom == .mac }
+
     static var isDuo: Bool { UserDefaults.standard.bool(forKey: SettingsKey.isDuo.rawValue) }
 }
 
