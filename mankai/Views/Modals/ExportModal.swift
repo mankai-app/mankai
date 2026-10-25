@@ -12,12 +12,12 @@ struct ExportModal: View {
     let downloadMangaId: String
     let chapterGroups: ChapterGroups
     let downloadedChapterIds: Set<String>
+    let downloadedCoverUrl: String?
     var onDownload: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedChapterIds: Set<String> = []
-    @State private var expandedGroupIndex: Int? = nil
     @State private var selectedExporter: Exporter = .mma
     @State private var isExporting = false
     @State private var exportProgress = 0.0
@@ -40,6 +40,24 @@ struct ExportModal: View {
             group.chapters = group.chapters.filter { selectedChapterIds.contains($0.id) }
             return group.chapters.isEmpty ? nil : group
         }
+    }
+
+    private var chapterSelection: Binding<Set<ChapterSelection>> {
+        Binding(
+            get: {
+                Set(
+                    availableGroups.enumerated()
+                        .flatMap { groupIndex, group in
+                            group.chapters.filter { selectedChapterIds.contains($0.id) }
+                                .map { ChapterSelection(groupIndex: groupIndex, chapterId: $0.id) }
+                        })
+            },
+            set: { selection in
+                // Deselect every occurrence when a chapter appears in multiple groups.
+                let deselected = self.chapterSelection.wrappedValue.subtracting(selection)
+                selectedChapterIds = Set(selection.map(\.chapterId))
+                    .subtracting(deselected.map(\.chapterId))
+            })
     }
 
     var body: some View {
@@ -122,91 +140,10 @@ struct ExportModal: View {
                 }
             }
 
-            ForEach(Array(availableGroups.enumerated()), id: \.offset) { index, group in
-                Section {
-                    chapterGroupRow(group, index: index)
-
-                    if expandedGroupIndex == index {
-                        ForEach(group.chapters, id: \.id) { chapter in chapterRow(chapter) }
-                    }
-                } footer: {
-                    Text("exportDownloadedChaptersOnly")
-                }
-            }
-        }
-    }
-
-    private func chapterGroupRow(_ group: ChapterGroup, index: Int) -> some View {
-        let chapterIds = Set(group.chapters.map(\.id))
-        let selectedCount = chapterIds.intersection(selectedChapterIds).count
-        let allSelected = chapterIds.isSubset(of: selectedChapterIds)
-
-        return HStack(spacing: 12) {
-            Button {
-                if allSelected {
-                    selectedChapterIds.subtract(chapterIds)
-                } else {
-                    selectedChapterIds.formUnion(chapterIds)
-                }
-            } label: {
-                Image(
-                    systemName: allSelected
-                        ? "checkmark.circle.fill"
-                        : selectedCount > 0 ? "minus.circle.fill" : "circle"
-                )
-                .resizable().frame(width: 20, height: 20)
-                .foregroundColor(selectedCount > 0 ? .accentColor : .secondary.opacity(0.5))
-            }
-            .buttonStyle(.plain)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(LocalizedStringKey(group.title)).foregroundColor(.primary)
-
-                        Text(
-                            String.localizedStringWithFormat(
-                                String(localized: "chapterCountFormat"), group.chapters.count)
-                        )
-                        .smallTagStyle()
-                    }
-
-                    Text(
-                        String(
-                            format: String(localized: "selectedChapterCountFormat"), selectedCount)
-                    )
-                    .font(.caption).foregroundColor(.accentColor)
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right").font(.footnote).foregroundColor(.secondary)
-                    .rotationEffect(.degrees(expandedGroupIndex == index ? 90 : 0))
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation { expandedGroupIndex = expandedGroupIndex == index ? nil : index }
-            }
-        }
-        .padding(.trailing, 4)
-    }
-
-    private func chapterRow(_ chapter: Chapter) -> some View {
-        let selected = selectedChapterIds.contains(chapter.id)
-
-        return Button {
-            if selected {
-                selectedChapterIds.remove(chapter.id)
-            } else {
-                selectedChapterIds.insert(chapter.id)
-            }
-        } label: {
-            HStack {
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(selected ? .accentColor : .secondary)
-                Text(chapter.title ?? chapter.id).foregroundColor(.primary)
-                Spacer()
-            }
+            ChapterSelector(
+                groups: availableGroups, selection: chapterSelection,
+                footer: Text("exportDownloadedChaptersOnly")
+            ) { chapter in Text(chapter.title ?? chapter.id).foregroundColor(.primary) }
         }
     }
 
@@ -214,7 +151,7 @@ struct ExportModal: View {
         List {
             Section {
                 HStack(spacing: 12) {
-                    MangaCoverView(coverUrl: manga.cover, plugin: DownloadPlugin.shared)
+                    MangaCoverView(coverUrl: downloadedCoverUrl, plugin: DownloadPlugin.shared)
                         .aspectRatio(3 / 4, contentMode: .fit).frame(height: 100)
 
                     VStack(alignment: .leading, spacing: 4) {

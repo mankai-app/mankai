@@ -599,6 +599,7 @@ struct MangaDetailsScreen: View {
                     manga: mangaData, downloadMangaId: downloadMangaId,
                     chapterGroups: downloadManga?.chapters ?? mangaData.chapters,
                     downloadedChapterIds: downloadedChapterIds ?? [],
+                    downloadedCoverUrl: downloadManga?.cover,
                     onDownload: plugin.supportsDownloads && detailedManga != nil
                         ? { openDownloadAfterExport = true } : nil)
             }

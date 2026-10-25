@@ -144,7 +144,7 @@ struct DownloadedMangaRow: View {
                     manga: manga,
                     downloadMangaId: DownloadMangaModel.makeId(
                         pluginId: pluginId, mangaId: manga.id), chapterGroups: manga.chapters,
-                    downloadedChapterIds: downloadedChapterIds)
+                    downloadedChapterIds: downloadedChapterIds, downloadedCoverUrl: manga.cover)
             }
         }
     }
