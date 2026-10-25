@@ -210,6 +210,27 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         return try await detailedManga(for: path)
     }
 
+    func parserFile(path: String) async throws -> ParserFile? {
+        guard let book = try await cachedBook(for: path) else {
+            throw MankaiErrorCode.pluginMangaNotFound.makeError()
+        }
+        guard case .regular(let url, let type) = book.mediaType,
+            let info = regularFileInfo(url: url, type: type)
+        else { return nil }
+
+        var fileName = info.fileName
+        if !info.parser.supportedExtensions.contains(
+            (fileName as NSString).pathExtension.lowercased()),
+            let fileExtension = info.parser.supportedExtensions.first
+        {
+            fileName = FileUtilities.filename(
+                for: book.title ?? fileName, fileExtension: fileExtension)
+        }
+        return OpdsParserFile(
+            cacheKey: book.id, remoteURL: url, fileName: fileName, session: session,
+            temporaryDirectory: temporaryDirectory)
+    }
+
     func absoluteURL(for path: String?) -> URL? { nil }
 
     override class var syncType: String? { "opds" }

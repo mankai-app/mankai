@@ -268,6 +268,14 @@ where Session: BrowsableSession, Session.Config == Config {
             temporaryDirectory: temporaryDirectory)
     }
 
+    func parserFile(path: String) async throws -> ParserFile? {
+        try await parserFile(relativePath: path, cacheKey: UUID().uuidString)
+    }
+
+    func parserFile(mangaId: String) async throws -> ParserFile? {
+        try await parserFile(for: MangaRoute(mangaId: mangaId))
+    }
+
     /// Computes the content hash used in manga routes.
     func hashFile(relativePath: String, progress: ParserFileProgress? = nil) async throws -> String
     {

@@ -30,6 +30,7 @@ struct FilesScreen: View {
     @State private var entities: [Entity] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
+
     @State private var isParsing: Bool = false
     @State private var parsedMangas: [String: DetailedManga] = [:]
     @State private var unreadMangaPaths: Set<String> = []
@@ -38,6 +39,16 @@ struct FilesScreen: View {
     @State private var loadId: UUID?
     @State private var parseErrors: [String: String] = [:]
 
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedPaths: Set<String> = []
+
+    @State private var isPreparingDownloads = false
+    @State private var filesToDownload: [ParserFile] = []
+    @State private var unavailableFileNames: [String] = []
+    @State private var isDownloadFilesModalPresented = false
+    @State private var openDownloadsAfterDismiss = false
+    @State private var isDownloadsFolderPresented = false
+
     init(share: BrowsablePlugin, entry: Entity? = nil, color: Color? = nil) {
         self.share = share
         self.entry = entry
@@ -45,92 +56,80 @@ struct FilesScreen: View {
     }
 
     var body: some View {
-        ScrollView {
+        Group {
             if viewMode == .grid {
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
-                    spacing: 20
-                ) {
-                    ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
-                        switch entity.type { case .directory:
-                            NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
-                                directoryView(entity: entity)
+                ScrollView {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
+                        spacing: 20
+                    ) {
+                        ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
+                            switch entity.type { case .directory:
+                                NavigationLink(
+                                    destination: FilesScreen(share: share, entry: entity)
+                                ) { directoryView(entity: entity) }
+                                .buttonStyle(.plain).disabled(isSelecting)
+
+                                case .book(let fileType):
+                                    bookView(entity: entity, fileType: fileType)
                             }
-                            .buttonStyle(.plain)
-                            case .book:
-                                if let manga = parsedMangas[entity.path] {
-                                    NavigationLink(
-                                        destination: MangaDetailsScreen(
-                                            plugin: share, manga: manga.toManga())
-                                    ) {
-                                        mangaView(
-                                            manga: manga, entity: entity,
-                                            isUnread: unreadMangaPaths.contains(entity.path))
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
-                                    filePlaceholderView(
-                                        entity: entity,
-                                        isParsing: parsingPaths.contains(entity.path),
-                                        errorMessage: parseErrors[entity.path])
-                                }
                         }
                     }
+                    .padding()
                 }
-                .padding()
             } else {
-                LazyVStack(spacing: 0) {
-                    ForEach(Array(entities.enumerated()), id: \.offset) { index, entity in
+                List(selection: isSelecting ? $selectedPaths : nil) {
+                    ForEach(entities, id: \.path) { entity in
                         switch entity.type { case .directory:
                             NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
                                 directoryListView(entity: entity)
                             }
-                            .buttonStyle(.plain)
-                            case .book(let fileType):
-                                if let manga = parsedMangas[entity.path] {
-                                    NavigationLink(
-                                        destination: MangaDetailsScreen(
-                                            plugin: share, manga: manga.toManga())
-                                    ) {
-                                        mangaListView(
-                                            manga: manga, entity: entity, fileType: fileType,
-                                            isUnread: unreadMangaPaths.contains(entity.path))
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
-                                    filePlaceholderListView(
-                                        entity: entity, fileType: fileType,
-                                        isParsing: parsingPaths.contains(entity.path),
-                                        errorMessage: parseErrors[entity.path])
-                                }
-                        }
+                            .buttonStyle(.plain).disabled(isSelecting).selectionDisabled()
 
-                        if index < entities.count - 1 { Divider().padding(.leading, 72) }
+                            case .book(let fileType):
+                                bookView(entity: entity, fileType: fileType).tag(entity.path)
+                        }
                     }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowSeparator(.hidden)
                 }
-                .padding(.horizontal)
+                .listStyle(.plain).disabled(isPreparingDownloads)
             }
         }
         .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: toggleViewMode) {
-                    Label(
-                        viewMode == .grid ? "listView" : "gridView",
-                        systemImage: viewMode == .grid ? "list.bullet" : "square.grid.2x2")
-                }
-            }
+            if isSelecting {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button("download", systemImage: "arrow.down") {
+                        prepareDownloads(for: entities.filter { selectedPaths.contains($0.path) })
+                    }
+                    .disabled(selectedPaths.isEmpty || isPreparingDownloads)
 
-            ToolbarItem(placement: .topBarTrailing) {
-                if folderURL != nil {
-                    Button {
-                        openInFilesApp()
-                    } label: {
-                        Label("openInFiles", systemImage: "folder")
+                    EditButton().disabled(isPreparingDownloads)
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: toggleViewMode) {
+                        Label(
+                            viewMode == .grid ? "listView" : "gridView",
+                            systemImage: viewMode == .grid ? "list.bullet" : "square.grid.2x2")
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    if folderURL != nil {
+                        Button {
+                            openInFilesApp()
+                        } label: {
+                            Label("openInFiles", systemImage: "folder")
+                        }
                     }
                 }
             }
         }
+        .environment(\.editMode, $editMode)
+        .onChange(of: editMode) { _, mode in if !mode.isEditing { selectedPaths.removeAll() } }
+
         .overlay {
             if isLoading && entities.isEmpty {
                 ProgressView {
@@ -147,6 +146,26 @@ struct FilesScreen: View {
             }
         }
         .task { await loadEntities() }
+        .sheet(
+            isPresented: $isDownloadFilesModalPresented,
+            onDismiss: {
+                if openDownloadsAfterDismiss {
+                    openDownloadsAfterDismiss = false
+                    isDownloadsFolderPresented = true
+                }
+            }
+        ) { [filesToDownload, unavailableFileNames] in
+            DownloadFilesModal(files: filesToDownload, unavailableFileNames: unavailableFileNames) {
+                openDownloadsAfterDismiss = true
+            }
+        }
+        .navigationDestination(isPresented: $isDownloadsFolderPresented) {
+            FilesScreen(
+                share: AppDirBrowsablePlugin.shared,
+                entry: Entity(
+                    path: "dowloads", displayName: String(localized: "downloads"), name: "dowloads",
+                    type: .directory))
+        }
     }
 
     private var viewMode: FilesViewMode {
@@ -160,6 +179,124 @@ struct FilesScreen: View {
 
     private var folderURL: URL? { share.absoluteURL(for: entry?.path) }
 
+    private var isSelecting: Bool { editMode.isEditing }
+
+    private func bookView(entity: Entity, fileType: String) -> some View {
+        Group {
+            if isSelecting {
+                if viewMode == .grid {
+                    Button {
+                        if !selectedPaths.insert(entity.path).inserted {
+                            selectedPaths.remove(entity.path)
+                        }
+                    } label: {
+                        bookContent(entity: entity, fileType: fileType)
+                    }
+                    .disabled(isPreparingDownloads)
+                } else {
+                    bookContent(entity: entity, fileType: fileType)
+                }
+            } else if let manga = parsedMangas[entity.path] {
+                NavigationLink(
+                    destination: MangaDetailsScreen(plugin: share, manga: manga.toManga()) {
+                        isDownloadsFolderPresented = true
+                    }
+                ) { bookContent(entity: entity, fileType: fileType) }
+            } else {
+                bookContent(entity: entity, fileType: fileType)
+            }
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("download", systemImage: "arrow.down") { prepareDownloads(for: [entity]) }
+                .disabled(isPreparingDownloads)
+
+            Button {
+                withAnimation {
+                    if isSelecting {
+                        editMode = .inactive
+                    } else {
+                        selectedPaths = [entity.path]
+                        editMode = .active
+                    }
+                }
+            } label: {
+                Label {
+                    if isSelecting { Text("done") } else { Text("select") }
+                } icon: {
+                    Image(systemName: "checkmark.circle")
+                }
+            }
+            .disabled(isPreparingDownloads)
+        }
+    }
+
+    private func bookContent(entity: Entity, fileType: String) -> some View {
+        Group {
+            if viewMode == .grid {
+                if let manga = parsedMangas[entity.path] {
+                    mangaView(
+                        manga: manga, entity: entity,
+                        isUnread: unreadMangaPaths.contains(entity.path))
+                } else {
+                    filePlaceholderView(
+                        entity: entity, isParsing: parsingPaths.contains(entity.path),
+                        errorMessage: parseErrors[entity.path])
+                }
+            } else {
+                if let manga = parsedMangas[entity.path] {
+                    mangaListView(
+                        manga: manga, entity: entity, fileType: fileType,
+                        isUnread: unreadMangaPaths.contains(entity.path))
+                } else {
+                    filePlaceholderListView(
+                        entity: entity, fileType: fileType,
+                        isParsing: parsingPaths.contains(entity.path),
+                        errorMessage: parseErrors[entity.path])
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .overlay(alignment: .topTrailing) {
+            if isSelecting, viewMode == .grid { selectionIndicator(for: entity).padding(8) }
+        }
+    }
+
+    private func selectionIndicator(for entity: Entity) -> some View {
+        Image(systemName: selectedPaths.contains(entity.path) ? "checkmark.circle.fill" : "circle")
+            .font(.title2).foregroundStyle(.tint).background(.background, in: Circle())
+    }
+
+    private func prepareDownloads(for entries: [Entity]) {
+        guard !isPreparingDownloads, !entries.isEmpty else { return }
+
+        withAnimation { editMode = .inactive }
+
+        isPreparingDownloads = true
+
+        Task { @MainActor in
+            defer { isPreparingDownloads = false }
+
+            do {
+                var files: [ParserFile] = []
+                var unavailableNames: [String] = []
+
+                for entity in entries {
+                    if let file = try await share.parserFile(path: entity.path) {
+                        files.append(file)
+                    } else {
+                        unavailableNames.append(
+                            entity.displayName(using: parsedMangas[entity.path]))
+                    }
+                }
+
+                filesToDownload = files
+                unavailableFileNames = unavailableNames
+                isDownloadFilesModalPresented = true
+            } catch { NotificationService.shared.showError(error.localizedDescription) }
+        }
+    }
+
     private func toggleViewMode() {
         viewModeRawValue =
             viewMode == .grid ? FilesViewMode.list.rawValue : FilesViewMode.grid.rawValue
@@ -167,6 +304,7 @@ struct FilesScreen: View {
 
     private func openInFilesApp() {
         guard let folderURL else { return }
+
         let path = folderURL.standardizedFileURL.path
         let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
         if let url = URL(string: "shareddocuments://\(encoded)") { openURL(url) }
@@ -288,9 +426,6 @@ struct FilesScreen: View {
                 Text(entity.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 8).contentShape(Rectangle())
     }
@@ -306,9 +441,6 @@ struct FilesScreen: View {
 
             bookListMetadata(
                 title: entity.displayName(using: manga), entity: entity, fileType: fileType)
-
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 8).contentShape(Rectangle())
     }

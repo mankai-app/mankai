@@ -3693,6 +3693,90 @@
         }
       }
     },
+    "downloadFiles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download files"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルをダウンロード"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載檔案"
+          }
+        }
+      }
+    },
+    "downloadFilesLocation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files are saved to %@ / dowloads."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルは %@ / dowloads に保存されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件将保存到 %@ / dowloads。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案將儲存到 %@ / dowloads。"
+          }
+        }
+      }
+    },
+    "downloadFileUnavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A downloadable file is not available for this book."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この本にはダウンロード可能なファイルがありません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此书没有可下载的文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此書沒有可下載的檔案。"
+          }
+        }
+      }
+    },
     "downloadInvalidImage" : {
       "localizations" : {
         "en" : {
@@ -12357,6 +12441,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "共用會使用 OPDS 目錄提供的 ID，確保在不同裝置間保持一致。若目錄未提供 ID，則使用目錄 URL。在此情況下，變更 URL 會移除共用的同步紀錄。"
+          }
+        }
+      }
+    },
+    "openDownloadsFolder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open downloads folder"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロードフォルダを開く"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开下载文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟下載資料夾"
           }
         }
       }

@@ -11,6 +11,7 @@ import WrappingHStack
 struct MangaDetailsScreen: View {
     @ObservedObject var plugin: Plugin
     let manga: Manga
+    let onShowDownloads: (() -> Void)?
 
     @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
 
@@ -27,6 +28,11 @@ struct MangaDetailsScreen: View {
     @State private var isUpdateMangaModalPresented = false
     @State private var isUpdateChaptersModalPresented = false
     @State private var isSelectChaptersModalPresented = false
+    @State private var isDownloadFilesModalPresented = false
+    @State private var openDownloadsAfterDismiss = false
+    @State private var isDownloadsFolderPresented = false
+    @State private var filesToDownload: [ParserFile] = []
+    @State private var isPreparingFileDownload = false
     @State private var isExportModalPresented = false
     @State private var openDownloadAfterExport = false
 
@@ -75,9 +81,10 @@ struct MangaDetailsScreen: View {
             || (chapter.locked != true && plugin.supportsRemoteReading)
     }
 
-    init(plugin: Plugin, manga: Manga) {
+    init(plugin: Plugin, manga: Manga, onShowDownloads: (() -> Void)? = nil) {
         self.plugin = plugin
         self.manga = manga
+        self.onShowDownloads = onShowDownloads
     }
 
     private func updateProgress() {
@@ -137,6 +144,31 @@ struct MangaDetailsScreen: View {
             }), let chapter = mangaData.chapters[groupIndex].chapters.first(where: canRead) {
                 navigateToChapter(chapter, chapterGroupIndex: groupIndex)
             }
+        }
+    }
+
+    private func handleDownloadAction() {
+        guard let browsable = plugin as? any Browsable else {
+            isSelectChaptersModalPresented = true
+
+            return
+        }
+
+        guard !isPreparingFileDownload else { return }
+
+        isPreparingFileDownload = true
+
+        Task { @MainActor in
+            defer { isPreparingFileDownload = false }
+
+            do {
+                guard let file = try await browsable.parserFile(mangaId: manga.id) else {
+                    throw CocoaError(.featureUnsupported)
+                }
+
+                filesToDownload = [file]
+                isDownloadFilesModalPresented = true
+            } catch { NotificationService.shared.showError(error.localizedDescription) }
         }
     }
 
@@ -515,6 +547,27 @@ struct MangaDetailsScreen: View {
                     chapterGroupIndex: selectedChapterGroupIndex, isRootOfSheet: true)
             }
         }
+        .sheet(
+            isPresented: $isDownloadFilesModalPresented,
+            onDismiss: {
+                if openDownloadsAfterDismiss {
+                    openDownloadsAfterDismiss = false
+
+                    if let onShowDownloads {
+                        onShowDownloads()
+                    } else {
+                        isDownloadsFolderPresented = true
+                    }
+                }
+            }
+        ) { DownloadFilesModal(files: filesToDownload) { openDownloadsAfterDismiss = true } }
+        .navigationDestination(isPresented: $isDownloadsFolderPresented) {
+            FilesScreen(
+                share: AppDirBrowsablePlugin.shared,
+                entry: Entity(
+                    path: "dowloads", displayName: String(localized: "downloads"), name: "dowloads",
+                    type: .directory))
+        }
         .sheet(isPresented: $isSelectChaptersModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga {
                 SelectChaptersModal(
@@ -582,8 +635,10 @@ struct MangaDetailsScreen: View {
             }
 
             ToolbarItemGroup(placement: .primaryAction) {
-                if plugin.supportsDownloads, mangaData == nil || detailedManga != nil {
-                    Button(action: { isSelectChaptersModalPresented = true }) {
+                if plugin.supportsDownloads || plugin is any Browsable,
+                    mangaData == nil || detailedManga != nil
+                {
+                    Button(action: handleDownloadAction) {
                         Label {
                             Text("download")
                         } icon: {
@@ -591,8 +646,10 @@ struct MangaDetailsScreen: View {
                                 systemName: "arrow.down", legacySystemName: "arrow.down.circle")
                         }
                     }
-                    .disabled(detailedManga == nil)
+                    .disabled(detailedManga == nil || isPreparingFileDownload)
+                }
 
+                if plugin.supportsDownloads, mangaData == nil || detailedManga != nil {
                     Button(action: { isExportModalPresented = true }) {
                         Label("export", systemImage: "square.and.arrow.up")
                     }

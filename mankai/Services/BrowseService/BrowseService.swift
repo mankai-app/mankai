@@ -52,6 +52,10 @@ struct Entity {
     func parseFile(path: String, fileType: String, progress: ParserFileProgress?) async throws
         -> DetailedManga
 
+    /// Returns a downloadable file, or `nil` for streaming-only entries.
+    func parserFile(path: String) async throws -> ParserFile?
+    func parserFile(mangaId: String) async throws -> ParserFile?
+
     /// Returns the absolute filesystem URL for the given relative path,
     /// if the plugin is backed by a local filesystem directory.
     /// Returns `nil` for non-filesystem plugins.
@@ -60,6 +64,10 @@ struct Entity {
 }
 
 extension Browsable {
+    func parserFile(mangaId: String) async throws -> ParserFile? {
+        try await parserFile(path: mangaId)
+    }
+
     func parseFile(path: String, fileType: String) async throws -> DetailedManga {
         try await parseFile(path: path, fileType: fileType, progress: nil)
     }
