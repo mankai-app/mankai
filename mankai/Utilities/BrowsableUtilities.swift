@@ -13,11 +13,28 @@ final class ParserFileDownloadRegistry: @unchecked Sendable {
     static let shared = ParserFileDownloadRegistry()
 
     private let downloads = AsyncLoadRegistry<URL>()
+    private let progressLock = NSLock()
+    private var progressObservers: [String: [UUID: ParserFileProgress]] = [:]
 
-    func file(at localURL: URL, download: @escaping @Sendable (URL) async throws -> Void)
-        async throws -> URL
-    {
+    func file(
+        at localURL: URL, progress: ParserFileProgress? = nil,
+        download: @escaping @Sendable (URL, @escaping ParserFileProgress) async throws -> Void
+    ) async throws -> URL {
+        try Task.checkCancellation()
         let key = localURL.path(percentEncoded: false)
+        let observerId = UUID()
+        progress?(nil)
+        if let progress {
+            progressLock.withLock { progressObservers[key, default: [:]][observerId] = progress }
+        }
+        defer {
+            progressLock.withLock {
+                progressObservers[key]?.removeValue(forKey: observerId)
+                if progressObservers[key]?.isEmpty == true {
+                    progressObservers.removeValue(forKey: key)
+                }
+            }
+        }
         return try await downloads.value(for: key) {
             let fileManager = FileManager.default
             if fileManager.fileExists(atPath: key) {
@@ -29,7 +46,7 @@ final class ParserFileDownloadRegistry: @unchecked Sendable {
                 at: localURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 
             do {
-                try await download(localURL)
+                try await download(localURL) { [self] value in reportProgress(value, for: key) }
                 try Task.checkCancellation()
                 return localURL
             } catch {
@@ -37,6 +54,13 @@ final class ParserFileDownloadRegistry: @unchecked Sendable {
                 throw error
             }
         }
+    }
+
+    private func reportProgress(_ value: Double?, for key: String) {
+        let observers = progressLock.withLock {
+            progressObservers[key].map { Array($0.values) } ?? []
+        }
+        for observer in observers { observer(value) }
     }
 }
 

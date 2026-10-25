@@ -26,18 +26,20 @@ struct OpdsParserFile: ParserFile {
         self.temporaryDirectory = temporaryDirectory
     }
 
-    func getContent() async throws -> Data {
-        let localURL = try await localURL()
+    func getContent(progress: ParserFileProgress? = nil) async throws -> Data {
+        let localURL = try await localURL(progress: progress)
         return try Data(contentsOf: localURL)
     }
 
-    func getUrl() async throws -> URL { try await localURL() }
+    func getUrl(progress: ParserFileProgress? = nil) async throws -> URL {
+        try await localURL(progress: progress)
+    }
 
-    private func localURL() async throws -> URL {
+    private func localURL(progress: ParserFileProgress?) async throws -> URL {
         let localURL = FileUtilities.cacheURL(
             for: "\(cacheKey)/\(fileName)", in: temporaryDirectory)
-        return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
-            [session, remoteURL] localURL in
+        return try await ParserFileDownloadRegistry.shared.file(at: localURL, progress: progress) {
+            [session, remoteURL] localURL, _ in
             Logger.opdsBrowsablePlugin.info("Downloading OPDS parser file: \(remoteURL)")
             let data = try await session.download(url: remoteURL)
             try Task.checkCancellation()

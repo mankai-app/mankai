@@ -33,6 +33,10 @@ struct ParserChapterMetadata: Codable, Sendable {
     }
 }
 
+/// Reports a fraction between 0 and 1, or `nil` when progress is unavailable.
+/// Callbacks run on the context performing the file operation.
+typealias ParserFileProgress = @Sendable (Double?) -> Void
+
 /// A backend-neutral file supplied to a parser.
 ///
 /// `cacheKey` must identify the current content.
@@ -41,8 +45,14 @@ protocol ParserFile: Sendable {
     var cacheKey: String { get }
     var fileName: String { get }
 
-    func getContent() async throws -> Data
-    func getUrl() async throws -> URL
+    func getContent(progress: ParserFileProgress?) async throws -> Data
+    func getUrl(progress: ParserFileProgress?) async throws -> URL
+}
+
+extension ParserFile {
+    func getContent() async throws -> Data { try await getContent(progress: nil) }
+
+    func getUrl() async throws -> URL { try await getUrl(progress: nil) }
 }
 
 @MainActor class Parser {

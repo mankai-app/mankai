@@ -116,7 +116,8 @@ actor NfsSession: BrowsableSession {
         }
     }
 
-    func download(path: String, to localURL: URL) async throws {
+    func download(path: String, to localURL: URL, progress: ParserFileProgress? = nil) async throws
+    {
         let client = try await connectedClient()
         do {
             try await withCheckedThrowingContinuation {
@@ -124,9 +125,13 @@ actor NfsSession: BrowsableSession {
                 client.downloadItem(
                     atPath: path, to: localURL,
                     progress: { completed, total in
-                        let progress = total > 0 ? Double(completed) / Double(total) : 1
-                        Logger.nfsBrowsablePlugin.debug(
-                            "Downloading \(path): \(Int(progress * 100))%")
+                        let fraction =
+                            total > 0 ? min(1, max(0, Double(completed) / Double(total))) : nil
+                        progress?(fraction)
+                        if let fraction {
+                            Logger.nfsBrowsablePlugin.debug(
+                                "Downloading \(path): \(Int(fraction * 100))%")
+                        }
                         return true
                     }
                 ) { error in

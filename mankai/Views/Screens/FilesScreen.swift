@@ -34,6 +34,8 @@ struct FilesScreen: View {
     @State private var parsedMangas: [String: DetailedManga] = [:]
     @State private var unreadMangaPaths: Set<String> = []
     @State private var parsingPaths: Set<String> = []
+    @State private var parsingProgress: [String: Double] = [:]
+    @State private var loadId: UUID?
     @State private var parseErrors: [String: String] = [:]
 
     init(share: BrowsablePlugin, entry: Entity? = nil, color: Color? = nil) {
@@ -173,14 +175,18 @@ struct FilesScreen: View {
     private func loadEntities() async {
         guard !isLoading, !isParsing else { return }
 
+        let currentLoadId = UUID()
+        loadId = currentLoadId
         isLoading = true
         errorMessage = nil
         parsedMangas = [:]
         unreadMangaPaths = []
         parsingPaths = []
+        parsingProgress = [:]
         parseErrors = [:]
 
         defer {
+            loadId = nil
             isLoading = false
             isParsing = false
         }
@@ -204,22 +210,29 @@ struct FilesScreen: View {
                 let filePath = entity.path
 
                 parsingPaths.insert(filePath)
+                defer {
+                    parsingPaths.remove(filePath)
+                    parsingProgress.removeValue(forKey: filePath)
+                }
 
                 do {
                     try Task.checkCancellation()
-                    let manga = try await share.parseFile(path: filePath, fileType: fileType)
+                    let manga = try await share.parseFile(
+                        path: filePath, fileType: fileType,
+                        progress: { value in
+                            Task { @MainActor in
+                                guard loadId == currentLoadId, parsingPaths.contains(filePath)
+                                else { return }
+                                parsingProgress[filePath] = value
+                            }
+                        })
 
                     let isUnread =
                         ProgressService.shared.get(mangaId: manga.id, pluginId: share.id) == nil
                     parsedMangas[filePath] = manga
                     if isUnread { unreadMangaPaths.insert(filePath) }
-                    parsingPaths.remove(filePath)
-                } catch is CancellationError {
-                    parsingPaths.remove(filePath)
-                    return
-                } catch {
+                } catch is CancellationError { return } catch {
                     parseErrors[filePath] = error.localizedDescription
-                    parsingPaths.remove(filePath)
                 }
             }
         } catch is CancellationError { return } catch { errorMessage = error.localizedDescription }
@@ -336,7 +349,8 @@ struct FilesScreen: View {
         HStack(spacing: 16) {
             listThumbnail {
                 documentThumbnail(
-                    fileType: fileType, isParsing: isParsing, hasError: errorMessage != nil)
+                    fileType: fileType, isParsing: isParsing,
+                    progress: parsingProgress[entity.path], hasError: errorMessage != nil)
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -375,7 +389,8 @@ struct FilesScreen: View {
         return VStack(spacing: 8) {
             thumbnailView {
                 documentThumbnail(
-                    fileType: fileType, isParsing: isParsing, hasError: errorMessage != nil)
+                    fileType: fileType, isParsing: isParsing,
+                    progress: parsingProgress[entity.path], hasError: errorMessage != nil)
             }
 
             Text(entity.displayName).font(.caption).foregroundColor(.primary).lineLimit(2)
@@ -384,7 +399,9 @@ struct FilesScreen: View {
         .help(errorMessage ?? "")
     }
 
-    private func documentThumbnail(fileType: String, isParsing: Bool, hasError: Bool) -> some View {
+    private func documentThumbnail(
+        fileType: String, isParsing: Bool, progress: Double?, hasError: Bool
+    ) -> some View {
         ZStack(alignment: .bottomLeading) {
             Image("DocumentIcon").resizable().scaledToFill().clipped()
 
@@ -393,7 +410,8 @@ struct FilesScreen: View {
                     .padding(12).background(.regularMaterial, in: Circle())
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if isParsing {
-                ProgressView().padding(12).background(.regularMaterial, in: Circle())
+                ProgressView(value: progress).progressViewStyle(.circular).padding(12)
+                    .background(.regularMaterial, in: Circle())
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 

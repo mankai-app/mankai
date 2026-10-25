@@ -48,13 +48,21 @@ struct Entity {
     func getEntities(path: String?) async throws -> [Entity]
 
     /// Parses a supported manga file at the given path.
-    func parseFile(path: String, fileType: String) async throws -> DetailedManga
+    /// The optional callback reports file download progress, or `nil` when unavailable.
+    func parseFile(path: String, fileType: String, progress: ParserFileProgress?) async throws
+        -> DetailedManga
 
     /// Returns the absolute filesystem URL for the given relative path,
     /// if the plugin is backed by a local filesystem directory.
     /// Returns `nil` for non-filesystem plugins.
     /// - Parameter path: A path relative to the plugin's root, or `nil` for the root.
     func absoluteURL(for path: String?) -> URL?
+}
+
+extension Browsable {
+    func parseFile(path: String, fileType: String) async throws -> DetailedManga {
+        try await parseFile(path: path, fileType: fileType, progress: nil)
+    }
 }
 
 /// A plugin that can receive files from the system file importer.

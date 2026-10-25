@@ -203,8 +203,11 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         return entities
     }
 
-    func parseFile(path: String, fileType _: String) async throws -> DetailedManga {
-        try await detailedManga(for: path)
+    func parseFile(path: String, fileType _: String, progress: ParserFileProgress? = nil)
+        async throws -> DetailedManga
+    {
+        progress?(nil)
+        return try await detailedManga(for: path)
     }
 
     func absoluteURL(for path: String?) -> URL? { nil }

@@ -13,7 +13,13 @@ struct FsParserFile: ParserFile {
 
     var fileName: String { url.lastPathComponent }
 
-    func getContent() async throws -> Data { try Data(contentsOf: url) }
+    func getContent(progress: ParserFileProgress? = nil) async throws -> Data {
+        progress?(nil)
+        return try Data(contentsOf: url)
+    }
 
-    func getUrl() async throws -> URL { url }
+    func getUrl(progress: ParserFileProgress? = nil) async throws -> URL {
+        progress?(nil)
+        return url
+    }
 }

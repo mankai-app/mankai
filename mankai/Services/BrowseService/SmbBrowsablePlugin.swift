@@ -89,11 +89,15 @@ actor SmbSession: BrowsableSession {
         try await withConnectedConnection { connection in try connection.loadFile(at: path) }
     }
 
-    func download(path: String, to localURL: URL) async throws {
+    func download(path: String, to localURL: URL, progress: ParserFileProgress? = nil) async throws
+    {
         try await withConnectedConnection { connection in
             try connection.downloadFile(remote: path, local: localURL) { completed, total, _, _ in
-                let progress = total > 0 ? Double(completed) / Double(total) : 1
-                Logger.smbBrowsablePlugin.debug("Downloading \(path): \(Int(progress * 100))%")
+                let fraction = total > 0 ? min(1, max(0, Double(completed) / Double(total))) : nil
+                progress?(fraction)
+                if let fraction {
+                    Logger.smbBrowsablePlugin.debug("Downloading \(path): \(Int(fraction * 100))%")
+                }
                 return !Task.isCancelled
             }
             try Task.checkCancellation()

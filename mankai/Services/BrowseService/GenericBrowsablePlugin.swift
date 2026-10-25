@@ -36,7 +36,7 @@ protocol BrowsableSession: Sendable {
     func disconnect() async
     func list(path: String) async throws -> [BrowsableSessionEntry]
     func download(path: String) async throws -> Data
-    func download(path: String, to localURL: URL) async throws
+    func download(path: String, to localURL: URL, progress: ParserFileProgress?) async throws
     func upload(data: Data, path: String) async throws
     func upload(file: URL, path: String) async throws
     func createDirectory(path: String) async throws
@@ -45,7 +45,8 @@ protocol BrowsableSession: Sendable {
 }
 
 extension BrowsableSession {
-    func download(path: String, to localURL: URL) async throws {
+    func download(path: String, to localURL: URL, progress: ParserFileProgress?) async throws {
+        progress?(nil)
         let data = try await download(path: path)
         try Task.checkCancellation()
         try data.write(to: localURL, options: .atomic)
@@ -88,15 +89,18 @@ struct BrowsableSessionParserFile<Session: BrowsableSession>: ParserFile {
         self.temporaryDirectory = temporaryDirectory
     }
 
-    func getContent() async throws -> Data { try Data(contentsOf: try await getUrl()) }
+    func getContent(progress: ParserFileProgress? = nil) async throws -> Data {
+        try Data(contentsOf: try await getUrl(progress: progress))
+    }
 
-    func getUrl() async throws -> URL {
+    func getUrl(progress: ParserFileProgress? = nil) async throws -> URL {
         let localURL = FileUtilities.cacheURL(for: remotePath, in: temporaryDirectory)
         do {
-            return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
-                [session, remotePath] localURL in
+            return try await ParserFileDownloadRegistry.shared.file(
+                at: localURL, progress: progress
+            ) { [session, remotePath] localURL, progress in
                 Session.logger.info("Downloading \(Session.backendName) parser file: \(remotePath)")
-                try await session.download(path: remotePath, to: localURL)
+                try await session.download(path: remotePath, to: localURL, progress: progress)
                 try Task.checkCancellation()
                 Session.logger.info("Downloaded \(Session.backendName) parser file: \(remotePath)")
             }
@@ -106,6 +110,23 @@ struct BrowsableSessionParserFile<Session: BrowsableSession>: ParserFile {
             )
             throw error
         }
+    }
+}
+
+/// Forwards progress from parser reads without changing the parser's file interface.
+private struct ProgressReportingParserFile: ParserFile {
+    let file: ParserFile
+    let progress: ParserFileProgress
+
+    var cacheKey: String { file.cacheKey }
+    var fileName: String { file.fileName }
+
+    func getContent(progress: ParserFileProgress?) async throws -> Data {
+        try await file.getContent(progress: progress ?? self.progress)
+    }
+
+    func getUrl(progress: ParserFileProgress?) async throws -> URL {
+        try await file.getUrl(progress: progress ?? self.progress)
     }
 }
 
@@ -248,9 +269,10 @@ where Session: BrowsableSession, Session.Config == Config {
     }
 
     /// Computes the content hash used in manga routes.
-    func hashFile(relativePath: String) async throws -> String {
+    func hashFile(relativePath: String, progress: ParserFileProgress? = nil) async throws -> String
+    {
         let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
-        let fileURL = try await file.getUrl()
+        let fileURL = try await file.getUrl(progress: progress)
         do { return try await FileUtilities.sha256(of: fileURL) } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -418,7 +440,10 @@ where Session: BrowsableSession, Session.Config == Config {
         return try await detailedManga(forPrefixedId: id)
     }
 
-    func parseFile(path: String, fileType: String) async throws -> DetailedManga {
+    func parseFile(path: String, fileType: String, progress: ParserFileProgress? = nil) async throws
+        -> DetailedManga
+    {
+        progress?(nil)
         let normalizedFileType = fileType.trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
         guard let parser = parser(forExtension: normalizedFileType) else {
@@ -428,7 +453,9 @@ where Session: BrowsableSession, Session.Config == Config {
         }
 
         Logger.browseService.debug("Parsing browsable file '\(path)' as '\(normalizedFileType)'")
-        do { return try await parseAndCache(parser: parser, relativePath: path) } catch {
+        do {
+            return try await parseAndCache(parser: parser, relativePath: path, progress: progress)
+        } catch {
             Logger.browseService.warning(
                 "Parser '\(parser.id)' failed to parse '\(path)': \(error)")
             throw error
@@ -439,13 +466,19 @@ where Session: BrowsableSession, Session.Config == Config {
         try await loadManga(route: MangaRoute(mangaId: id))
     }
 
-    private func parserFile(for route: MangaRoute) async throws -> ParserFile {
-        try await parserFile(relativePath: route.relativePath, cacheKey: route.hash)
+    private func parserFile(for route: MangaRoute, progress: ParserFileProgress? = nil) async throws
+        -> ParserFile
+    {
+        let file = try await parserFile(relativePath: route.relativePath, cacheKey: route.hash)
+        if let progress { return ProgressReportingParserFile(file: file, progress: progress) }
+        return file
     }
 
-    private func loadManga(route: MangaRoute) async throws -> DetailedManga {
+    private func loadManga(route: MangaRoute, progress: ParserFileProgress? = nil) async throws
+        -> DetailedManga
+    {
         let parser = try route.parser(in: parsers)
-        let file = try await parserFile(for: route)
+        let file = try await parserFile(for: route, progress: progress)
 
         let stored: DetailedManga
         if let cached = try? await fetchCachedManga(mangaId: route.hash, parserId: route.parserId) {
@@ -512,20 +545,22 @@ where Session: BrowsableSession, Session.Config == Config {
         let manga: DetailedManga
     }
 
-    private func parseAndCache(parser: Parser, relativePath: String) async throws -> DetailedManga {
+    private func parseAndCache(parser: Parser, relativePath: String, progress: ParserFileProgress?)
+        async throws -> DetailedManga
+    {
         if let cached = try? await fetchCachedManga(path: relativePath, parserId: parser.id) {
             Logger.browseService.debug("Browsable source cache hit: \(relativePath)")
             let route = try MangaRoute(
                 parserId: parser.id, hash: cached.mangaId, relativePath: relativePath)
-            let file = try await parserFile(for: route)
+            let file = try await parserFile(for: route, progress: progress)
             return try await prepareCachedManga(
                 cached.manga, route: route, parser: parser, file: file)
         }
 
         Logger.browseService.debug("Browsable source cache miss, hashing: \(relativePath)")
-        let hash = try await hashFile(relativePath: relativePath)
+        let hash = try await hashFile(relativePath: relativePath, progress: progress)
         let route = try MangaRoute(parserId: parser.id, hash: hash, relativePath: relativePath)
-        return try await loadManga(route: route)
+        return try await loadManga(route: route, progress: progress)
     }
 
     private func fetchCachedManga(mangaId: String, parserId: String) async throws -> CachedManga? {
