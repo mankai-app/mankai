@@ -3161,6 +3161,34 @@
         }
       }
     },
+    "deleteFilesConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete the selected files?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したファイルを削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除选中的文件吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除選取的檔案嗎？"
+          }
+        }
+      }
+    },
     "deleteImagesConfirmation" : {
       "localizations" : {
         "en" : {

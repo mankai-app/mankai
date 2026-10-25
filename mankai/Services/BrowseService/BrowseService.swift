@@ -73,6 +73,9 @@ extension Browsable {
     }
 }
 
+/// A browsable source that can delete individual files.
+@MainActor protocol FileDeletable { func deleteFile(path: String) async throws }
+
 /// A plugin that can receive files from the system file importer.
 @MainActor protocol Importable {
     /// The file extensions accepted by this importable plugin.

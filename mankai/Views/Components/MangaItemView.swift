@@ -48,11 +48,7 @@ struct MangaItemView: View {
                 tagColor: coverTag?.color
             )
             .aspectRatio(3 / 4, contentMode: .fit)
-            .modifier(
-                MangaItemContextMenu(
-                    manga: manga, plugin: plugin, progress: progress, libraryItem: libraryItem,
-                    allowUnsupportedDetailsNavigation: allowUnsupportedDetailsNavigation,
-                    onRead: onRead))
+            .modifier(MangaItemContextMenu(manga: manga, plugin: plugin, onRead: onRead))
 
             VStack(alignment: .center) {
                 // Title

@@ -640,6 +640,15 @@ where Session: BrowsableSession, Session.Config == Config {
         }
     }
 
+    /// Invalidates the path lookup when a source file is removed or replaced.
+    func invalidateCachedManga(path: String) throws {
+        guard let db else { return }
+        _ = try db.write { db in
+            try BrowsablePluginMangaModel.filter(Column("pluginId") == id && Column("path") == path)
+                .deleteAll(db)
+        }
+    }
+
     /// Clears parser metadata and locally cached covers for this plugin.
     func clearCache() throws {
         if let db {

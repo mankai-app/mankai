@@ -8,12 +8,18 @@
 import SwiftUI
 
 struct MangaItemContextMenu: ViewModifier {
-    let manga: Manga
+    struct FileActions {
+        let isSelecting: Bool
+        let isBusy: Bool
+        let download: () -> Void
+        let select: () -> Void
+        let delete: (() async throws -> Void)?
+    }
+
+    let manga: Manga?
     let plugin: Plugin
-    let progress: ProgressModel?
-    let libraryItem: LibraryModel?
-    let allowUnsupportedDetailsNavigation: Bool
     let onRead: (ReaderRoute) -> Void
+    var fileActions: FileActions? = nil
 
     private enum Sheet: String, Identifiable {
         case download, edit, share
@@ -22,8 +28,22 @@ struct MangaItemContextMenu: ViewModifier {
 
     private enum Action { case download, read, edit, delete, share }
 
-    @State private var loadedProgress: ProgressModel?
-    @State private var loadedLibraryItem: LibraryModel?
+    private struct RecordKey: Equatable {
+        let pluginId: String
+        let mangaId: String?
+
+        func matches(mangaId: String, pluginId: String) -> Bool {
+            self.mangaId == mangaId && self.pluginId == pluginId
+        }
+    }
+
+    private struct Records {
+        let key: RecordKey
+        var progress: ProgressModel?
+        var libraryItem: LibraryModel?
+    }
+
+    @State private var loadedRecords: Records?
     @State private var detailedManga: DetailedManga?
     @State private var downloadManga: DetailedManga?
     @State private var sheet: Sheet?
@@ -31,12 +51,52 @@ struct MangaItemContextMenu: ViewModifier {
     @State private var isProcessing = false
     @State private var showingDeleteConfirmation = false
 
-    private var menuProgress: ProgressModel? { progress ?? loadedProgress }
+    private var recordKey: RecordKey { RecordKey(pluginId: plugin.id, mangaId: manga?.id) }
 
-    private var isBookmarked: Bool { (libraryItem ?? loadedLibraryItem) != nil }
+    private var records: Records {
+        if let loadedRecords, loadedRecords.key == recordKey { return loadedRecords }
+        return Records(key: recordKey, progress: nil, libraryItem: nil)
+    }
+
+    private var menuProgress: ProgressModel? { records.progress }
+
+    private var isBookmarked: Bool { records.libraryItem != nil }
+
+    private var isBusy: Bool { isProcessing || fileActions?.isBusy == true }
+
+    // Only plugin capabilities control visibility. Item data and state control interaction.
+    private var supportsDownload: Bool { plugin is any Browsable || plugin.supportsDownloads }
+
+    private var supportsShare: Bool { !(plugin is any Browsable) }
+
+    private var supportsEdit: Bool { !(plugin is any Browsable) && plugin is any Editable }
+
+    private var supportsDelete: Bool { plugin is any FileDeletable || supportsEdit }
+
+    private var canRead: Bool {
+        manga != nil
+            && ((plugin.supports(.mangaDetails) && plugin.supportsRemoteReading)
+                || !downloadedChapterIds.isEmpty)
+    }
+
+    private var canDownload: Bool {
+        fileActions != nil
+            || (manga != nil && plugin.supportsDownloads && plugin.supports(.mangaDetails))
+    }
+
+    private var canShare: Bool {
+        manga != nil && supportsShare && (plugin.supports(.mangaDetails) || downloadManga != nil)
+    }
 
     private var canEdit: Bool {
-        plugin is any Editable && plugin.supports(.mangaDetails) && detailedManga?.editable != false
+        manga != nil && supportsEdit && plugin.supports(.mangaDetails)
+            && detailedManga?.editable != false
+    }
+
+    private var canDelete: Bool { fileActions?.delete != nil || canEdit }
+
+    private var needsDownloadMetadata: Bool {
+        !plugin.supports(.mangaDetails) || !plugin.supportsRemoteReading
     }
 
     private var downloadedChapterIds: Set<String> {
@@ -47,55 +107,72 @@ struct MangaItemContextMenu: ViewModifier {
 
     func body(content: Content) -> some View {
         content.contextMenu {
-            Button {
-                open(.read, readingProgress: menuProgress)
-            } label: {
-                Label(
-                    menuProgress == nil ? "startReading" : "continueReading",
-                    systemImage: "book.pages")
-            }
-            .disabled(
-                isProcessing
-                    || (!(plugin.supports(.mangaDetails) && plugin.supportsRemoteReading)
-                        && !allowUnsupportedDetailsNavigation && downloadedChapterIds.isEmpty)
-            )
-            .onAppear(perform: loadMissingRecords)
+            Group {
+                Section {
+                    Button {
+                        open(.read)
+                    } label: {
+                        Label(
+                            menuProgress == nil ? "startReading" : "continueReading",
+                            systemImage: "book.pages")
+                    }
+                    .disabled(!canRead)
 
-            Button {
-                toggleBookmark(isBookmarked: isBookmarked)
-            } label: {
-                Label(
-                    isBookmarked ? "removeBookmark" : "bookmark",
-                    systemImage: isBookmarked ? "bookmark.slash" : "bookmark")
-            }
-            .disabled(isProcessing)
+                    Button {
+                        toggleBookmark()
+                    } label: {
+                        Label(
+                            isBookmarked ? "removeBookmark" : "bookmark",
+                            systemImage: isBookmarked ? "bookmark.slash" : "bookmark")
+                    }
+                    .disabled(manga == nil)
+                }
 
-            Divider()
+                Section {
+                    if supportsDownload {
+                        Button("download", systemImage: "arrow.down") { open(.download) }
+                            .disabled(!canDownload)
+                    }
 
-            Button("download", systemImage: "arrow.down") { open(.download) }
-                .disabled(
-                    !plugin.supportsDownloads || !plugin.supports(.mangaDetails) || isProcessing)
+                    if supportsShare {
+                        Button("share", systemImage: "square.and.arrow.up") { open(.share) }
+                            .disabled(!canShare)
+                    }
 
-            Button("share", systemImage: "square.and.arrow.up") { open(.share) }
-                .disabled(isProcessing)
+                    if supportsEdit {
+                        Button("edit", systemImage: "pencil") { open(.edit) }.disabled(!canEdit)
+                    }
 
-            Button("edit", systemImage: "pencil") { open(.edit) }.disabled(!canEdit || isProcessing)
-
-            Divider()
-
-            if menuProgress != nil {
-                Button("removeRecords", systemImage: "clock.badge.xmark", role: .destructive) {
-                    perform {
-                        _ = try await ProgressService.shared.remove(
-                            mangaId: manga.id, pluginId: plugin.id)
-                        loadedProgress = nil
+                    if plugin is any Browsable {
+                        Button {
+                            fileActions?.select()
+                        } label: {
+                            Label(
+                                fileActions?.isSelecting == true ? "done" : "select",
+                                systemImage: "checkmark.circle")
+                        }
+                        .disabled(fileActions == nil)
                     }
                 }
-                .disabled(isProcessing)
-            }
 
-            Button("delete", systemImage: "trash", role: .destructive) { open(.delete) }
-                .disabled(!canEdit || isProcessing)
+                Section {
+                    Button("removeRecords", systemImage: "clock.badge.xmark", role: .destructive) {
+                        guard let manga else { return }
+                        perform {
+                            _ = try await ProgressService.shared.remove(
+                                mangaId: manga.id, pluginId: plugin.id)
+                            if loadedRecords?.key == recordKey { refreshRecords() }
+                        }
+                    }
+                    .disabled(manga == nil || menuProgress == nil)
+
+                    if supportsDelete {
+                        Button("delete", systemImage: "trash", role: .destructive) { open(.delete) }
+                            .disabled(!canDelete)
+                    }
+                }
+            }
+            .disabled(isBusy)
         }
         .sheet(
             item: $sheet,
@@ -122,7 +199,7 @@ struct MangaItemContextMenu: ViewModifier {
                         UpdateMangaModal(plugin: editablePlugin, manga: detailedManga)
                     }
                 case .share:
-                    if let mangaData = detailedManga ?? downloadManga {
+                    if let manga, let mangaData = detailedManga ?? downloadManga {
                         ExportModal(
                             manga: mangaData,
                             downloadMangaId: DownloadMangaModel.makeId(
@@ -139,8 +216,11 @@ struct MangaItemContextMenu: ViewModifier {
         ) {
             Button("delete", role: .destructive) {
                 perform {
-                    guard let editablePlugin = plugin as? any Editable else { return }
-                    try await editablePlugin.deleteManga(manga.id)
+                    if let deleteFile = fileActions?.delete {
+                        try await deleteFile()
+                    } else if let manga, let editablePlugin = plugin as? any Editable {
+                        try await editablePlugin.deleteManga(manga.id)
+                    }
                 }
             }
             Button("cancel", role: .cancel) {}
@@ -148,22 +228,78 @@ struct MangaItemContextMenu: ViewModifier {
             Text("deleteMangaConfirmation")
         }
         .onReceive(plugin.objectWillChange) { detailedManga = nil }
+        .onAppear(perform: refreshRecords)
+        .onChange(of: recordKey) {
+            detailedManga = nil
+            downloadManga = nil
+            refreshRecords()
+        }
+        .onReceive(ProgressService.shared.changes, perform: updateProgress)
+        .onReceive(LibraryService.shared.changes, perform: updateLibraryItem)
+        .task(id: recordKey) { if needsDownloadMetadata { await loadDownloadManga() } }
+        .onReceive(DownloadPlugin.shared.objectWillChange) {
+            if needsDownloadMetadata { Task { await loadDownloadManga() } }
+        }
     }
 
-    private func loadMissingRecords() {
-        loadedProgress =
-            progress ?? ProgressService.shared.get(mangaId: manga.id, pluginId: plugin.id)
-        loadedLibraryItem =
-            libraryItem ?? LibraryService.shared.get(mangaId: manga.id, pluginId: plugin.id)
+    private func refreshRecords() {
+        guard let manga else {
+            loadedRecords = Records(key: recordKey, progress: nil, libraryItem: nil)
+            return
+        }
+        loadedRecords = Records(
+            key: recordKey,
+            progress: ProgressService.shared.get(mangaId: manga.id, pluginId: plugin.id),
+            libraryItem: LibraryService.shared.get(mangaId: manga.id, pluginId: plugin.id))
+    }
+
+    private func updateProgress(_ change: ProgressService.Change) {
+        var updated = records
+        switch change { case .upserted(let entries):
+            guard
+                let entry = entries.first(where: {
+                    recordKey.matches(mangaId: $0.mangaId, pluginId: $0.pluginId)
+                })
+            else { return }
+            updated.progress = entry
+            case .deleted(let keys):
+                guard
+                    keys.contains(where: {
+                        recordKey.matches(mangaId: $0.mangaId, pluginId: $0.pluginId)
+                    })
+                else { return }
+                updated.progress = nil
+        }
+        loadedRecords = updated
+    }
+
+    private func updateLibraryItem(_ change: LibraryService.Change) {
+        var updated = records
+        switch change { case .upserted(let entries):
+            guard
+                let entry = entries.first(where: {
+                    recordKey.matches(mangaId: $0.mangaId, pluginId: $0.pluginId)
+                })
+            else { return }
+            updated.libraryItem = entry
+            case .deleted(let mangaId, let pluginId):
+                guard recordKey.matches(mangaId: mangaId, pluginId: pluginId) else { return }
+                updated.libraryItem = nil
+        }
+        loadedRecords = updated
     }
 
     private func loadDownloadManga() async {
+        guard let manga else { return }
+        let key = recordKey
         let id = DownloadMangaModel.makeId(pluginId: plugin.id, mangaId: manga.id)
-        downloadManga = try? await DownloadPlugin.shared.getDetailedManga(id)
+        let downloaded = try? await DownloadPlugin.shared.getDetailedManga(id)
+        guard !Task.isCancelled, loadedRecords?.key == key else { return }
+        downloadManga = downloaded
     }
 
     private func perform(_ action: @escaping @MainActor () async throws -> Void) {
-        guard !isProcessing else { return }
+        guard !isBusy else { return }
         isProcessing = true
         Task {
             defer { isProcessing = false }
@@ -174,11 +310,11 @@ struct MangaItemContextMenu: ViewModifier {
         }
     }
 
-    private func toggleBookmark(isBookmarked: Bool) {
+    private func toggleBookmark() {
+        guard let manga else { return }
         perform {
-            if isBookmarked {
+            if LibraryService.shared.get(mangaId: manga.id, pluginId: plugin.id) != nil {
                 _ = try await LibraryService.shared.remove(mangaId: manga.id, pluginId: plugin.id)
-                loadedLibraryItem = nil
             } else {
                 let snapshot = MangaSnapshotService.shared.makeSnapshot(
                     for: detailedManga?.toManga() ?? manga, pluginId: plugin.id)
@@ -187,17 +323,34 @@ struct MangaItemContextMenu: ViewModifier {
                     mangaId: manga.id, pluginId: plugin.id, datetime: Date(), updates: false,
                     latestChapter: manga.latestChapter, shouldSync: plugin.supports(.sync))
                 _ = try await LibraryService.shared.save(libraryItem: newLibraryItem)
-                loadedLibraryItem = newLibraryItem
             }
+            if loadedRecords?.key == recordKey { refreshRecords() }
         }
     }
 
-    private func open(_ action: Action, readingProgress: ProgressModel? = nil) {
+    private func open(_ action: Action) {
+        guard !isBusy else { return }
+        if action == .download, let fileActions {
+            fileActions.download()
+            return
+        }
+        if action == .delete, fileActions?.delete != nil {
+            showingDeleteConfirmation = true
+            return
+        }
+        guard let manga else { return }
+        let key = recordKey
         perform {
             if action == .read || action == .share { await loadDownloadManga() }
+            guard loadedRecords?.key == key else { return }
 
             if plugin.supports(.mangaDetails) {
-                do { detailedManga = try await plugin.getDetailedManga(manga.id) } catch {
+                do {
+                    let detailed = try await plugin.getDetailedManga(manga.id)
+                    guard loadedRecords?.key == key else { return }
+                    detailedManga = detailed
+                } catch {
+                    guard loadedRecords?.key == key else { return }
                     guard (action == .share || action == .read) && downloadManga != nil else {
                         throw error
                     }
@@ -219,7 +372,10 @@ struct MangaItemContextMenu: ViewModifier {
                         throw MankaiErrorCode.pluginMangaNotFound.makeError()
                     }
                     sheet = .share
-                case .read: startReading(progress: readingProgress)
+                case .read:
+                    startReading(
+                        progress: ProgressService.shared.get(mangaId: manga.id, pluginId: plugin.id)
+                    )
             }
         }
     }

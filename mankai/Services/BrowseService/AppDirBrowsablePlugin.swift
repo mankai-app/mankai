@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 import SwiftUI
 
-final class AppDirBrowsablePlugin: FsBrowsablePlugin {
+final class AppDirBrowsablePlugin: FsBrowsablePlugin, FileDeletable {
     static let shared = try! AppDirBrowsablePlugin()
 
     override class func loadPlugins() -> [Plugin] { [shared] }
@@ -48,6 +48,24 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
     override var icon: AnyView { AnyView(Image(systemName: "iphone")) }
 
     override var color: Color { .accentColor }
+
+    func deleteFile(path: String) async throws {
+        guard !path.isEmpty else {
+            throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
+        }
+
+        let fileURL = try session.sourceURL(for: path)
+        let rootPath = url.resolvingSymlinksInPath().path(percentEncoded: false)
+        let rootPrefix = rootPath.hasSuffix("/") ? rootPath : "\(rootPath)/"
+        let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+        guard fileURL.resolvingSymlinksInPath().path(percentEncoded: false).hasPrefix(rootPrefix),
+            resourceValues.isRegularFile == true
+        else { throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError() }
+
+        try FileManager.default.removeItem(at: fileURL)
+        defer { objectWillChange.send() }
+        try invalidateCachedManga(path: path)
+    }
 
     /// Built-in plugin, do nothing
     override func savePlugin(db: Database? = nil) throws {}
