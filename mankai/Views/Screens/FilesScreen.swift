@@ -188,52 +188,48 @@ struct FilesScreen: View {
     }
 
     var body: some View {
-        ZStack {
-            if viewMode == .grid {
+        GeometryReader { geometry in
+            if showsStatusView {
                 ScrollView {
-                    if entities.isEmpty || errorMessage != nil {
-                        statusView
-                    } else {
-                        LazyVGrid(
-                            columns: [
-                                GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)
-                            ], spacing: 20
-                        ) {
-                            ForEach(entities, id: \.path) { entity in
-                                switch entity.type { case .directory:
-                                    NavigationLink(
-                                        destination: FilesScreen(share: share, entry: entity)
-                                    ) { directoryView(entity: entity) }
-                                    .buttonStyle(.plain).disabled(isSelecting)
-
-                                    case .book(let fileType):
-                                        bookView(entity: entity, fileType: fileType)
-                                }
-                            }
-                        }
-                        .padding()
-                    }
+                    // Measure the viewport outside the scroll content to avoid List row clipping.
+                    statusView.fixedSize(horizontal: false, vertical: true)
+                        .frame(minHeight: geometry.size.height)
                 }
-            } else {
-                List(selection: isSelecting ? $selectedPaths : nil) {
-                    if entities.isEmpty || errorMessage != nil {
-                        statusView.listRowInsets(EdgeInsets()).listRowSeparator(.hidden)
-                            .selectionDisabled()
-                    } else {
+            } else if viewMode == .grid {
+                ScrollView {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
+                        spacing: 20
+                    ) {
                         ForEach(entities, id: \.path) { entity in
                             switch entity.type { case .directory:
                                 NavigationLink(
                                     destination: FilesScreen(share: share, entry: entity)
-                                ) { directoryListView(entity: entity) }
-                                .buttonStyle(.plain).disabled(isSelecting).selectionDisabled()
+                                ) { directoryView(entity: entity) }
+                                .buttonStyle(.plain).disabled(isSelecting)
 
                                 case .book(let fileType):
-                                    bookView(entity: entity, fileType: fileType).tag(entity.path)
+                                    bookView(entity: entity, fileType: fileType)
                             }
                         }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                        .listRowSeparator(.hidden)
                     }
+                    .padding()
+                }
+            } else {
+                List(selection: isSelecting ? $selectedPaths : nil) {
+                    ForEach(entities, id: \.path) { entity in
+                        switch entity.type { case .directory:
+                            NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
+                                directoryListView(entity: entity)
+                            }
+                            .buttonStyle(.plain).disabled(isSelecting).selectionDisabled()
+
+                            case .book(let fileType):
+                                bookView(entity: entity, fileType: fileType).tag(entity.path)
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowSeparator(.hidden)
                 }
                 .listStyle(.plain).disabled(isBusy)
             }
@@ -353,6 +349,8 @@ struct FilesScreen: View {
         }
     }
 
+    private var showsStatusView: Bool { entities.isEmpty || errorMessage != nil }
+
     private var statusView: some View {
         Group {
             if isLoading && entities.isEmpty {
@@ -360,7 +358,6 @@ struct FilesScreen: View {
                     Text("filesScreenLoadingHint").multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
-                .frame(maxHeight: .infinity)
             } else if let errorMessage {
                 ContentUnavailableView(
                     "failedToLoadList", systemImage: "exclamationmark.triangle",
@@ -370,7 +367,7 @@ struct FilesScreen: View {
                     "noEntities", systemImage: "tray", description: Text("noEntitiesDescription"))
             }
         }
-        .frame(maxWidth: .infinity).containerRelativeFrame(.vertical)
+        .frame(maxWidth: .infinity)
     }
 
     private var viewMode: FilesViewMode {
