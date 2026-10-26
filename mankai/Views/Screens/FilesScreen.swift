@@ -137,6 +137,39 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
 }
 
 struct FilesScreen: View {
+    private enum FileAction {
+        case download, delete, bookmark, removeBookmark, removeRecords
+
+        var title: LocalizedStringKey {
+            switch self { case .download: return "download" case .delete: return "delete"
+                case .bookmark: return "bookmark"
+                case .removeBookmark: return "removeBookmark"
+                case .removeRecords: return "removeRecords"
+            }
+        }
+
+        var confirmationMessage: LocalizedStringKey? {
+            switch self { case .download: return nil case .delete: return "deleteFilesConfirmation"
+                case .bookmark: return "bookmarkFilesConfirmation"
+                case .removeBookmark: return "removeBookmarksConfirmation"
+                case .removeRecords: return "removeRecordsConfirmation"
+            }
+        }
+
+        var role: ButtonRole? { self == .delete || self == .removeRecords ? .destructive : nil }
+
+        var requiresManga: Bool {
+            switch self { case .download, .delete: return false
+                case .bookmark, .removeBookmark, .removeRecords: return true
+            }
+        }
+    }
+
+    private struct PendingBatchAction {
+        let action: FileAction
+        let entries: [Entity]
+    }
+
     private struct TopRightCornerTriangle: Shape {
         func path(in rect: CGRect) -> Path {
             var path = Path()
@@ -151,6 +184,8 @@ struct FilesScreen: View {
     let share: BrowsablePlugin
     let entry: Entity?
     let color: Color?
+
+    @ObservedObject private var libraryService = LibraryService.shared
 
     @AppStorage(SettingsKey.filesViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
         .filesViewMode.rawValue
@@ -170,10 +205,9 @@ struct FilesScreen: View {
 
     @State private var editMode: EditMode = .inactive
     @State private var selectedPaths: Set<String> = []
-    @State private var showingDeleteConfirmation = false
-    @State private var isDeletingFiles = false
+    @State private var pendingBatchAction: PendingBatchAction?
+    @State private var activeFileAction: FileAction?
 
-    @State private var isPreparingDownloads = false
     @State private var filesToDownload: [ParserFile] = []
     @State private var unavailableFileNames: [String] = []
     @State private var isDownloadFilesModalPresented = false
@@ -270,16 +304,35 @@ struct FilesScreen: View {
                 ToolbarItemGroup(placement: .bottomBar) {
                     if #unavailable(iOS 26.0) { Spacer() }
 
-                    Button("download", systemImage: "arrow.down") {
-                        prepareDownloads(for: selectedEntities)
+                    Button("download", systemImage: "arrow.down") { requestBatchAction(.download) }
+                        .disabled(selectedPaths.isEmpty || isBusy)
+
+                    if #unavailable(iOS 26.0) { Spacer() }
+
+                    Group {
+                        if allSelectedFilesBookmarked {
+                            Button("removeBookmark", systemImage: "bookmark.slash") {
+                                requestBatchAction(.removeBookmark)
+                            }
+                        } else {
+                            Button("bookmark", systemImage: "bookmark") {
+                                requestBatchAction(.bookmark)
+                            }
+                        }
+
+                        if #unavailable(iOS 26.0) { Spacer() }
+
+                        Button(
+                            "removeRecords", systemImage: "clock.badge.xmark", role: .destructive
+                        ) { requestBatchAction(.removeRecords) }
                     }
-                    .disabled(selectedPaths.isEmpty || isBusy)
+                    .disabled(!canPerformBatchMangaAction || isBusy)
 
                     if share is any FileDeletable {
                         if #unavailable(iOS 26.0) { Spacer() }
 
                         Button("delete", systemImage: "trash", role: .destructive) {
-                            showingDeleteConfirmation = true
+                            requestBatchAction(.delete)
                         }
                         .disabled(selectedPaths.isEmpty || isBusy)
                     }
@@ -288,19 +341,34 @@ struct FilesScreen: View {
                 }
             } else {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: toggleViewMode) {
-                        Label(
-                            viewMode == .grid ? "listView" : "gridView",
-                            systemImage: viewMode == .grid ? "list.bullet" : "square.grid.2x2")
-                    }
-                }
+                    Menu {
+                        Section {
+                            Button("select", systemImage: "checkmark.circle") {
+                                withAnimation { editMode = .active }
+                            }
+                            .disabled(selectableFilePaths.isEmpty || isBusy)
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    if folderURL != nil {
-                        Button {
-                            openInFilesApp()
+                            if folderURL != nil {
+                                Button("openInFiles", systemImage: "folder") { openInFilesApp() }
+                            }
+                        }
+
+                        Picker(selection: $viewModeRawValue) {
+                            Label("gridView", systemImage: "square.grid.2x2")
+                                .tag(FilesViewMode.grid.rawValue)
+                            Label("listView", systemImage: "list.bullet")
+                                .tag(FilesViewMode.list.rawValue)
                         } label: {
-                            Label("openInFiles", systemImage: "folder")
+                            Label(
+                                viewMode == .grid ? "gridView" : "listView",
+                                systemImage: viewMode == .grid ? "square.grid.2x2" : "list.bullet")
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        Label {
+                            Text("actions")
+                        } icon: {
+                            ToolbarIcon(systemName: "ellipsis", legacySystemName: "ellipsis.circle")
                         }
                     }
                 }
@@ -309,15 +377,20 @@ struct FilesScreen: View {
         .environment(\.editMode, $editMode)
         .onChange(of: editMode) { _, mode in if !mode.isEditing { selectedPaths.removeAll() } }
         .confirmationDialog(
-            "delete", isPresented: $showingDeleteConfirmation, titleVisibility: .visible
-        ) {
-            Button("delete", role: .destructive, action: deleteSelectedFiles)
+            pendingBatchAction?.action.title ?? "actions",
+            isPresented: .init(
+                get: { pendingBatchAction != nil }, set: { if !$0 { pendingBatchAction = nil } }),
+            titleVisibility: .visible, presenting: pendingBatchAction
+        ) { request in
+            Button(request.action.title, role: request.action.role) {
+                Task { await performFileAction(request.action, for: request.entries) }
+            }
             Button("cancel", role: .cancel) {}
-        } message: {
-            Text("deleteFilesConfirmation")
+        } message: { request in
+            if let message = request.action.confirmationMessage { Text(message) }
         }
         .task(id: refreshId) { await loadEntities() }
-        .onReceive(share.objectWillChange) { if !isDeletingFiles { refreshId = UUID() } }
+        .onReceive(share.objectWillChange) { if activeFileAction != .delete { refreshId = UUID() } }
         .onReceive(ProgressService.shared.objectWillChange) { updateUnreadMangas() }
         .sheet(
             isPresented: $isDownloadFilesModalPresented,
@@ -386,7 +459,7 @@ struct FilesScreen: View {
 
     private var isSelecting: Bool { editMode.isEditing }
 
-    private var isBusy: Bool { isPreparingDownloads || isDeletingFiles }
+    private var isBusy: Bool { activeFileAction != nil }
 
     private var selectableFilePaths: Set<String> {
         Set(
@@ -401,6 +474,18 @@ struct FilesScreen: View {
     }
 
     private var selectedEntities: [Entity] { entities.filter { selectedPaths.contains($0.path) } }
+
+    private var canPerformBatchMangaAction: Bool {
+        !selectedPaths.isEmpty && selectedEntities.allSatisfy { parsedMangas[$0.path] != nil }
+    }
+
+    private var allSelectedFilesBookmarked: Bool {
+        guard canPerformBatchMangaAction else { return false }
+        return selectedEntities.allSatisfy { entity in
+            guard let manga = parsedMangas[entity.path] else { return false }
+            return libraryService.get(mangaId: manga.id, pluginId: share.id) != nil
+        }
+    }
 
     private func bookView(entity: Entity, fileType: String) -> some View {
         Group {
@@ -436,7 +521,7 @@ struct FilesScreen: View {
             onRead: { readerRoute = $0 },
             fileActions: .init(
                 isSelecting: isSelecting, isBusy: isBusy,
-                download: { prepareDownloads(for: [entity]) },
+                download: { Task { await performFileAction(.download, for: [entity]) } },
                 select: { toggleSelection(for: entity) }, delete: fileDeletionAction(for: entity)))
     }
 
@@ -452,39 +537,88 @@ struct FilesScreen: View {
     }
 
     private func fileDeletionAction(for entity: Entity) -> (() async throws -> Void)? {
-        guard let deletableShare = share as? any FileDeletable else { return nil }
-        return { try await deletableShare.deleteFile(path: entity.path) }
+        guard share is any FileDeletable else { return nil }
+        return { await performFileAction(.delete, for: [entity]) }
     }
 
-    private func deleteSelectedFiles() {
+    private func requestBatchAction(_ action: FileAction) {
         let entries = selectedEntities
-        guard !isBusy, !entries.isEmpty, let deletableShare = share as? any FileDeletable else {
-            return
+        guard !isBusy, !entries.isEmpty else { return }
+        if action == .download {
+            Task { await performFileAction(action, for: entries) }
+        } else {
+            pendingBatchAction = PendingBatchAction(action: action, entries: entries)
+        }
+    }
+
+    @MainActor private func performFileAction(_ action: FileAction, for entries: [Entity]) async {
+        guard !isBusy, !entries.isEmpty else { return }
+        let deletableShare = share as? any FileDeletable
+        guard action != .delete || deletableShare != nil else { return }
+        let items = entries.map { (entity: $0, manga: parsedMangas[$0.path]) }
+        guard !action.requiresManga || items.allSatisfy({ $0.manga != nil }) else { return }
+
+        activeFileAction = action
+        defer {
+            activeFileAction = nil
+            if action == .delete { refreshId = UUID() }
         }
 
-        isDeletingFiles = true
+        var files: [ParserFile] = []
+        var unavailableNames: [String] = []
+        var failures: [String] = []
 
-        Task { @MainActor in
-            defer {
-                isDeletingFiles = false
-                refreshId = UUID()
-            }
-
-            var failures: [String] = []
-            for entity in entries {
-                do {
-                    try await deletableShare.deleteFile(path: entity.path)
-                    selectedPaths.remove(entity.path)
-                } catch {
-                    Logger.ui.error("Failed to delete file \(entity.path)", error: error)
-                    failures.append("\(entity.displayName): \(error.localizedDescription)")
+        for (entity, manga) in items {
+            do {
+                switch action { case .download:
+                    if let file = try await share.parserFile(path: entity.path) {
+                        files.append(file)
+                    } else {
+                        unavailableNames.append(entity.displayName(using: manga))
+                    }
+                    case .delete:
+                        if let deletableShare {
+                            try await deletableShare.deleteFile(path: entity.path)
+                        }
+                    case .bookmark:
+                        guard let manga else { continue }
+                        if LibraryService.shared.get(mangaId: manga.id, pluginId: share.id) == nil {
+                            let snapshot = MangaSnapshotService.shared.makeSnapshot(
+                                for: manga.toManga(), pluginId: share.id)
+                            try await MangaSnapshotService.shared.upsert(snapshot)
+                            let libraryItem = LibraryModel(
+                                mangaId: manga.id, pluginId: share.id, datetime: Date(),
+                                updates: false, latestChapter: manga.latestChapter,
+                                shouldSync: share.supports(.sync))
+                            _ = try await LibraryService.shared.save(libraryItem: libraryItem)
+                        }
+                    case .removeBookmark:
+                        guard let manga else { continue }
+                        if LibraryService.shared.get(mangaId: manga.id, pluginId: share.id) != nil {
+                            _ = try await LibraryService.shared.remove(
+                                mangaId: manga.id, pluginId: share.id)
+                        }
+                    case .removeRecords:
+                        guard let manga else { continue }
+                        _ = try await ProgressService.shared.remove(
+                            mangaId: manga.id, pluginId: share.id)
                 }
+                selectedPaths.remove(entity.path)
+            } catch {
+                Logger.ui.error("Failed to perform file action for \(entity.path)", error: error)
+                failures.append(
+                    "\(entity.displayName(using: manga)): \(error.localizedDescription)")
             }
+        }
 
-            if selectedPaths.isEmpty { withAnimation { editMode = .inactive } }
-            if !failures.isEmpty {
-                NotificationService.shared.showError(failures.joined(separator: "\n"))
-            }
+        if selectedPaths.isEmpty { withAnimation { editMode = .inactive } }
+        if action == .download, !files.isEmpty || !unavailableNames.isEmpty {
+            filesToDownload = files
+            unavailableFileNames = unavailableNames
+            isDownloadFilesModalPresented = true
+        }
+        if !failures.isEmpty {
+            NotificationService.shared.showError(failures.joined(separator: "\n"))
         }
     }
 
@@ -528,41 +662,6 @@ struct FilesScreen: View {
             .foregroundStyle(isSelected ? Color.accentColor : Color(uiColor: .tertiaryLabel))
             .background(.background, in: Circle())
             .overlay { if isSelected { Circle().strokeBorder(.white, lineWidth: 1) } }
-    }
-
-    private func prepareDownloads(for entries: [Entity]) {
-        guard !isBusy, !entries.isEmpty else { return }
-
-        withAnimation { editMode = .inactive }
-
-        isPreparingDownloads = true
-
-        Task { @MainActor in
-            defer { isPreparingDownloads = false }
-
-            do {
-                var files: [ParserFile] = []
-                var unavailableNames: [String] = []
-
-                for entity in entries {
-                    if let file = try await share.parserFile(path: entity.path) {
-                        files.append(file)
-                    } else {
-                        unavailableNames.append(
-                            entity.displayName(using: parsedMangas[entity.path]))
-                    }
-                }
-
-                filesToDownload = files
-                unavailableFileNames = unavailableNames
-                isDownloadFilesModalPresented = true
-            } catch { NotificationService.shared.showError(error.localizedDescription) }
-        }
-    }
-
-    private func toggleViewMode() {
-        viewModeRawValue =
-            viewMode == .grid ? FilesViewMode.list.rawValue : FilesViewMode.grid.rawValue
     }
 
     private func openInFilesApp() {

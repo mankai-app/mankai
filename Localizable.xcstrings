@@ -1185,6 +1185,34 @@
         }
       }
     },
+    "bookmarkFilesConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to bookmark the selected files?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したファイルをブックマークしてもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要收藏选中的文件吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要收藏選取的檔案嗎？"
+          }
+        }
+      }
+    },
     "boolean" : {
       "comment" : "Used as a config type label.",
       "extractionState" : "manual",
@@ -13708,6 +13736,34 @@
         }
       }
     },
+    "removeBookmarksConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove bookmarks from the selected files?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したファイルのブックマークを解除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要取消收藏选中的文件吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要取消收藏選取的檔案嗎？"
+          }
+        }
+      }
+    },
     "removeChapterGroup" : {
       "localizations" : {
         "en" : {
@@ -13844,6 +13900,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除閱讀紀錄"
+          }
+        }
+      }
+    },
+    "removeRecordsConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove the reading records for the selected files?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したファイルの読書履歴を削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要移除选中文件的阅读记录吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要移除所選檔案的閱讀紀錄嗎？"
           }
         }
       }
