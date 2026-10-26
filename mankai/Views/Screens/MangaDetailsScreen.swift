@@ -8,6 +8,21 @@
 import SwiftUI
 import WrappingHStack
 
+// Keep DismissAction out of the view that declares navigationDestination.
+// On iOS 17, changes to that environment value can repeatedly invalidate the presenting screen during a push and prevent the reader's tasks from starting.
+private struct MangaDetailsLoadFailureDismissal: View {
+    let shouldDismiss: Bool
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Color.clear.frame(width: 0, height: 0)
+            .onChange(of: shouldDismiss, initial: true) { _, shouldDismiss in
+                if shouldDismiss { dismiss() }
+            }
+    }
+}
+
 struct MangaDetailsScreen: View {
     @ObservedObject var plugin: Plugin
     let manga: Manga
@@ -17,6 +32,7 @@ struct MangaDetailsScreen: View {
 
     @State private var detailedManga: DetailedManga? = nil
     @State private var hasFinishedInitialLoad = false
+    @State private var shouldDismissForLoadFailure = false
 
     @State private var showingChaptersModal = false
     @State private var isChaptersPaneVisible = false
@@ -42,7 +58,6 @@ struct MangaDetailsScreen: View {
     @State private var searchQuery: String? = nil
     @State private var showSourceSearchScreen = false
 
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var progress: ProgressModel? = nil
@@ -696,6 +711,7 @@ struct MangaDetailsScreen: View {
         }
         .onReceive(LibraryService.shared.objectWillChange) { updateLibraryItem() }
         .onReceive(ProgressService.shared.objectWillChange) { updateProgress() }
+        .background { MangaDetailsLoadFailureDismissal(shouldDismiss: shouldDismissForLoadFailure) }
         .toolbarBackground(
             horizontalSizeClass == .regular ? .visible : .automatic, for: .navigationBar)
     }
@@ -767,6 +783,6 @@ struct MangaDetailsScreen: View {
         let message = String(localized: "failedToLoadMangaDetails")
         NotificationService.shared.showError(String(format: message, error.localizedDescription))
 
-        dismiss()
+        shouldDismissForLoadFailure = true
     }
 }

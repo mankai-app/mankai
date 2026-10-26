@@ -152,7 +152,6 @@ struct FilesScreen: View {
     let entry: Entity?
     let color: Color?
 
-    @Environment(\.openURL) private var openURL
     @AppStorage(SettingsKey.filesViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
         .filesViewMode.rawValue
 
@@ -571,7 +570,8 @@ struct FilesScreen: View {
 
         let path = folderURL.standardizedFileURL.path
         let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
-        if let url = URL(string: "shareddocuments://\(encoded)") { openURL(url) }
+
+        if let url = URL(string: "shareddocuments://\(encoded)") { UIApplication.shared.open(url) }
     }
 
     private func loadEntities() async {

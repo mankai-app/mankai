@@ -14,10 +14,18 @@ struct ImageProcessorSettingsScreen: View {
     @State private var showingDeleteConfirmation = false
     @State private var processorIdsToRemove: [String] = []
 
+    static var systemImageName: String {
+        if #available(iOS 18.0, *) {
+            return "photo.on.rectangle.angled.fill"
+        } else {
+            return "photo.fill.on.rectangle.fill"
+        }
+    }
+
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "photo.fill.on.rectangle.fill"), color: .purple,
+                image: Image(systemName: Self.systemImageName), color: .purple,
                 title: String(localized: "imageProcessing"),
                 description: String(localized: "imageProcessingDescription"))
 

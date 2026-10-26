@@ -31,8 +31,11 @@ struct SettingsTab: View {
                     }
 
                     NavigationLink(destination: ImageProcessorSettingsScreen()) {
-                        Label("imageProcessing", systemImage: "photo.fill.on.rectangle.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .purple))
+                        Label(
+                            "imageProcessing",
+                            systemImage: ImageProcessorSettingsScreen.systemImageName
+                        )
+                        .labelStyle(ColorfulIconLabelStyle(color: .purple))
                     }
                 }
 
