@@ -17,7 +17,7 @@ struct ImageProcessorSettingsScreen: View {
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "photo.on.rectangle.angled.fill"), color: .purple,
+                image: Image(systemName: "photo.fill.on.rectangle.fill"), color: .purple,
                 title: String(localized: "imageProcessing"),
                 description: String(localized: "imageProcessingDescription"))
 

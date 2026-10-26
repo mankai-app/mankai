@@ -24,23 +24,46 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
     final class Controller: UIViewController {
         private var shouldHideTabBar = false
         private var isVisible = false
+        private var isApplyingVisibility = false
+        private var visibilityUpdateScheduled = false
         private weak var controlledTabBarController: UITabBarController?
         private var wasTabBarHidden = false
 
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            view.backgroundColor = .clear
-            view.isUserInteractionEnabled = false
+        private final class AttachmentView: UIView {
+            var onWindowChanged: ((Bool) -> Void)?
+
+            override func didMoveToWindow() {
+                super.didMoveToWindow()
+                onWindowChanged?(window != nil)
+            }
+        }
+
+        override func loadView() {
+            let attachmentView = AttachmentView()
+            attachmentView.backgroundColor = .clear
+            attachmentView.isUserInteractionEnabled = false
+            attachmentView.onWindowChanged = { [weak self] isAttached in
+                guard let self else { return }
+                if isAttached {
+                    self.isVisible = true
+                    self.scheduleVisibilityUpdate()
+                } else {
+                    self.restoreTabBar(animated: false)
+                }
+            }
+            view = attachmentView
         }
 
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             isVisible = true
             applyVisibility(animated: animated)
+            scheduleVisibilityUpdate()
         }
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
+            isVisible = true
             applyVisibility(animated: false)
         }
 
@@ -51,23 +74,35 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
 
         override func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
-            isVisible = false
             restoreTabBar(animated: animated)
         }
 
         func setTabBarHidden(_ isHidden: Bool) {
             shouldHideTabBar = isHidden
-            if isVisible { applyVisibility(animated: true) }
+            if #available(iOS 26.0, *), isVisible { applyVisibility(animated: true) }
+            scheduleVisibilityUpdate()
+        }
+
+        private func scheduleVisibilityUpdate() {
+            guard isVisible, !visibilityUpdateScheduled else { return }
+            visibilityUpdateScheduled = true
+            // Apply after SwiftUI has updated the List and its bottom toolbar.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.visibilityUpdateScheduled = false
+                if self.isVisible { self.applyVisibility(animated: false) }
+            }
         }
 
         private func applyVisibility(animated: Bool) {
-            guard shouldHideTabBar else {
-                restoreTabBar(animated: animated)
-                return
-            }
+            guard isVisible, !isApplyingVisibility else { return }
+            isApplyingVisibility = true
+            defer { isApplyingVisibility = false }
+
             guard let tabBarController else { return }
 
             if controlledTabBarController == nil {
+                // Capture the browsing state before selection adds the bottom toolbar.
                 controlledTabBarController = tabBarController
                 if #available(iOS 18.0, *) {
                     wasTabBarHidden = tabBarController.isTabBarHidden
@@ -75,10 +110,11 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
                     wasTabBarHidden = tabBarController.tabBar.isHidden
                 }
             }
-            setHidden(true, on: tabBarController, animated: animated)
+            setHidden(shouldHideTabBar || wasTabBarHidden, on: tabBarController, animated: animated)
         }
 
         func restoreTabBar(animated: Bool) {
+            isVisible = false
             guard let tabBarController = controlledTabBarController else { return }
             controlledTabBarController = nil
             setHidden(wasTabBarHidden, on: tabBarController, animated: animated)
@@ -91,7 +127,9 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
                 if tabBarController.isTabBarHidden != isHidden {
                     tabBarController.setTabBarHidden(isHidden, animated: animated)
                 }
-            } else {
+            }
+            if #unavailable(iOS 26.0) {
+                // Keep the tab bar view in sync with the controller on older SwiftUI versions.
                 tabBarController.tabBar.isHidden = isHidden
             }
         }
@@ -150,49 +188,67 @@ struct FilesScreen: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
             if viewMode == .grid {
                 ScrollView {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
-                        spacing: 20
-                    ) {
+                    if entities.isEmpty || errorMessage != nil {
+                        statusView
+                    } else {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)
+                            ], spacing: 20
+                        ) {
+                            ForEach(entities, id: \.path) { entity in
+                                switch entity.type { case .directory:
+                                    NavigationLink(
+                                        destination: FilesScreen(share: share, entry: entity)
+                                    ) { directoryView(entity: entity) }
+                                    .buttonStyle(.plain).disabled(isSelecting)
+
+                                    case .book(let fileType):
+                                        bookView(entity: entity, fileType: fileType)
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            } else {
+                List(selection: isSelecting ? $selectedPaths : nil) {
+                    if entities.isEmpty || errorMessage != nil {
+                        statusView.listRowInsets(EdgeInsets()).listRowSeparator(.hidden)
+                            .selectionDisabled()
+                    } else {
                         ForEach(entities, id: \.path) { entity in
                             switch entity.type { case .directory:
                                 NavigationLink(
                                     destination: FilesScreen(share: share, entry: entity)
-                                ) { directoryView(entity: entity) }
-                                .buttonStyle(.plain).disabled(isSelecting)
+                                ) { directoryListView(entity: entity) }
+                                .buttonStyle(.plain).disabled(isSelecting).selectionDisabled()
 
                                 case .book(let fileType):
-                                    bookView(entity: entity, fileType: fileType)
+                                    bookView(entity: entity, fileType: fileType).tag(entity.path)
                             }
                         }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowSeparator(.hidden)
                     }
-                    .padding()
-                }
-            } else {
-                List(selection: isSelecting ? $selectedPaths : nil) {
-                    ForEach(entities, id: \.path) { entity in
-                        switch entity.type { case .directory:
-                            NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
-                                directoryListView(entity: entity)
-                            }
-                            .buttonStyle(.plain).disabled(isSelecting).selectionDisabled()
-
-                            case .book(let fileType):
-                                bookView(entity: entity, fileType: fileType).tag(entity.path)
-                        }
-                    }
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                    .listRowSeparator(.hidden)
                 }
                 .listStyle(.plain).disabled(isBusy)
             }
         }
+        .scrollBounceBehavior(.always, axes: .vertical)
+        .refreshable {
+            guard !isBusy else { return }
+            refreshId = UUID()
+        }
         .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(isSelecting)
-        .background { FilesTabBarController(isHidden: isSelecting).frame(width: 0, height: 0) }
+        .overlay {
+            FilesTabBarController(isHidden: isSelecting).frame(width: 0, height: 0)
+                .allowsHitTesting(false)
+        }
         .toolbar {
             if isSelecting {
                 ToolbarItem(placement: .topBarLeading) {
@@ -205,20 +261,28 @@ struct FilesScreen: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("done", systemImage: "checkmark") {
-                        withAnimation { editMode = .inactive }
+                    if #available(iOS 26.0, *) {
+                        Button("done", systemImage: "checkmark") {
+                            withAnimation { editMode = .inactive }
+                        }
+                        .labelStyle(.iconOnly).buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.circle).disabled(isBusy)
+                    } else {
+                        Button("done") { withAnimation { editMode = .inactive } }.disabled(isBusy)
                     }
-                    .labelStyle(.iconOnly).buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.circle).disabled(isBusy)
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {
+                    if #unavailable(iOS 26.0) { Spacer() }
+
                     Button("download", systemImage: "arrow.down") {
                         prepareDownloads(for: selectedEntities)
                     }
                     .disabled(selectedPaths.isEmpty || isBusy)
 
                     if share is any FileDeletable {
+                        if #unavailable(iOS 26.0) { Spacer() }
+
                         Button("delete", systemImage: "trash", role: .destructive) {
                             showingDeleteConfirmation = true
                         }
@@ -257,22 +321,6 @@ struct FilesScreen: View {
         } message: {
             Text("deleteFilesConfirmation")
         }
-
-        .overlay {
-            if isLoading && entities.isEmpty {
-                ProgressView {
-                    Text("filesScreenLoadingHint").multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                }
-            } else if let errorMessage = errorMessage {
-                ContentUnavailableView(
-                    "failedToLoadList", systemImage: "exclamationmark.triangle",
-                    description: Text(errorMessage))
-            } else if entities.isEmpty {
-                ContentUnavailableView(
-                    "noEntities", systemImage: "tray", description: Text("noEntitiesDescription"))
-            }
-        }
         .task(id: refreshId) { await loadEntities() }
         .onReceive(share.objectWillChange) { if !isDeletingFiles { refreshId = UUID() } }
         .onReceive(ProgressService.shared.objectWillChange) { updateUnreadMangas() }
@@ -303,6 +351,26 @@ struct FilesScreen: View {
                 chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
                 initialPage: route.initialPage)
         }
+    }
+
+    private var statusView: some View {
+        Group {
+            if isLoading && entities.isEmpty {
+                ProgressView {
+                    Text("filesScreenLoadingHint").multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+                .frame(maxHeight: .infinity)
+            } else if let errorMessage {
+                ContentUnavailableView(
+                    "failedToLoadList", systemImage: "exclamationmark.triangle",
+                    description: Text(errorMessage))
+            } else {
+                ContentUnavailableView(
+                    "noEntities", systemImage: "tray", description: Text("noEntitiesDescription"))
+            }
+        }
+        .frame(maxWidth: .infinity).containerRelativeFrame(.vertical)
     }
 
     private var viewMode: FilesViewMode {

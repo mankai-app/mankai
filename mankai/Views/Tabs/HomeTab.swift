@@ -112,38 +112,37 @@ struct HomeTab: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if !isDownloadsMode && library.orders.isEmpty {
-                    ContentUnavailableView(
-                        "noSavedManga", systemImage: "bookmark.slash",
-                        description: Text("noSavedMangaDescription"))
-                } else if isDownloadsMode && library.orders.isEmpty && isLoadingDownloads {
-                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if library.filteredOrders.isEmpty {
-                    ContentUnavailableView(
-                        "noResultsFound", systemImage: "magnifyingglass",
-                        description: Text("noResultsFoundDescription"))
-                } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            MangasListView(
-                                mangas: library.mangas, plugins: library.plugins,
-                                keys: library.filteredOrders,
-                                progressEntries: library.progressEntries,
-                                libraryItems: library.libraryItems, showsUnreadTag: true,
-                                allowUnsupportedDetailsNavigation: isDownloadsMode,
-                                onRead: { readerRoute = $0 })
-                        }
-                        .padding()
-                    }
-                    .refreshable {
-                        if isDownloadsMode {
-                            await reloadDownloads()
+            ScrollView {
+                if library.filteredOrders.isEmpty {
+                    Group {
+                        if !isDownloadsMode && library.orders.isEmpty {
+                            ContentUnavailableView(
+                                "noSavedManga", systemImage: "bookmark.slash",
+                                description: Text("noSavedMangaDescription"))
+                        } else if isDownloadsMode && library.orders.isEmpty && isLoadingDownloads {
+                            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
-                            await performUpdate()
+                            ContentUnavailableView(
+                                "noResultsFound", systemImage: "magnifyingglass",
+                                description: Text("noResultsFoundDescription"))
                         }
                     }
+                    .frame(maxWidth: .infinity).containerRelativeFrame(.vertical)
+                } else {
+                    VStack(spacing: 12) {
+                        MangasListView(
+                            mangas: library.mangas, plugins: library.plugins,
+                            keys: library.filteredOrders, progressEntries: library.progressEntries,
+                            libraryItems: library.libraryItems, showsUnreadTag: true,
+                            allowUnsupportedDetailsNavigation: isDownloadsMode,
+                            onRead: { readerRoute = $0 })
+                    }
+                    .padding()
                 }
+            }
+            .scrollBounceBehavior(.always, axes: .vertical)
+            .refreshable {
+                if isDownloadsMode { await reloadDownloads() } else { await performUpdate() }
             }
             .navigationTitle("home").navigationSubtitleIfAvailable(homeNavigationSubtitle)
             .toolbar {
