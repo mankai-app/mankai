@@ -26,6 +26,7 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
         private var isVisible = false
         private var isApplyingVisibility = false
         private var visibilityUpdateScheduled = false
+        private var animatesVisibilityUpdate = false
         private weak var controlledTabBarController: UITabBarController?
         private var wasTabBarHidden = false
 
@@ -57,19 +58,18 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             isVisible = true
-            applyVisibility(animated: animated)
-            scheduleVisibilityUpdate()
+            scheduleVisibilityUpdate(animated: animated)
         }
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             isVisible = true
-            applyVisibility(animated: false)
+            scheduleVisibilityUpdate()
         }
 
         override func viewDidLayoutSubviews() {
             super.viewDidLayoutSubviews()
-            if isVisible { applyVisibility(animated: false) }
+            scheduleVisibilityUpdate()
         }
 
         override func viewWillDisappear(_ animated: Bool) {
@@ -78,19 +78,28 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
         }
 
         func setTabBarHidden(_ isHidden: Bool) {
+            guard shouldHideTabBar != isHidden else { return }
             shouldHideTabBar = isHidden
-            if #available(iOS 26.0, *), isVisible { applyVisibility(animated: true) }
-            scheduleVisibilityUpdate()
+            if #available(iOS 26.0, *) {
+                scheduleVisibilityUpdate(animated: true)
+            } else {
+                scheduleVisibilityUpdate()
+            }
         }
 
-        private func scheduleVisibilityUpdate() {
-            guard isVisible, !visibilityUpdateScheduled else { return }
+        private func scheduleVisibilityUpdate(animated: Bool = false) {
+            guard isVisible else { return }
+            animatesVisibilityUpdate = animatesVisibilityUpdate || animated
+            guard !visibilityUpdateScheduled else { return }
             visibilityUpdateScheduled = true
-            // Apply after SwiftUI has updated the List and its bottom toolbar.
+
+            // Changing tab-bar layout during a SwiftUI update can reenter its attribute graph.
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
+                let animated = self.animatesVisibilityUpdate
+                self.animatesVisibilityUpdate = false
                 self.visibilityUpdateScheduled = false
-                if self.isVisible { self.applyVisibility(animated: false) }
+                if self.isVisible { self.applyVisibility(animated: animated) }
             }
         }
 
@@ -115,6 +124,7 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
 
         func restoreTabBar(animated: Bool) {
             isVisible = false
+            animatesVisibilityUpdate = false
             guard let tabBarController = controlledTabBarController else { return }
             controlledTabBarController = nil
             setHidden(wasTabBarHidden, on: tabBarController, animated: animated)
@@ -130,7 +140,9 @@ private struct FilesTabBarController: UIViewControllerRepresentable {
             }
             if #unavailable(iOS 26.0) {
                 // Keep the tab bar view in sync with the controller on older SwiftUI versions.
-                tabBarController.tabBar.isHidden = isHidden
+                if tabBarController.tabBar.isHidden != isHidden {
+                    tabBarController.tabBar.isHidden = isHidden
+                }
             }
         }
     }
@@ -156,6 +168,14 @@ struct FilesScreen: View {
             }
         }
 
+        var systemImage: String {
+            switch self { case .download: return "arrow.down" case .delete: return "trash"
+                case .bookmark: return "bookmark"
+                case .removeBookmark: return "bookmark.slash"
+                case .removeRecords: return "clock.badge.xmark"
+            }
+        }
+
         var role: ButtonRole? { self == .delete || self == .removeRecords ? .destructive : nil }
 
         var requiresManga: Bool {
@@ -165,9 +185,59 @@ struct FilesScreen: View {
         }
     }
 
+    private struct FileItem: Identifiable {
+        enum ParseState {
+            case queued
+            case parsing(Double?)
+            case ready(DetailedManga, isUnread: Bool)
+            case failed(String)
+        }
+
+        let entity: Entity
+        var state: ParseState = .queued
+
+        var id: String { entity.path }
+
+        var fileType: String? {
+            guard case .book(let fileType) = entity.type else { return nil }
+            return fileType
+        }
+
+        var manga: DetailedManga? {
+            guard case .ready(let manga, _) = state else { return nil }
+            return manga
+        }
+
+        var isUnread: Bool {
+            guard case .ready(_, let isUnread) = state else { return false }
+            return isUnread
+        }
+
+        var errorMessage: String? {
+            guard case .failed(let message) = state else { return nil }
+            return message
+        }
+
+        var displayName: String { entity.displayName(using: manga) }
+    }
+
+    private enum ListingState {
+        case loading
+        case loaded
+        case failed(String)
+    }
+
     private struct PendingBatchAction {
         let action: FileAction
-        let entries: [Entity]
+        let items: [FileItem]
+    }
+
+    private struct DownloadRequest: Identifiable {
+        let id = UUID()
+        var files: [ParserFile] = []
+        var unavailableNames: [String] = []
+
+        var isEmpty: Bool { files.isEmpty && unavailableNames.isEmpty }
     }
 
     private struct TopRightCornerTriangle: Shape {
@@ -190,17 +260,10 @@ struct FilesScreen: View {
     @AppStorage(SettingsKey.filesViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
         .filesViewMode.rawValue
 
-    @State private var entities: [Entity] = []
-    @State private var isLoading: Bool = false
-    @State private var errorMessage: String?
-
-    @State private var parsedMangas: [String: DetailedManga] = [:]
-    @State private var unreadMangaPaths: Set<String> = []
-    @State private var parsingPaths: Set<String> = []
-    @State private var parsingProgress: [String: Double] = [:]
+    @State private var items: [FileItem] = []
+    @State private var listingState: ListingState = .loading
     @State private var loadId: UUID?
     @State private var refreshId = UUID()
-    @State private var parseErrors: [String: String] = [:]
     @State private var readerRoute: ReaderRoute?
 
     @State private var editMode: EditMode = .inactive
@@ -208,9 +271,7 @@ struct FilesScreen: View {
     @State private var pendingBatchAction: PendingBatchAction?
     @State private var activeFileAction: FileAction?
 
-    @State private var filesToDownload: [ParserFile] = []
-    @State private var unavailableFileNames: [String] = []
-    @State private var isDownloadFilesModalPresented = false
+    @State private var downloadRequest: DownloadRequest?
     @State private var openDownloadsAfterDismiss = false
     @State private var isDownloadsFolderPresented = false
 
@@ -221,6 +282,69 @@ struct FilesScreen: View {
     }
 
     var body: some View {
+        content.scrollBounceBehavior(.always, axes: .vertical)
+            .refreshable {
+                guard !isBusy else { return }
+                refreshId = UUID()
+            }
+            .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(isSelecting)
+            .overlay {
+                FilesTabBarController(isHidden: isSelecting).frame(width: 0, height: 0)
+                    .allowsHitTesting(false)
+            }
+            .toolbar { fileToolbar }.environment(\.editMode, $editMode)
+            .onChange(of: editMode) { _, mode in if !mode.isEditing { selectedPaths.removeAll() } }
+            .confirmationDialog(
+                pendingBatchAction?.action.title ?? "actions",
+                isPresented: .init(
+                    get: { pendingBatchAction != nil }, set: { if !$0 { pendingBatchAction = nil } }
+                ), titleVisibility: .visible, presenting: pendingBatchAction
+            ) { request in
+                Button(request.action.title, role: request.action.role) {
+                    Task { await performFileAction(request.action, for: request.items) }
+                }
+                Button("cancel", role: .cancel) {}
+            } message: { request in
+                if let message = request.action.confirmationMessage { Text(message) }
+            }
+            .task(id: refreshId) { await loadEntities() }
+            .onReceive(share.objectWillChange) {
+                if activeFileAction != .delete { refreshId = UUID() }
+            }
+            .onReceive(ProgressService.shared.changes) { updateUnreadMangas($0) }
+            .sheet(
+                item: $downloadRequest,
+                onDismiss: {
+                    if openDownloadsAfterDismiss {
+                        openDownloadsAfterDismiss = false
+                        isDownloadsFolderPresented = true
+                    }
+                }
+            ) { request in
+                DownloadFilesModal(
+                    files: request.files, unavailableFileNames: request.unavailableNames
+                ) { openDownloadsAfterDismiss = true }
+            }
+            .navigationDestination(isPresented: $isDownloadsFolderPresented) {
+                FilesScreen(
+                    share: AppDirBrowsablePlugin.shared,
+                    entry: Entity(
+                        path: "dowloads", displayName: String(localized: "downloads"),
+                        name: "dowloads", type: .directory))
+            }
+            .navigationDestination(item: $readerRoute) { route in
+                ReaderScreen(
+                    plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
+                    usesDownloadedMetadata: route.usesDownloadedMetadata,
+                    chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
+                    initialPage: route.initialPage)
+            }
+    }
+
+    // MARK: - Content
+
+    private var content: some View {
         GeometryReader { geometry in
             if showsStatusView {
                 ScrollView {
@@ -229,214 +353,69 @@ struct FilesScreen: View {
                         .frame(minHeight: geometry.size.height)
                 }
             } else if viewMode == .grid {
-                ScrollView {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
-                        spacing: 20
-                    ) {
-                        ForEach(entities, id: \.path) { entity in
-                            switch entity.type { case .directory:
-                                NavigationLink(
-                                    destination: FilesScreen(share: share, entry: entity)
-                                ) { directoryView(entity: entity) }
-                                .buttonStyle(.plain).disabled(isSelecting)
-
-                                case .book(let fileType):
-                                    bookView(entity: entity, fileType: fileType)
-                            }
-                        }
-                    }
-                    .padding()
-                }
+                gridView
             } else {
-                List(selection: isSelecting ? $selectedPaths : nil) {
-                    ForEach(entities, id: \.path) { entity in
-                        switch entity.type { case .directory:
-                            NavigationLink(destination: FilesScreen(share: share, entry: entity)) {
-                                directoryListView(entity: entity)
-                            }
-                            .buttonStyle(.plain).disabled(isSelecting).selectionDisabled()
-
-                            case .book(let fileType):
-                                bookView(entity: entity, fileType: fileType).tag(entity.path)
-                        }
-                    }
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                    .listRowSeparator(.hidden)
-                }
-                .listStyle(.plain).disabled(isBusy)
+                listView
             }
-        }
-        .scrollBounceBehavior(.always, axes: .vertical)
-        .refreshable {
-            guard !isBusy else { return }
-            refreshId = UUID()
-        }
-        .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(isSelecting)
-        .overlay {
-            FilesTabBarController(isHidden: isSelecting).frame(width: 0, height: 0)
-                .allowsHitTesting(false)
-        }
-        .toolbar {
-            if isSelecting {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(allFilesSelected ? "deselectAll" : "selectAll") {
-                        withAnimation {
-                            selectedPaths = allFilesSelected ? [] : selectableFilePaths
-                        }
-                    }
-                    .disabled(selectableFilePaths.isEmpty || isBusy)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    if #available(iOS 26.0, *) {
-                        Button("done", systemImage: "checkmark") {
-                            withAnimation { editMode = .inactive }
-                        }
-                        .labelStyle(.iconOnly).buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.circle).disabled(isBusy)
-                    } else {
-                        Button("done") { withAnimation { editMode = .inactive } }.disabled(isBusy)
-                    }
-                }
-
-                ToolbarItemGroup(placement: .bottomBar) {
-                    if #unavailable(iOS 26.0) { Spacer() }
-
-                    Button("download", systemImage: "arrow.down") { requestBatchAction(.download) }
-                        .disabled(selectedPaths.isEmpty || isBusy)
-
-                    if #unavailable(iOS 26.0) { Spacer() }
-
-                    Group {
-                        if allSelectedFilesBookmarked {
-                            Button("removeBookmark", systemImage: "bookmark.slash") {
-                                requestBatchAction(.removeBookmark)
-                            }
-                        } else {
-                            Button("bookmark", systemImage: "bookmark") {
-                                requestBatchAction(.bookmark)
-                            }
-                        }
-
-                        if #unavailable(iOS 26.0) { Spacer() }
-
-                        Button(
-                            "removeRecords", systemImage: "clock.badge.xmark", role: .destructive
-                        ) { requestBatchAction(.removeRecords) }
-                    }
-                    .disabled(!canPerformBatchMangaAction || isBusy)
-
-                    if share is any FileDeletable {
-                        if #unavailable(iOS 26.0) { Spacer() }
-
-                        Button("delete", systemImage: "trash", role: .destructive) {
-                            requestBatchAction(.delete)
-                        }
-                        .disabled(selectedPaths.isEmpty || isBusy)
-                    }
-
-                    Spacer()
-                }
-            } else {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Section {
-                            Button("select", systemImage: "checkmark.circle") {
-                                withAnimation { editMode = .active }
-                            }
-                            .disabled(selectableFilePaths.isEmpty || isBusy)
-
-                            if folderURL != nil {
-                                Button("openInFiles", systemImage: "folder") { openInFilesApp() }
-                            }
-                        }
-
-                        Picker(selection: $viewModeRawValue) {
-                            Label("gridView", systemImage: "square.grid.2x2")
-                                .tag(FilesViewMode.grid.rawValue)
-                            Label("listView", systemImage: "list.bullet")
-                                .tag(FilesViewMode.list.rawValue)
-                        } label: {
-                            Label(
-                                viewMode == .grid ? "gridView" : "listView",
-                                systemImage: viewMode == .grid ? "square.grid.2x2" : "list.bullet")
-                        }
-                        .pickerStyle(.inline)
-                    } label: {
-                        Label {
-                            Text("actions")
-                        } icon: {
-                            ToolbarIcon(systemName: "ellipsis", legacySystemName: "ellipsis.circle")
-                        }
-                    }
-                }
-            }
-        }
-        .environment(\.editMode, $editMode)
-        .onChange(of: editMode) { _, mode in if !mode.isEditing { selectedPaths.removeAll() } }
-        .confirmationDialog(
-            pendingBatchAction?.action.title ?? "actions",
-            isPresented: .init(
-                get: { pendingBatchAction != nil }, set: { if !$0 { pendingBatchAction = nil } }),
-            titleVisibility: .visible, presenting: pendingBatchAction
-        ) { request in
-            Button(request.action.title, role: request.action.role) {
-                Task { await performFileAction(request.action, for: request.entries) }
-            }
-            Button("cancel", role: .cancel) {}
-        } message: { request in
-            if let message = request.action.confirmationMessage { Text(message) }
-        }
-        .task(id: refreshId) { await loadEntities() }
-        .onReceive(share.objectWillChange) { if activeFileAction != .delete { refreshId = UUID() } }
-        .onReceive(ProgressService.shared.objectWillChange) { updateUnreadMangas() }
-        .sheet(
-            isPresented: $isDownloadFilesModalPresented,
-            onDismiss: {
-                if openDownloadsAfterDismiss {
-                    openDownloadsAfterDismiss = false
-                    isDownloadsFolderPresented = true
-                }
-            }
-        ) { [filesToDownload, unavailableFileNames] in
-            DownloadFilesModal(files: filesToDownload, unavailableFileNames: unavailableFileNames) {
-                openDownloadsAfterDismiss = true
-            }
-        }
-        .navigationDestination(isPresented: $isDownloadsFolderPresented) {
-            FilesScreen(
-                share: AppDirBrowsablePlugin.shared,
-                entry: Entity(
-                    path: "dowloads", displayName: String(localized: "downloads"), name: "dowloads",
-                    type: .directory))
-        }
-        .navigationDestination(item: $readerRoute) { route in
-            ReaderScreen(
-                plugin: route.plugin, manga: route.manga, downloadManga: route.downloadManga,
-                usesDownloadedMetadata: route.usesDownloadedMetadata,
-                chapterGroupIndex: route.chapterGroupIndex, chapter: route.chapter,
-                initialPage: route.initialPage)
         }
     }
 
-    private var showsStatusView: Bool { entities.isEmpty || errorMessage != nil }
+    private var gridView: some View {
+        ScrollView {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
+                spacing: 20
+            ) { fileRows }
+            .padding()
+        }
+    }
+
+    private var listView: some View {
+        List(selection: isSelecting ? $selectedPaths : nil) {
+            fileRows.listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowSeparator(.hidden)
+        }
+        .listStyle(.plain).disabled(isBusy)
+    }
+
+    private var fileRows: some View {
+        ForEach(items) { item in
+            if let fileType = item.fileType {
+                bookView(item, fileType: fileType).tag(item.id)
+            } else {
+                NavigationLink(destination: FilesScreen(share: share, entry: item.entity)) {
+                    if viewMode == .grid {
+                        directoryGridView(entity: item.entity)
+                    } else {
+                        directoryListView(entity: item.entity)
+                    }
+                }
+                .disabled(isSelecting).selectionDisabled()
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var showsStatusView: Bool {
+        if case .failed = listingState { return true }
+        return items.isEmpty
+    }
 
     private var statusView: some View {
         Group {
-            if isLoading && entities.isEmpty {
+            switch listingState { case .loading:
                 ProgressView {
                     Text("filesScreenLoadingHint").multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
-            } else if let errorMessage {
-                ContentUnavailableView(
-                    "failedToLoadList", systemImage: "exclamationmark.triangle",
-                    description: Text(errorMessage))
-            } else {
-                ContentUnavailableView(
-                    "noEntities", systemImage: "tray", description: Text("noEntitiesDescription"))
+                case .failed(let message):
+                    ContentUnavailableView(
+                        "failedToLoadList", systemImage: "exclamationmark.triangle",
+                        description: Text(message))
+                case .loaded:
+                    ContentUnavailableView(
+                        "noEntities", systemImage: "tray",
+                        description: Text("noEntitiesDescription"))
             }
         }
         .frame(maxWidth: .infinity)
@@ -461,102 +440,150 @@ struct FilesScreen: View {
 
     private var isBusy: Bool { activeFileAction != nil }
 
-    private var selectableFilePaths: Set<String> {
-        Set(
-            entities.compactMap { entity in
-                guard case .book = entity.type else { return nil }
-                return entity.path
-            })
-    }
+    // MARK: - Toolbar and selection
 
-    private var allFilesSelected: Bool {
-        !selectableFilePaths.isEmpty && selectableFilePaths.isSubset(of: selectedPaths)
-    }
+    @ToolbarContentBuilder private var fileToolbar: some ToolbarContent {
+        let selectablePaths = selectableFilePaths
+        let selected = items.filter { selectedPaths.contains($0.id) }
+        let allSelected = !selectablePaths.isEmpty && selectablePaths.isSubset(of: selectedPaths)
+        let mangas = selected.compactMap(\.manga)
+        let allBookmarked =
+            !selected.isEmpty && mangas.count == selected.count
+            && mangas.allSatisfy { libraryService.get(mangaId: $0.id, pluginId: share.id) != nil }
 
-    private var selectedEntities: [Entity] { entities.filter { selectedPaths.contains($0.path) } }
-
-    private var canPerformBatchMangaAction: Bool {
-        !selectedPaths.isEmpty && selectedEntities.allSatisfy { parsedMangas[$0.path] != nil }
-    }
-
-    private var allSelectedFilesBookmarked: Bool {
-        guard canPerformBatchMangaAction else { return false }
-        return selectedEntities.allSatisfy { entity in
-            guard let manga = parsedMangas[entity.path] else { return false }
-            return libraryService.get(mangaId: manga.id, pluginId: share.id) != nil
-        }
-    }
-
-    private func bookView(entity: Entity, fileType: String) -> some View {
-        Group {
-            if isSelecting {
-                if viewMode == .grid {
-                    Button {
-                        if !selectedPaths.insert(entity.path).inserted {
-                            selectedPaths.remove(entity.path)
-                        }
-                    } label: {
-                        bookContent(entity: entity, fileType: fileType)
-                    }
-                    .disabled(isBusy)
-                } else {
-                    bookContent(entity: entity, fileType: fileType)
+        if isSelecting {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(allSelected ? "deselectAll" : "selectAll") {
+                    withAnimation { selectedPaths = allSelected ? [] : selectablePaths }
                 }
-            } else if let manga = parsedMangas[entity.path] {
-                NavigationLink(
-                    destination: MangaDetailsScreen(plugin: share, manga: manga.toManga()) {
-                        isDownloadsFolderPresented = true
+                .disabled(selectablePaths.isEmpty || isBusy)
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                if #available(iOS 26.0, *) {
+                    Button("done", systemImage: "checkmark") {
+                        withAnimation { editMode = .inactive }
                     }
-                ) { bookContent(entity: entity, fileType: fileType) }
-            } else {
-                bookContent(entity: entity, fileType: fileType)
+                    .labelStyle(.iconOnly).buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.circle).disabled(isBusy)
+                } else {
+                    Button("done") { withAnimation { editMode = .inactive } }.disabled(isBusy)
+                }
+            }
+
+            ToolbarItemGroup(placement: .bottomBar) {
+                if #unavailable(iOS 26.0) { Spacer() }
+
+                fileActionButton(.download, for: selected)
+
+                if #unavailable(iOS 26.0) { Spacer() }
+
+                fileActionButton(allBookmarked ? .removeBookmark : .bookmark, for: selected)
+
+                if #unavailable(iOS 26.0) { Spacer() }
+
+                fileActionButton(.removeRecords, for: selected)
+
+                if share is any FileDeletable {
+                    if #unavailable(iOS 26.0) { Spacer() }
+
+                    fileActionButton(.delete, for: selected)
+                }
+
+                Spacer()
+            }
+        } else {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Section {
+                        Button("select", systemImage: "checkmark.circle") {
+                            withAnimation { editMode = .active }
+                        }
+                        .disabled(selectablePaths.isEmpty || isBusy)
+
+                        if folderURL != nil {
+                            Button("openInFiles", systemImage: "folder") { openInFilesApp() }
+                        }
+                    }
+
+                    Picker(selection: $viewModeRawValue) {
+                        Label("gridView", systemImage: "square.grid.2x2")
+                            .tag(FilesViewMode.grid.rawValue)
+                        Label("listView", systemImage: "list.bullet")
+                            .tag(FilesViewMode.list.rawValue)
+                    } label: {
+                        Label(
+                            viewMode == .grid ? "gridView" : "listView",
+                            systemImage: viewMode == .grid ? "square.grid.2x2" : "list.bullet")
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label {
+                        Text("actions")
+                    } icon: {
+                        ToolbarIcon(systemName: "ellipsis", legacySystemName: "ellipsis.circle")
+                    }
+                }
             }
         }
-        .buttonStyle(.plain)
     }
 
-    private func bookContextMenu(for entity: Entity) -> MangaItemContextMenu {
+    private var selectableFilePaths: Set<String> {
+        Set(items.filter { $0.fileType != nil }.map(\.id))
+    }
+
+    private func fileActionButton(_ action: FileAction, for items: [FileItem]) -> some View {
+        Button(action.title, systemImage: action.systemImage, role: action.role) {
+            requestBatchAction(action, for: items)
+        }
+        .disabled(!canPerform(action, on: items))
+    }
+
+    private func canPerform(_ action: FileAction, on items: [FileItem]) -> Bool {
+        !isBusy && !items.isEmpty && (action != .delete || share is any FileDeletable)
+            && (!action.requiresManga || items.allSatisfy { $0.manga != nil })
+    }
+
+    // MARK: - File actions
+
+    private func bookContextMenu(for item: FileItem) -> MangaItemContextMenu {
         MangaItemContextMenu(
-            manga: parsedMangas[entity.path]?.toManga(), plugin: share,
-            onRead: { readerRoute = $0 },
+            manga: item.manga?.toManga(), plugin: share, onRead: { readerRoute = $0 },
             fileActions: .init(
                 isSelecting: isSelecting, isBusy: isBusy,
-                download: { Task { await performFileAction(.download, for: [entity]) } },
-                select: { toggleSelection(for: entity) }, delete: fileDeletionAction(for: entity)))
+                download: { Task { await performFileAction(.download, for: [item]) } },
+                select: { toggleSelectionMode(startingWith: item) },
+                delete: fileDeletionAction(for: item)))
     }
 
-    private func toggleSelection(for entity: Entity) {
+    private func toggleSelectionMode(startingWith item: FileItem) {
         withAnimation {
             if isSelecting {
                 editMode = .inactive
             } else {
-                selectedPaths = [entity.path]
+                selectedPaths = [item.id]
                 editMode = .active
             }
         }
     }
 
-    private func fileDeletionAction(for entity: Entity) -> (() async throws -> Void)? {
+    private func fileDeletionAction(for item: FileItem) -> (() async throws -> Void)? {
         guard share is any FileDeletable else { return nil }
-        return { await performFileAction(.delete, for: [entity]) }
+        return { await performFileAction(.delete, for: [item]) }
     }
 
-    private func requestBatchAction(_ action: FileAction) {
-        let entries = selectedEntities
-        guard !isBusy, !entries.isEmpty else { return }
-        if action == .download {
-            Task { await performFileAction(action, for: entries) }
+    private func requestBatchAction(_ action: FileAction, for items: [FileItem]) {
+        guard canPerform(action, on: items) else { return }
+        if action.confirmationMessage != nil {
+            pendingBatchAction = PendingBatchAction(action: action, items: items)
         } else {
-            pendingBatchAction = PendingBatchAction(action: action, entries: entries)
+            Task { await performFileAction(action, for: items) }
         }
     }
 
-    @MainActor private func performFileAction(_ action: FileAction, for entries: [Entity]) async {
-        guard !isBusy, !entries.isEmpty else { return }
+    @MainActor private func performFileAction(_ action: FileAction, for items: [FileItem]) async {
+        guard canPerform(action, on: items) else { return }
         let deletableShare = share as? any FileDeletable
-        guard action != .delete || deletableShare != nil else { return }
-        let items = entries.map { (entity: $0, manga: parsedMangas[$0.path]) }
-        guard !action.requiresManga || items.allSatisfy({ $0.manga != nil }) else { return }
 
         activeFileAction = action
         defer {
@@ -564,104 +591,60 @@ struct FilesScreen: View {
             if action == .delete { refreshId = UUID() }
         }
 
-        var files: [ParserFile] = []
-        var unavailableNames: [String] = []
+        var downloads = DownloadRequest()
         var failures: [String] = []
 
-        for (entity, manga) in items {
+        for item in items {
             do {
                 switch action { case .download:
-                    if let file = try await share.parserFile(path: entity.path) {
-                        files.append(file)
+                    if let file = try await share.parserFile(path: item.id) {
+                        downloads.files.append(file)
                     } else {
-                        unavailableNames.append(entity.displayName(using: manga))
+                        downloads.unavailableNames.append(item.displayName)
                     }
                     case .delete:
-                        if let deletableShare {
-                            try await deletableShare.deleteFile(path: entity.path)
-                        }
+                        if let deletableShare { try await deletableShare.deleteFile(path: item.id) }
                     case .bookmark:
-                        guard let manga else { continue }
-                        if LibraryService.shared.get(mangaId: manga.id, pluginId: share.id) == nil {
-                            let snapshot = MangaSnapshotService.shared.makeSnapshot(
-                                for: manga.toManga(), pluginId: share.id)
-                            try await MangaSnapshotService.shared.upsert(snapshot)
-                            let libraryItem = LibraryModel(
-                                mangaId: manga.id, pluginId: share.id, datetime: Date(),
-                                updates: false, latestChapter: manga.latestChapter,
-                                shouldSync: share.supports(.sync))
-                            _ = try await LibraryService.shared.save(libraryItem: libraryItem)
+                        if let manga = item.manga,
+                            libraryService.get(mangaId: manga.id, pluginId: share.id) == nil
+                        {
+                            try await bookmark(manga)
                         }
                     case .removeBookmark:
-                        guard let manga else { continue }
-                        if LibraryService.shared.get(mangaId: manga.id, pluginId: share.id) != nil {
-                            _ = try await LibraryService.shared.remove(
+                        if let manga = item.manga,
+                            libraryService.get(mangaId: manga.id, pluginId: share.id) != nil
+                        {
+                            _ = try await libraryService.remove(
                                 mangaId: manga.id, pluginId: share.id)
                         }
                     case .removeRecords:
-                        guard let manga else { continue }
-                        _ = try await ProgressService.shared.remove(
-                            mangaId: manga.id, pluginId: share.id)
+                        if let manga = item.manga {
+                            _ = try await ProgressService.shared.remove(
+                                mangaId: manga.id, pluginId: share.id)
+                        }
                 }
-                selectedPaths.remove(entity.path)
+                selectedPaths.remove(item.id)
             } catch {
-                Logger.ui.error("Failed to perform file action for \(entity.path)", error: error)
-                failures.append(
-                    "\(entity.displayName(using: manga)): \(error.localizedDescription)")
+                Logger.ui.error("Failed to perform file action for \(item.id)", error: error)
+                failures.append("\(item.displayName): \(error.localizedDescription)")
             }
         }
 
         if selectedPaths.isEmpty { withAnimation { editMode = .inactive } }
-        if action == .download, !files.isEmpty || !unavailableNames.isEmpty {
-            filesToDownload = files
-            unavailableFileNames = unavailableNames
-            isDownloadFilesModalPresented = true
-        }
+        if !downloads.isEmpty { downloadRequest = downloads }
         if !failures.isEmpty {
             NotificationService.shared.showError(failures.joined(separator: "\n"))
         }
     }
 
-    private func bookContent(entity: Entity, fileType: String) -> some View {
-        Group {
-            if viewMode == .grid {
-                if let manga = parsedMangas[entity.path] {
-                    mangaView(
-                        manga: manga, entity: entity,
-                        isUnread: unreadMangaPaths.contains(entity.path))
-                } else {
-                    filePlaceholderView(
-                        entity: entity, isParsing: parsingPaths.contains(entity.path),
-                        errorMessage: parseErrors[entity.path])
-                }
-            } else {
-                if let manga = parsedMangas[entity.path] {
-                    mangaListView(
-                        manga: manga, entity: entity, fileType: fileType,
-                        isUnread: unreadMangaPaths.contains(entity.path)
-                    )
-                    .modifier(bookContextMenu(for: entity))
-                } else {
-                    filePlaceholderListView(
-                        entity: entity, fileType: fileType,
-                        isParsing: parsingPaths.contains(entity.path),
-                        errorMessage: parseErrors[entity.path]
-                    )
-                    .modifier(bookContextMenu(for: entity))
-                }
-            }
-        }
-        .contentShape(Rectangle())
-    }
-
-    private func selectionIndicator(for entity: Entity) -> some View {
-        let isSelected = selectedPaths.contains(entity.path)
-
-        return Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-            .font(.system(size: 22))
-            .foregroundStyle(isSelected ? Color.accentColor : Color(uiColor: .tertiaryLabel))
-            .background(.background, in: Circle())
-            .overlay { if isSelected { Circle().strokeBorder(.white, lineWidth: 1) } }
+    private func bookmark(_ manga: DetailedManga) async throws {
+        let snapshot = MangaSnapshotService.shared.makeSnapshot(
+            for: manga.toManga(), pluginId: share.id)
+        try await MangaSnapshotService.shared.upsert(snapshot)
+        let libraryItem = LibraryModel(
+            mangaId: manga.id, pluginId: share.id, datetime: Date(), updates: false,
+            latestChapter: manga.latestChapter, shouldSync: share.supports(.sync))
+        _ = try await libraryService.save(libraryItem: libraryItem)
     }
 
     private func openInFilesApp() {
@@ -673,88 +656,211 @@ struct FilesScreen: View {
         if let url = URL(string: "shareddocuments://\(encoded)") { UIApplication.shared.open(url) }
     }
 
+    // MARK: - Loading
+
     private func loadEntities() async {
         let currentLoadId = UUID()
         loadId = currentLoadId
-        isLoading = true
-        errorMessage = nil
-        parsedMangas = [:]
-        unreadMangaPaths = []
-        parsingPaths = []
-        parsingProgress = [:]
-        parseErrors = [:]
+        listingState = .loading
+        for index in items.indices { items[index].state = .queued }
 
         defer {
             if loadId == currentLoadId {
                 loadId = nil
-                isLoading = false
+                if case .loading = listingState { listingState = .loaded }
             }
         }
 
         do {
             try Task.checkCancellation()
-            let result = try await share.getEntities(path: entry?.path)
+            let entities = try await share.getEntities(path: entry?.path)
             try Task.checkCancellation()
             guard loadId == currentLoadId else { return }
 
-            let sorted = result.sorted { lhs, rhs in
-                switch (lhs.type, rhs.type) { case (.directory, .book): return true
-                    case (.book, .directory): return false
-                    default: return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            items =
+                entities.sorted { lhs, rhs in
+                    switch (lhs.type, rhs.type) { case (.directory, .book): return true
+                        case (.book, .directory): return false
+                        default:
+                            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+                    }
                 }
-            }
-            entities = sorted
+                .map { FileItem(entity: $0) }
             selectedPaths.formIntersection(selectableFilePaths)
-            isLoading = false
+            listingState = .loaded
 
-            for entity in sorted {
-                guard case .book(let fileType) = entity.type else { continue }
-                let filePath = entity.path
+            // Indices stay stable during a load, the ID rejects callbacks after a refresh.
+            for index in items.indices {
+                let item = items[index]
+                guard let fileType = item.fileType else { continue }
+                items[index].state = .parsing(nil)
 
-                parsingPaths.insert(filePath)
                 defer {
-                    if loadId == currentLoadId {
-                        parsingPaths.remove(filePath)
-                        parsingProgress.removeValue(forKey: filePath)
+                    if loadId == currentLoadId, case .parsing = items[index].state {
+                        items[index].state = .queued
                     }
                 }
 
                 do {
                     try Task.checkCancellation()
                     let manga = try await share.parseFile(
-                        path: filePath, fileType: fileType,
+                        path: item.id, fileType: fileType,
                         progress: { value in
                             Task { @MainActor in
-                                guard loadId == currentLoadId, parsingPaths.contains(filePath)
+                                guard loadId == currentLoadId, case .parsing = items[index].state
                                 else { return }
-                                parsingProgress[filePath] = value
+                                items[index].state = .parsing(value)
                             }
                         })
                     try Task.checkCancellation()
                     guard loadId == currentLoadId else { return }
 
-                    let isUnread =
-                        ProgressService.shared.get(mangaId: manga.id, pluginId: share.id) == nil
-                    parsedMangas[filePath] = manga
-                    if isUnread { unreadMangaPaths.insert(filePath) }
+                    items[index].state = .ready(
+                        manga,
+                        isUnread: ProgressService.shared.get(mangaId: manga.id, pluginId: share.id)
+                            == nil)
                 } catch is CancellationError { return } catch {
                     guard loadId == currentLoadId, !Task.isCancelled else { return }
-                    parseErrors[filePath] = error.localizedDescription
+                    items[index].state = .failed(error.localizedDescription)
                 }
             }
         } catch is CancellationError { return } catch {
             guard loadId == currentLoadId, !Task.isCancelled else { return }
-            errorMessage = error.localizedDescription
+            listingState = .failed(error.localizedDescription)
         }
     }
 
-    private func updateUnreadMangas() {
-        unreadMangaPaths = Set(
-            parsedMangas.compactMap { path, manga in
-                ProgressService.shared.get(mangaId: manga.id, pluginId: share.id) == nil
-                    ? path : nil
-            })
+    private func updateUnreadMangas(_ change: ProgressService.Change) {
+        let mangaIds: Set<String>
+        let isUnread: Bool
+        switch change { case .upserted(let records):
+            mangaIds = Set(records.filter { $0.pluginId == share.id }.map(\.mangaId))
+            isUnread = false
+            case .deleted(let keys):
+                mangaIds = Set(keys.filter { $0.pluginId == share.id }.map(\.mangaId))
+                isUnread = true
+        }
+        guard !mangaIds.isEmpty else { return }
+
+        for index in items.indices {
+            guard let manga = items[index].manga, mangaIds.contains(manga.id) else { continue }
+            items[index].state = .ready(manga, isUnread: isUnread)
+        }
     }
+
+    // MARK: - File views
+
+    private func bookView(_ item: FileItem, fileType: String) -> some View {
+        let content = bookContent(item, fileType: fileType)
+
+        return Group {
+            if isSelecting && viewMode == .grid {
+                Button {
+                    if !selectedPaths.insert(item.id).inserted { selectedPaths.remove(item.id) }
+                } label: {
+                    content
+                }
+                .disabled(isBusy)
+            } else if !isSelecting, let manga = item.manga {
+                NavigationLink(
+                    destination: MangaDetailsScreen(plugin: share, manga: manga.toManga()) {
+                        isDownloadsFolderPresented = true
+                    }
+                ) { content }
+            } else {
+                content
+            }
+        }
+    }
+
+    private func bookContent(_ item: FileItem, fileType: String) -> some View {
+        Group {
+            if viewMode == .grid {
+                VStack(spacing: 8) {
+                    selectableThumbnail(for: item.entity) {
+                        bookThumbnail(item, fileType: fileType)
+                    }
+                    .modifier(bookContextMenu(for: item))
+
+                    gridTitle(item.displayName)
+                }
+                .help(item.errorMessage ?? "")
+            } else {
+                bookListView(item, fileType: fileType).modifier(bookContextMenu(for: item))
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    private func bookListView(_ item: FileItem, fileType: String) -> some View {
+        HStack(spacing: 16) {
+            listThumbnail {
+                bookThumbnail(item, fileType: fileType, cornerRadius: 6, showsUnreadTag: false)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
+
+                HStack(spacing: 8) {
+                    Text(item.entity.name).lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(fileType.uppercased()).smallTagStyle()
+                }
+                .font(.subheadline).foregroundStyle(.secondary)
+
+                if let errorMessage = item.errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle").font(.caption)
+                        .foregroundStyle(.orange).lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8).contentShape(Rectangle())
+    }
+
+    @ViewBuilder private func bookThumbnail(
+        _ item: FileItem, fileType: String, cornerRadius: CGFloat? = nil,
+        showsUnreadTag: Bool = true
+    ) -> some View {
+        if let manga = item.manga {
+            mangaThumbnail(
+                manga: manga, isUnread: item.isUnread, cornerRadius: cornerRadius,
+                showsUnreadTag: showsUnreadTag)
+        } else {
+            documentThumbnail(fileType: fileType, state: item.state)
+        }
+    }
+
+    private func directoryGridView(entity: Entity) -> some View {
+        VStack(spacing: 8) {
+            thumbnailView { folderIcon }
+
+            gridTitle(entity.displayName)
+        }
+    }
+
+    private func directoryListView(entity: Entity) -> some View {
+        HStack(spacing: 16) {
+            listThumbnail { folderIcon }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entity.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8).contentShape(Rectangle())
+    }
+
+    private var folderIcon: some View {
+        Image("FolderIcon").resizable().scaledToFit()
+            .overlay {
+                Image("FolderIcon").renderingMode(.template).resizable().scaledToFit()
+                    .foregroundStyle(color ?? .accentColor).blendMode(.hue)
+            }
+            .compositingGroup()
+    }
+
+    // MARK: - Thumbnails
 
     private func thumbnailView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         Color.clear.aspectRatio(3 / 4, contentMode: .fit)
@@ -780,68 +886,19 @@ struct FilesScreen: View {
             .multilineTextAlignment(.center).frame(maxWidth: .infinity)
     }
 
-    private func directoryView(entity: Entity) -> some View {
-        VStack(spacing: 8) {
-            thumbnailView {
-                Image("FolderIcon").resizable().scaledToFit()
-                    .overlay {
-                        Image("FolderIcon").renderingMode(.template).resizable().scaledToFit()
-                            .foregroundStyle(color ?? .accentColor).blendMode(.hue)
-                    }
-                    .compositingGroup()
-            }
-
-            Text(entity.displayName).font(.caption).foregroundColor(.primary).lineLimit(2)
-                .multilineTextAlignment(.center).frame(maxWidth: .infinity)
-        }
-    }
-
-    private func mangaView(manga: DetailedManga, entity: Entity, isUnread: Bool) -> some View {
-        VStack(spacing: 8) {
-            selectableThumbnail(for: entity) { mangaThumbnail(manga: manga, isUnread: isUnread) }
-                .modifier(bookContextMenu(for: entity))
-
-            gridTitle(entity.displayName(using: manga))
-        }
-    }
-
     private func listThumbnail<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         Color.clear.frame(width: 56, height: 72)
             .overlay { content().frame(maxWidth: .infinity, maxHeight: .infinity) }
     }
 
-    private func directoryListView(entity: Entity) -> some View {
-        HStack(spacing: 16) {
-            listThumbnail {
-                Image("FolderIcon").resizable().scaledToFit()
-                    .overlay {
-                        Image("FolderIcon").renderingMode(.template).resizable().scaledToFit()
-                            .foregroundStyle(color ?? .accentColor).blendMode(.hue)
-                    }
-                    .compositingGroup()
-            }
+    private func selectionIndicator(for entity: Entity) -> some View {
+        let isSelected = selectedPaths.contains(entity.path)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entity.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.vertical, 8).contentShape(Rectangle())
-    }
-
-    private func mangaListView(
-        manga: DetailedManga, entity: Entity, fileType: String, isUnread: Bool
-    ) -> some View {
-        HStack(spacing: 16) {
-            listThumbnail {
-                mangaThumbnail(
-                    manga: manga, isUnread: isUnread, cornerRadius: 6, showsUnreadTag: false)
-            }
-
-            bookListMetadata(
-                title: entity.displayName(using: manga), entity: entity, fileType: fileType)
-        }
-        .padding(.vertical, 8).contentShape(Rectangle())
+        return Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 22))
+            .foregroundStyle(isSelected ? Color.accentColor : Color(uiColor: .tertiaryLabel))
+            .background(.background, in: Circle())
+            .overlay { if isSelected { Circle().strokeBorder(.white, lineWidth: 1) } }
     }
 
     private func mangaThumbnail(
@@ -874,76 +931,21 @@ struct FilesScreen: View {
         .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
     }
 
-    private func filePlaceholderListView(
-        entity: Entity, fileType: String, isParsing: Bool, errorMessage: String?
-    ) -> some View {
-        HStack(spacing: 16) {
-            listThumbnail {
-                documentThumbnail(
-                    fileType: fileType, isParsing: isParsing,
-                    progress: parsingProgress[entity.path], hasError: errorMessage != nil)
-            }
+    private func documentThumbnail(fileType: String, state: FileItem.ParseState) -> some View {
+        let hasError = if case .failed = state { true } else { false }
 
-            VStack(alignment: .leading, spacing: 6) {
-                bookListMetadata(title: entity.displayName, entity: entity, fileType: fileType)
-
-                if let errorMessage {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle").font(.caption)
-                        .foregroundStyle(.orange).lineLimit(2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.vertical, 8).contentShape(Rectangle())
-    }
-
-    private func bookListMetadata(title: String, entity: Entity, fileType: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.body).foregroundStyle(.primary).lineLimit(2)
-
-            HStack(spacing: 8) {
-                Text(entity.name).lineLimit(1)
-                Spacer(minLength: 0)
-                Text(fileType.uppercased()).smallTagStyle()
-            }
-            .font(.subheadline).foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func filePlaceholderView(entity: Entity, isParsing: Bool, errorMessage: String?)
-        -> some View
-    {
-        let fileType: String
-        if case .book(let type) = entity.type { fileType = type } else { fileType = "" }
-
-        return VStack(spacing: 8) {
-            selectableThumbnail(for: entity) {
-                documentThumbnail(
-                    fileType: fileType, isParsing: isParsing,
-                    progress: parsingProgress[entity.path], hasError: errorMessage != nil)
-            }
-            .modifier(bookContextMenu(for: entity))
-
-            gridTitle(entity.displayName)
-        }
-        .help(errorMessage ?? "")
-    }
-
-    private func documentThumbnail(
-        fileType: String, isParsing: Bool, progress: Double?, hasError: Bool
-    ) -> some View {
-        ZStack(alignment: .bottomLeading) {
+        return ZStack(alignment: .bottomLeading) {
             Image("DocumentIcon").resizable().scaledToFill().clipped()
 
-            if hasError {
+            switch state { case .failed:
                 Image(systemName: "exclamationmark.triangle").font(.title2).foregroundStyle(.orange)
                     .padding(12).background(.regularMaterial, in: Circle())
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if isParsing {
-                ProgressView(value: progress).progressViewStyle(.circular).padding(12)
-                    .background(.regularMaterial, in: Circle())
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .parsing(let progress):
+                    ProgressView(value: progress).progressViewStyle(.circular).padding(12)
+                        .background(.regularMaterial, in: Circle())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                default: EmptyView()
             }
 
             Text(fileType.uppercased()).font(.caption2).fontWeight(.semibold)
