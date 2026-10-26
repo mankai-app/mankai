@@ -6,6 +6,97 @@
 //
 
 import SwiftUI
+import UIKit
+
+private struct FilesTabBarController: UIViewControllerRepresentable {
+    let isHidden: Bool
+
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.setTabBarHidden(isHidden)
+    }
+
+    static func dismantleUIViewController(_ controller: Controller, coordinator: ()) {
+        controller.restoreTabBar(animated: false)
+    }
+
+    final class Controller: UIViewController {
+        private var shouldHideTabBar = false
+        private var isVisible = false
+        private weak var controlledTabBarController: UITabBarController?
+        private var wasTabBarHidden = false
+
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.backgroundColor = .clear
+            view.isUserInteractionEnabled = false
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            isVisible = true
+            applyVisibility(animated: animated)
+        }
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            applyVisibility(animated: false)
+        }
+
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            if isVisible { applyVisibility(animated: false) }
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            isVisible = false
+            restoreTabBar(animated: animated)
+        }
+
+        func setTabBarHidden(_ isHidden: Bool) {
+            shouldHideTabBar = isHidden
+            if isVisible { applyVisibility(animated: true) }
+        }
+
+        private func applyVisibility(animated: Bool) {
+            guard shouldHideTabBar else {
+                restoreTabBar(animated: animated)
+                return
+            }
+            guard let tabBarController else { return }
+
+            if controlledTabBarController == nil {
+                controlledTabBarController = tabBarController
+                if #available(iOS 18.0, *) {
+                    wasTabBarHidden = tabBarController.isTabBarHidden
+                } else {
+                    wasTabBarHidden = tabBarController.tabBar.isHidden
+                }
+            }
+            setHidden(true, on: tabBarController, animated: animated)
+        }
+
+        func restoreTabBar(animated: Bool) {
+            guard let tabBarController = controlledTabBarController else { return }
+            controlledTabBarController = nil
+            setHidden(wasTabBarHidden, on: tabBarController, animated: animated)
+        }
+
+        private func setHidden(
+            _ isHidden: Bool, on tabBarController: UITabBarController, animated: Bool
+        ) {
+            if #available(iOS 18.0, *) {
+                if tabBarController.isTabBarHidden != isHidden {
+                    tabBarController.setTabBarHidden(isHidden, animated: animated)
+                }
+            } else {
+                tabBarController.tabBar.isHidden = isHidden
+            }
+        }
+    }
+}
 
 struct FilesScreen: View {
     private struct TopRightCornerTriangle: Shape {
@@ -100,9 +191,28 @@ struct FilesScreen: View {
             }
         }
         .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isSelecting)
+        .background { FilesTabBarController(isHidden: isSelecting).frame(width: 0, height: 0) }
         .toolbar {
             if isSelecting {
-                ToolbarItemGroup(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(allFilesSelected ? "deselectAll" : "selectAll") {
+                        withAnimation {
+                            selectedPaths = allFilesSelected ? [] : selectableFilePaths
+                        }
+                    }
+                    .disabled(selectableFilePaths.isEmpty || isBusy)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("done", systemImage: "checkmark") {
+                        withAnimation { editMode = .inactive }
+                    }
+                    .labelStyle(.iconOnly).buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.circle).disabled(isBusy)
+                }
+
+                ToolbarItemGroup(placement: .bottomBar) {
                     Button("download", systemImage: "arrow.down") {
                         prepareDownloads(for: selectedEntities)
                     }
@@ -115,7 +225,7 @@ struct FilesScreen: View {
                         .disabled(selectedPaths.isEmpty || isBusy)
                     }
 
-                    EditButton().disabled(isBusy)
+                    Spacer()
                 }
             } else {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -200,6 +310,10 @@ struct FilesScreen: View {
     }
 
     private var navigationTitle: String {
+        if isSelecting {
+            return String(format: String(localized: "selectedFileCountFormat"), selectedPaths.count)
+        }
+
         if let entry { return entry.displayName }
         return share.name ?? share.id
     }
@@ -209,6 +323,18 @@ struct FilesScreen: View {
     private var isSelecting: Bool { editMode.isEditing }
 
     private var isBusy: Bool { isPreparingDownloads || isDeletingFiles }
+
+    private var selectableFilePaths: Set<String> {
+        Set(
+            entities.compactMap { entity in
+                guard case .book = entity.type else { return nil }
+                return entity.path
+            })
+    }
+
+    private var allFilesSelected: Bool {
+        !selectableFilePaths.isEmpty && selectableFilePaths.isSubset(of: selectedPaths)
+    }
 
     private var selectedEntities: [Entity] { entities.filter { selectedPaths.contains($0.path) } }
 
@@ -328,14 +454,16 @@ struct FilesScreen: View {
             }
         }
         .contentShape(Rectangle())
-        .overlay(alignment: .topTrailing) {
-            if isSelecting, viewMode == .grid { selectionIndicator(for: entity).padding(8) }
-        }
     }
 
     private func selectionIndicator(for entity: Entity) -> some View {
-        Image(systemName: selectedPaths.contains(entity.path) ? "checkmark.circle.fill" : "circle")
-            .font(.title2).foregroundStyle(.tint).background(.background, in: Circle())
+        let isSelected = selectedPaths.contains(entity.path)
+
+        return Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 22))
+            .foregroundStyle(isSelected ? Color.accentColor : Color(uiColor: .tertiaryLabel))
+            .background(.background, in: Circle())
+            .overlay { if isSelected { Circle().strokeBorder(.white, lineWidth: 1) } }
     }
 
     private func prepareDownloads(for entries: [Entity]) {
@@ -412,7 +540,7 @@ struct FilesScreen: View {
                 }
             }
             entities = sorted
-            selectedPaths.formIntersection(Set(sorted.map(\.path)))
+            selectedPaths.formIntersection(selectableFilePaths)
             isLoading = false
 
             for entity in sorted {
@@ -469,6 +597,25 @@ struct FilesScreen: View {
             .overlay { content().frame(maxWidth: .infinity, maxHeight: .infinity) }
     }
 
+    private func selectableThumbnail<Content: View>(
+        for entity: Entity, @ViewBuilder content: () -> Content
+    ) -> some View {
+        thumbnailView { content().padding(isSelecting ? 8 : 0) }
+            .background {
+                if isSelecting && selectedPaths.contains(entity.path) {
+                    RoundedRectangle(cornerRadius: 12).fill(Color(uiColor: .tertiarySystemFill))
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if isSelecting { selectionIndicator(for: entity).padding(.bottom, 24) }
+            }
+    }
+
+    private func gridTitle(_ title: String) -> some View {
+        Text(title).font(.caption).foregroundStyle(.primary).lineLimit(2)
+            .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+    }
+
     private func directoryView(entity: Entity) -> some View {
         VStack(spacing: 8) {
             thumbnailView {
@@ -487,11 +634,10 @@ struct FilesScreen: View {
 
     private func mangaView(manga: DetailedManga, entity: Entity, isUnread: Bool) -> some View {
         VStack(spacing: 8) {
-            thumbnailView { mangaThumbnail(manga: manga, isUnread: isUnread) }
+            selectableThumbnail(for: entity) { mangaThumbnail(manga: manga, isUnread: isUnread) }
                 .modifier(bookContextMenu(for: entity))
 
-            Text(entity.displayName(using: manga)).font(.caption).foregroundColor(.primary)
-                .lineLimit(2).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            gridTitle(entity.displayName(using: manga))
         }
     }
 
@@ -608,15 +754,14 @@ struct FilesScreen: View {
         if case .book(let type) = entity.type { fileType = type } else { fileType = "" }
 
         return VStack(spacing: 8) {
-            thumbnailView {
+            selectableThumbnail(for: entity) {
                 documentThumbnail(
                     fileType: fileType, isParsing: isParsing,
                     progress: parsingProgress[entity.path], hasError: errorMessage != nil)
             }
             .modifier(bookContextMenu(for: entity))
 
-            Text(entity.displayName).font(.caption).foregroundColor(.primary).lineLimit(2)
-                .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            gridTitle(entity.displayName)
         }
         .help(errorMessage ?? "")
     }
