@@ -49,6 +49,37 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin, FileDeletable {
 
     override var color: Color { .accentColor }
 
+    var supportedExtensions: [String] {
+        Array(Set(parsers.values.flatMap(\.supportedExtensions))).sorted()
+    }
+
+    var importsEntity: Entity {
+        Entity(
+            path: "imports", displayName: String(localized: "imports"), name: "imports",
+            type: .directory)
+    }
+
+    /// Copies a supported file into the app's imports folder without replacing existing files.
+    func importFile(from source: URL) throws {
+        let needsScopeAccess = source.startAccessingSecurityScopedResource()
+        defer { if needsScopeAccess { source.stopAccessingSecurityScopedResource() } }
+
+        guard parser(forExtension: source.pathExtension.lowercased()) != nil else {
+            throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
+        }
+        guard try source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else {
+            throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
+        }
+
+        let fileManager = FileManager.default
+        let importsURL = try session.sourceURL(for: importsEntity.path)
+        try fileManager.createDirectory(at: importsURL, withIntermediateDirectories: true)
+        let existingNames = try fileManager.contentsOfDirectory(atPath: importsURL.path)
+        let fileName = FileUtilities.uniqueFileName(for: source, existingNames: Set(existingNames))
+        try fileManager.copyItem(at: source, to: importsURL.appendingPathComponent(fileName))
+        objectWillChange.send()
+    }
+
     func deleteFile(path: String) async throws {
         guard !path.isEmpty else {
             throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()

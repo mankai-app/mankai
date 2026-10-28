@@ -109,19 +109,6 @@ actor SmbSession: BrowsableSession {
         }
     }
 
-    func upload(file: URL, path: String) async throws {
-        try await withConnectedConnection { connection in
-            try connection.uploadFile(local: file, remote: path) { _, _, _, _ in !Task.isCancelled }
-            try Task.checkCancellation()
-        }
-    }
-
-    func createDirectory(path: String) async throws {
-        try await withConnectedConnection { connection in
-            try connection.makeDirectory(at: path, makePath: true)
-        }
-    }
-
     func isOnline() async -> Bool {
         do {
             _ = try await withConnectedConnection { connection in try connection.echo() }

@@ -41,15 +41,6 @@ struct FilesystemSession: BrowsableSession {
         try data.write(to: sourceURL(for: path), options: .atomic)
     }
 
-    func upload(file: URL, path: String) async throws {
-        try FileManager.default.copyItem(at: file, to: sourceURL(for: path))
-    }
-
-    func createDirectory(path: String) async throws {
-        try FileManager.default.createDirectory(
-            at: sourceURL(for: path), withIntermediateDirectories: true)
-    }
-
     func localURL(for path: String?) throws -> URL? { try sourceURL(for: path) }
 
     func sourceURL(for relativePath: String?) throws -> URL {

@@ -148,50 +148,12 @@ actor NfsSession: BrowsableSession {
         }
     }
 
-    func createDirectory(path: String) async throws {
-        let client = try await connectedClient()
-        do {
-            try await withCheckedThrowingContinuation {
-                (continuation: CheckedContinuation<Void, Error>) in
-                client.createDirectory(atPath: path) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
-                }
-            }
-        } catch {
-            invalidate(client)
-            throw error
-        }
-    }
-
     func upload(data: Data, path: String) async throws {
         let client = try await connectedClient()
         do {
             try await withCheckedThrowingContinuation {
                 (continuation: CheckedContinuation<Void, Error>) in
                 client.write(data: data, toPath: path, progress: { _ in true }) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
-                }
-            }
-        } catch {
-            invalidate(client)
-            throw error
-        }
-    }
-
-    func upload(file: URL, path: String) async throws {
-        let client = try await connectedClient()
-        do {
-            try await withCheckedThrowingContinuation {
-                (continuation: CheckedContinuation<Void, Error>) in
-                client.uploadItem(at: file, toPath: path, progress: { _ in true }) { error in
                     if let error {
                         continuation.resume(throwing: error)
                     } else {

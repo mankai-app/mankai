@@ -100,18 +100,6 @@ actor SftpSession: BrowsableSession {
         }
     }
 
-    func upload(file: URL, path: String) async throws {
-        let data = try Data(contentsOf: file, options: .mappedIfSafe)
-        try Task.checkCancellation()
-        try await upload(data: data, path: path)
-    }
-
-    func createDirectory(path: String) async throws {
-        try await withConnectedClient(path: path) { client, remotePath in
-            try await client.createDirectory(atPath: remotePath)
-        }
-    }
-
     private enum EntryKind: Equatable { case directory, regularFile }
 
     private static func entryKind(attributes: SFTPFileAttributes, longName: String) -> EntryKind? {

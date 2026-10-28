@@ -91,41 +91,11 @@ actor WebDavSession: BrowsableSession {
         return data
     }
 
-    func createDirectory(path: String) async throws {
-        try await withCheckedThrowingContinuation {
-            (continuation: CheckedContinuation<Void, Error>) in
-            client.createFolder(
-                atPath: path, account: account, password: configuration.password ?? ""
-            ) { error in
-                if let error {
-                    continuation.resume(throwing: Self.requestError(error))
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
-    }
-
     func upload(data: Data, path: String) async throws {
         try await withCheckedThrowingContinuation {
             (continuation: CheckedContinuation<Void, Error>) in
             client.upload(
                 data: data, toPath: path, account: account, password: configuration.password ?? ""
-            ) { error in
-                if let error {
-                    continuation.resume(throwing: Self.requestError(error))
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
-    }
-
-    func upload(file: URL, path: String) async throws {
-        try await withCheckedThrowingContinuation {
-            (continuation: CheckedContinuation<Void, Error>) in
-            client.upload(
-                file: file, toPath: path, account: account, password: configuration.password ?? ""
             ) { error in
                 if let error {
                     continuation.resume(throwing: Self.requestError(error))

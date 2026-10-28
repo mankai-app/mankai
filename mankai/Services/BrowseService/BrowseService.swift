@@ -76,24 +76,7 @@ extension Browsable {
 /// A browsable source that can delete individual files.
 @MainActor protocol FileDeletable { func deleteFile(path: String) async throws }
 
-/// A plugin that can receive files from the system file importer.
-@MainActor protocol Importable {
-    /// The file extensions accepted by this importable plugin.
-    var supportedExtensions: [String] { get }
-
-    /// The directory entity inside the plugin used for imported files.
-    var importsEntity: Entity { get }
-
-    /// Imports a file from the given URL into the plugin's import directory.
-    ///
-    /// The caller is responsible for ensuring the source resource is accessible (e.g. by starting security-scoped access if needed).
-    ///
-    /// - Parameter source: The URL of the file to import.
-    func importFile(from source: URL) async throws
-}
-
 typealias BrowsablePlugin = Browsable & Plugin
-typealias ImportableBrowsablePlugin = Browsable & Importable & Plugin
 
 @MainActor protocol LocalBrowsablePluginConvertible { func convertToLocalPlugin() }
 
@@ -128,11 +111,6 @@ enum BrowsePluginAddConflictResolution {
         return [appDir] + others
     }
 
-    /// A list of plugins that can receive files from the system file importer.
-    var importablePlugins: [ImportableBrowsablePlugin] {
-        plugins.compactMap { $0 as? ImportableBrowsablePlugin }
-    }
-
     private func loadPlugins() {
         for pluginType in Self.pluginTypes {
             let plugins = pluginType.loadPlugins().compactMap { $0 as? BrowsablePlugin }
@@ -146,11 +124,6 @@ enum BrowsePluginAddConflictResolution {
     /// - Parameter id: The unique identifier of the plugin.
     /// - Returns: The `BrowsablePlugin` instance if found, otherwise `nil`.
     func getPlugin(_ id: String) -> BrowsablePlugin? { return _plugins[id] }
-
-    /// Retrieves an importable plugin by its identifier.
-    func getImportablePlugin(_ id: String) -> ImportableBrowsablePlugin? {
-        _plugins[id] as? ImportableBrowsablePlugin
-    }
 
     /// Reconstructs a downloaded folder configuration without contacting its server or requeueing it.
     func updatePlugin(url: String, type: String, sourceId: String, datetime: Date) async throws {

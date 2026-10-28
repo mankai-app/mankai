@@ -7,14 +7,14 @@
 
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct MainScreen: View {
     private enum Tab: Hashable { case home, library, files, settings }
 
     @State private var selectedTab: Tab = .home
-    @State private var importedFiles: [URL] = []
-    @State private var showingImportsModal = false
-    @State private var importDestinationShareId: String?
+    @State private var showingFileImporter = false
+    @State private var importsNavigationID: UUID?
     @State private var sourceImportRequest: SourceImportRequest?
     @State private var lastCheckedPasteboardChangeCount: Int?
 
@@ -28,16 +28,17 @@ struct MainScreen: View {
             HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
             LibraryTab().tag(Tab.library)
                 .tabItem { Label("library", systemImage: "books.vertical.fill") }
-            FilesTab(importDestinationShareId: $importDestinationShareId) {
-                showingImportsModal = true
-            }
-            .tag(Tab.files).tabItem { Label("files", systemImage: "folder.fill") }
+            FilesTab(importsNavigationID: $importsNavigationID) { showingFileImporter = true }
+                .tag(Tab.files).tabItem { Label("files", systemImage: "folder.fill") }
             SettingsTab().tag(Tab.settings).tabItem { Label("settings", systemImage: "gearshape") }
         }
         .overlay(alignment: .bottom) { NotificationContainerView() }
-        .sheet(isPresented: $showingImportsModal, onDismiss: { importedFiles = [] }) {
-            [importedFiles] in
-            ImportsModal(initialFiles: importedFiles) { share in importDestinationShareId = share.id
+        .fileImporter(
+            isPresented: $showingFileImporter, allowedContentTypes: supportedContentTypes,
+            allowsMultipleSelection: true
+        ) { result in
+            switch result { case .success(let urls): importFiles(urls) case .failure(let error):
+                showImportError(error)
             }
         }
         .sheet(item: $sourceImportRequest) { request in AddSourcesModal(sources: request.sources) }
@@ -45,9 +46,7 @@ struct MainScreen: View {
             Logger.ui.info("Received URL: \(url)")
 
             if url.isFileURL {
-                selectedTab = .files
-                importedFiles.append(url)
-                showingImportsModal = true
+                importFiles([url])
                 return
             }
 
@@ -83,6 +82,29 @@ struct MainScreen: View {
             Logger.ui.info("Found \(urls.count) Mankai URL(s) in the pasteboard")
             handleMankaiURLs(urls)
         }
+    }
+
+    private var supportedContentTypes: [UTType] {
+        AppDirBrowsablePlugin.shared.supportedExtensions.compactMap { ext in
+            if ext == "epub" { return .epub }
+            return UTType(filenameExtension: ext)
+        }
+    }
+
+    private func importFiles(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+
+        do {
+            for url in urls { try AppDirBrowsablePlugin.shared.importFile(from: url) }
+            selectedTab = .files
+            importsNavigationID = UUID()
+        } catch { showImportError(error) }
+    }
+
+    private func showImportError(_ error: Error) {
+        Logger.ui.error("Failed to import files", error: error)
+        NotificationService.shared.showError(
+            "\(String(localized: "failedToImport")): \(error.localizedDescription)")
     }
 
     private func handleMankaiURLs(_ urls: [URL]) {

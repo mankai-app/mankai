@@ -8,27 +8,31 @@
 import SwiftUI
 
 struct FilesTab: View {
+    private enum Destination: Hashable {
+        case share(String)
+        case imports(UUID)
+        case editShare(String)
+    }
+
     @ObservedObject private var browseService = BrowseService.shared
-    @Binding var importDestinationShareId: String?
-    var onShowImports: () -> Void
+    @Binding var importsNavigationID: UUID?
+    var onImport: () -> Void
+    @State private var path: [Destination] = []
     @State private var showingAddFilesModal = false
     @State private var removalError: String?
     @State private var sharePendingDeletion: BrowsablePlugin?
-    @State private var editDestinationShareId: String?
 
-    init(importDestinationShareId: Binding<String?>, onShowImports: @escaping () -> Void) {
-        _importDestinationShareId = importDestinationShareId
-        self.onShowImports = onShowImports
+    init(importsNavigationID: Binding<UUID?>, onImport: @escaping () -> Void) {
+        _importsNavigationID = importsNavigationID
+        self.onImport = onImport
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section {
                     ForEach(browseService.plugins, id: \.id) { share in
-                        NavigationLink {
-                            FilesScreen(share: share)
-                        } label: {
+                        NavigationLink(value: Destination.share(share.id)) {
                             Label {
                                 Text(share.name ?? share.id)
                             } icon: {
@@ -40,7 +44,7 @@ struct FilesTab: View {
                         .swipeActions(edge: .leading, allowsFullSwipe: false) {
                             if !(share is AppDirBrowsablePlugin) {
                                 Button {
-                                    editDestinationShareId = share.id
+                                    path.append(.editShare(share.id))
                                 } label: {
                                     Label("edit", systemImage: "pencil")
                                 }
@@ -72,9 +76,9 @@ struct FilesTab: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        onShowImports()
+                        onImport()
                     } label: {
-                        Label("imports", systemImage: "square.and.arrow.down")
+                        Label("import", systemImage: "square.and.arrow.down")
                     }
                 }
             }
@@ -107,16 +111,26 @@ struct FilesTab: View {
                 Text("removeShareConfirmation")
             }
             .sheet(isPresented: $showingAddFilesModal) { AddFilesModal() }
-            .navigationDestination(item: $importDestinationShareId) { shareId in
-                if let share = browseService.getImportablePlugin(shareId) {
-                    FilesScreen(share: share, entry: share.importsEntity)
+            .navigationDestination(for: Destination.self) { destination in
+                switch destination { case .share(let shareId):
+                    if let share = browseService.getPlugin(shareId) { FilesScreen(share: share) }
+                    case .imports(let navigationID):
+                        FilesScreen(
+                            share: AppDirBrowsablePlugin.shared,
+                            entry: AppDirBrowsablePlugin.shared.importsEntity
+                        )
+                        .id(navigationID)
+                    case .editShare(let shareId):
+                        if let share = browseService.getPlugin(shareId) {
+                            ShareInfoScreen(share: share)
+                        }
                 }
             }
-            .navigationDestination(item: $editDestinationShareId) { shareId in
-                if let share = browseService.plugins.first(where: { $0.id == shareId }) {
-                    ShareInfoScreen(share: share)
-                }
-            }
+        }
+        .onChange(of: importsNavigationID, initial: true) { _, navigationID in
+            guard let navigationID else { return }
+            path = [.imports(navigationID)]
+            importsNavigationID = nil
         }
     }
 }

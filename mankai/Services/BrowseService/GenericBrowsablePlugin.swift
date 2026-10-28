@@ -38,8 +38,6 @@ protocol BrowsableSession: Sendable {
     func download(path: String) async throws -> Data
     func download(path: String, to localURL: URL, progress: ParserFileProgress?) async throws
     func upload(data: Data, path: String) async throws
-    func upload(file: URL, path: String) async throws
-    func createDirectory(path: String) async throws
     func isOnline() async -> Bool
     func localURL(for path: String?) throws -> URL?
 }
@@ -133,8 +131,7 @@ private struct ProgressReportingParserFile: ParserFile {
 /// Common implementation for plugins that expose manga files through a browsable hierarchy.
 ///
 /// Subclasses provide persistence and presentation details while their session implements the backend-specific file operations.
-class GenericBrowsablePlugin<Config, Session>: Plugin, Browsable, Importable,
-    LocalBrowsablePluginConvertible
+class GenericBrowsablePlugin<Config, Session>: Plugin, Browsable, LocalBrowsablePluginConvertible
 where Session: BrowsableSession, Session.Config == Config {
     override var id: String { _id }
 
@@ -152,12 +149,6 @@ where Session: BrowsableSession, Session.Config == Config {
     override class var typeCapabilities: [PluginTypeCapability] { [] }
 
     var color: Color { BrowsablePluginStyle.color(for: _id) }
-
-    var supportedExtensions: [String] { extensionsIndex.keys.sorted() }
-
-    var importsEntity: Entity {
-        Entity(path: "imports", displayName: "imports", name: "imports", type: .directory)
-    }
 
     var configuration: Config {
         didSet {
@@ -712,34 +703,5 @@ where Session: BrowsableSession, Session.Config == Config {
         }
 
         return entities
-    }
-
-    // MARK: - Importable methods
-
-    func importFile(from source: URL) async throws {
-        let needsScopeAccess = source.startAccessingSecurityScopedResource()
-        defer { if needsScopeAccess { source.stopAccessingSecurityScopedResource() } }
-
-        let importPath = importsEntity.path
-        let rootEntries = try await session.list(path: "")
-        if !rootEntries.contains(where: { $0.name == importPath && $0.isDirectory }) {
-            do { try await session.createDirectory(path: importPath) } catch {
-                let refreshedEntries = try await session.list(path: "")
-                guard refreshedEntries.contains(where: { $0.name == importPath && $0.isDirectory })
-                else { throw error }
-            }
-        }
-
-        let existingEntries = try await session.list(path: importPath)
-        let fileName = FileUtilities.uniqueFileName(
-            for: source, existingNames: Set(existingEntries.map(\.name)))
-        try await session.upload(
-            file: source, path: PathUtilities.appending(fileName, to: importPath))
-        try Task.checkCancellation()
-
-        let importedEntries = try await session.list(path: importPath)
-        guard importedEntries.contains(where: { $0.name == fileName && $0.isRegularFile }) else {
-            throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
-        }
     }
 }
