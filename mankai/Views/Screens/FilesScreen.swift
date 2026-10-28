@@ -799,7 +799,7 @@ struct FilesScreen: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(item.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
+                Text(item.displayName).lineLimit(2)
 
                 HStack(spacing: 8) {
                     Text(item.entity.name).lineLimit(1)
@@ -843,10 +843,8 @@ struct FilesScreen: View {
         HStack(spacing: 16) {
             listThumbnail { folderIcon }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entity.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) { Text(entity.displayName).lineLimit(2) }
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 8).contentShape(Rectangle())
     }
@@ -882,8 +880,8 @@ struct FilesScreen: View {
     }
 
     private func gridTitle(_ title: String) -> some View {
-        Text(title).font(.caption).foregroundStyle(.primary).lineLimit(2)
-            .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+        Text(title).font(.caption).lineLimit(2).multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
     }
 
     private func listThumbnail<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -898,7 +896,7 @@ struct FilesScreen: View {
             .font(.system(size: 22))
             .foregroundStyle(isSelected ? Color.accentColor : Color(uiColor: .tertiaryLabel))
             .background(.background, in: Circle())
-            .overlay { if isSelected { Circle().strokeBorder(.white, lineWidth: 1) } }
+            .overlay { if isSelected { Circle().strokeBorder(.white) } }
     }
 
     private func mangaThumbnail(

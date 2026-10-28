@@ -42,37 +42,34 @@ struct DebugMangas: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("id").font(.caption).foregroundColor(.secondary)
-                Text(manga.id).font(.caption).foregroundColor(.primary)
+                Text(manga.id).font(.caption)
                 Spacer()
                 Text("status").font(.caption).foregroundColor(.secondary)
-                Text(manga.status.localizedName).font(.caption).foregroundColor(.primary)
+                Text(manga.status.localizedName).font(.caption)
             }
 
             HStack {
                 Text("title").font(.caption).foregroundColor(.secondary)
                 Text(manga.title ?? String(localized: "nil")).font(.caption)
-                    .foregroundColor(.primary)
                 Spacer()
             }
 
             HStack {
                 Text("cover").font(.caption).foregroundColor(.secondary)
-                Text(manga.cover ?? String(localized: "nil")).font(.caption)
-                    .foregroundColor(.primary).lineLimit(1)
+                Text(manga.cover ?? String(localized: "nil")).font(.caption).lineLimit(1)
                 Spacer()
             }
 
             HStack {
                 Text("latestChapter").font(.caption).foregroundColor(.secondary)
-                Text(chapterText(manga.latestChapter)).font(.caption).foregroundColor(.primary)
-                    .lineLimit(1)
+                Text(chapterText(manga.latestChapter)).font(.caption).lineLimit(1)
                 Spacer()
             }
 
             if let updates = manga.updates {
                 HStack {
                     Text("updated").font(.caption).foregroundColor(.secondary)
-                    Text(String(describing: updates)).font(.caption).foregroundColor(.primary)
+                    Text(String(describing: updates)).font(.caption)
                     Spacer()
                 }
             }

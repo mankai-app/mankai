@@ -14,7 +14,7 @@ struct InfoRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label).font(.caption).foregroundColor(.secondary)
-            Text(value).font(.body)
+            Text(value)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

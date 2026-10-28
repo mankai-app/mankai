@@ -71,7 +71,7 @@ struct ChapterSelector<ChapterRow: View>: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(LocalizedStringKey(group.title)).foregroundColor(.primary)
+                        Text(LocalizedStringKey(group.title))
 
                         Text(
                             String.localizedStringWithFormat(

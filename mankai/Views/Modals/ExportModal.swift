@@ -159,7 +159,7 @@ struct ExportModal: View {
 
                         if exportURLs.isEmpty {
                             Text("exporting").font(.subheadline).foregroundStyle(.secondary)
-                            ProgressView(value: exportProgress).progressViewStyle(.linear)
+                            ProgressView(value: exportProgress)
                             Text(exportProgress, format: .percent.precision(.fractionLength(0)))
                                 .font(.caption).foregroundStyle(.secondary)
                         } else {

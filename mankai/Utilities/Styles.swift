@@ -12,7 +12,7 @@ struct AdaptiveGlassBackgroundModifier<BackgroundShape: Shape>: ViewModifier {
 
     @ViewBuilder func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
+            content.glassEffect(in: shape)
         } else {
             content.background(.regularMaterial, in: shape)
         }

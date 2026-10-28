@@ -45,8 +45,7 @@ struct MangasRowListView: View {
                     Text("noMangasAvailable").foregroundColor(.secondary)
                         .frame(
                             maxWidth: .infinity,
-                            minHeight: horizontalSizeClass == .regular ? 240 : 200,
-                            alignment: .center)
+                            minHeight: horizontalSizeClass == .regular ? 240 : 200)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 12) {
@@ -67,8 +66,7 @@ struct MangasRowListView: View {
             } else {
                 ProgressView()
                     .frame(
-                        maxWidth: .infinity, minHeight: horizontalSizeClass == .regular ? 240 : 200,
-                        alignment: .center)
+                        maxWidth: .infinity, minHeight: horizontalSizeClass == .regular ? 240 : 200)
             }
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) {

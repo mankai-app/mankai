@@ -19,8 +19,8 @@ struct NotificationView: View {
                 Image(systemName: iconName).foregroundStyle(iconColor)
                     .font(.system(size: 18, weight: .semibold))
 
-                Text(notification.message).font(.system(size: 14)).foregroundStyle(.primary)
-                    .lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+                Text(notification.message).font(.system(size: 14)).lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.leading, 16).padding(.vertical, 12)
 
@@ -103,8 +103,6 @@ struct NotificationContainerView: View {
         }
         .frame(maxWidth: .infinity, alignment: .bottom).padding(.bottom)
         .animation(
-            .spring(response: 0.3, dampingFraction: 0.8), value: notificationService.notifications
-        )
-        .allowsHitTesting(true)
+            .spring(response: 0.3, dampingFraction: 0.8), value: notificationService.notifications)
     }
 }

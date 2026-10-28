@@ -250,7 +250,7 @@ struct UpdateMangaContent: View {
             }
 
             Section("cover") {
-                HStack(alignment: .center, spacing: 8) {
+                HStack(spacing: 8) {
                     Group {
                         if let coverImageData = coverImageData,
                             let uiImage = UIImage(data: coverImageData)

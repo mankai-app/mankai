@@ -24,8 +24,7 @@ struct AppLicenseScreen: View {
             if let licenseText {
                 ScrollView {
                     Text(licenseText).font(.caption).foregroundStyle(.secondary)
-                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .center)
-                        .padding()
+                        .textSelection(.enabled).frame(maxWidth: .infinity).padding()
                 }
                 .background(Color(.systemGroupedBackground))
             } else {

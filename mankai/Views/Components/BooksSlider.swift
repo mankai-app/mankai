@@ -77,7 +77,7 @@ struct BooksSlider: View {
 
                     Image(systemName: "list.bullet")
                 }
-                .font(.body).padding(.horizontal, 16).allowsHitTesting(false).transition(.opacity)
+                .padding(.horizontal, 16).allowsHitTesting(false).transition(.opacity)
             }
         }
         .frame(height: 44).adaptiveGlassBackground(in: Capsule()).opacity(isEnabled ? 1 : 0.45)

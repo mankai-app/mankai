@@ -124,9 +124,7 @@ struct DownloadFilesModal: View {
                 Text(download.status.label).font(.caption)
                     .foregroundStyle(download.status == .failed ? Color.red : .secondary)
 
-                if download.status == .downloading {
-                    ProgressView(value: download.progress ?? 0).progressViewStyle(.linear)
-                }
+                if download.status == .downloading { ProgressView(value: download.progress ?? 0) }
 
                 if let errorMessage = download.errorMessage {
                     Text(errorMessage).font(.caption).foregroundStyle(.secondary)

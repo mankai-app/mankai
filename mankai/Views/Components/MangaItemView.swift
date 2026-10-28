@@ -42,7 +42,7 @@ struct MangaItemView: View {
     }
 
     private var itemContent: some View {
-        VStack(alignment: .center, spacing: 8) {
+        VStack(spacing: 8) {
             MangaCoverView(
                 coverUrl: manga.cover, plugin: plugin, tag: coverTag?.text,
                 tagColor: coverTag?.color
@@ -50,11 +50,9 @@ struct MangaItemView: View {
             .aspectRatio(3 / 4, contentMode: .fit)
             .modifier(MangaItemContextMenu(manga: manga, plugin: plugin, onRead: onRead))
 
-            VStack(alignment: .center) {
+            VStack {
                 // Title
-                if let title = manga.title {
-                    Text(title).font(.caption).foregroundColor(.primary).lineLimit(1)
-                }
+                if let title = manga.title { Text(title).font(.caption).lineLimit(1) }
 
                 // Latest Chapter
                 HStack(spacing: 4) {
@@ -82,7 +80,7 @@ struct MangaItemView: View {
                     }
                 }
                 .font(.caption2).foregroundColor(.secondary).foregroundStyle(.secondary)
-                .lineLimit(1).frame(maxWidth: .infinity, alignment: .center)
+                .lineLimit(1).frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)
         }

@@ -15,7 +15,7 @@ struct SettingsHeaderView: View {
 
     var body: some View {
         Section {
-            VStack(alignment: .center) {
+            VStack {
                 image.font(.title).foregroundColor(.white)
                     .background(
                         RoundedRectangle(cornerRadius: 14).frame(width: 56, height: 56)

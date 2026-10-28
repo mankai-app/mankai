@@ -31,7 +31,6 @@ private struct ConfigTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration.padding(.horizontal).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.1)))
-            .foregroundColor(.primary)
     }
 }
 

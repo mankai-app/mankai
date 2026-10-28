@@ -45,7 +45,7 @@ struct AddSourcesView: View {
     var body: some View {
         List(candidates) { candidate in
             if candidate.isLoading {
-                ProgressView().frame(maxWidth: .infinity, alignment: .center)
+                ProgressView().frame(maxWidth: .infinity)
             } else if let plugin = candidate.plugin {
                 if sources.count == 1 {
                     VStack(spacing: 16) {

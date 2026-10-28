@@ -30,7 +30,7 @@ struct AppearanceSettingsScreen: View {
                                     .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(icon.localizedName).foregroundStyle(.primary)
+                                    Text(icon.localizedName)
 
                                     if icon == .sakura {
                                         Text("default").font(.caption).foregroundStyle(.secondary)
@@ -72,7 +72,7 @@ struct AppearanceSettingsScreen: View {
                                 }
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(accentColor.localizedName).foregroundStyle(.primary)
+                                Text(accentColor.localizedName)
 
                                 if accentColor == .sakura {
                                     Text("default").font(.caption).foregroundStyle(.secondary)

@@ -73,7 +73,7 @@ struct GeneralSettingsScreen: View {
                     }
 
                     if let progress = updateService.progress, progress.total > 0 {
-                        ProgressView(value: progress.fractionCompleted).progressViewStyle(.linear)
+                        ProgressView(value: progress.fractionCompleted)
                     }
                 }
             }
