@@ -13,12 +13,14 @@ struct UpdateMangaModal: View {
 
     var plugin: (any Editable)? = nil
     var manga: DetailedManga? = nil
+    var showSourceSelection = true
 
     var body: some View {
         NavigationView {
             UpdateMangaContent(
                 plugin: plugin, manga: manga,
-                plugins: PluginService.shared.plugins.compactMap { $0 as? any Editable }
+                plugins: PluginService.shared.plugins.compactMap { $0 as? any Editable },
+                showSourceSelection: showSourceSelection
             )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -32,6 +34,7 @@ struct UpdateMangaModal: View {
 struct UpdateMangaContent: View {
     let plugins: [any Editable]
     let isCreatingManga: Bool
+    let showSourceSelection: Bool
 
     @Environment(\.dismiss) private var dismiss
 
@@ -59,8 +62,12 @@ struct UpdateMangaContent: View {
     @State private var isProcessing = false
     @State private var showingDeleteConfirmation = false
 
-    init(plugin: (any Editable)? = nil, manga: DetailedManga? = nil, plugins: [any Editable]) {
+    init(
+        plugin: (any Editable)? = nil, manga: DetailedManga? = nil, plugins: [any Editable],
+        showSourceSelection: Bool = true
+    ) {
         self.plugins = plugins
+        self.showSourceSelection = showSourceSelection
         isCreatingManga = manga == nil
 
         _plugin = State(initialValue: plugin?.id ?? AppDirPlugin.shared.id)
@@ -229,7 +236,7 @@ struct UpdateMangaContent: View {
 
     var body: some View {
         List {
-            if isCreatingManga {
+            if isCreatingManga && showSourceSelection {
                 Section {
                     Picker("source", selection: $plugin) {
                         ForEach(plugins, id: \.id) { plugin in

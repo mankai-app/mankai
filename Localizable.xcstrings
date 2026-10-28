@@ -16749,25 +16749,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Swipe left to edit or remove a share"
+            "value" : "Swipe right to edit a share, or left to remove it"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "左にスワイプして共有を編集または削除"
+            "value" : "右にスワイプして共有を編集、左にスワイプして削除"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向左滑动以编辑或移除共享"
+            "value" : "向右滑动以编辑共享，向左滑动以移除共享"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向左滑動以編輯或移除共用"
+            "value" : "向右滑動以編輯共用，向左滑動以移除共用"
           }
         }
       }

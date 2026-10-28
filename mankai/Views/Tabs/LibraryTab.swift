@@ -17,7 +17,7 @@ struct LibraryTab: View {
     @State var searchSuggestions: [String] = []
     @State var searchTask: Task<Void, Never>? = nil
     @State var navigateToSearch: Bool = false
-    @State private var isUpdateMangaModalPresented = false
+    @State private var isAddSourceModalPresented = false
     @State private var readerRoute: ReaderRoute?
 
     var body: some View {
@@ -71,12 +71,12 @@ struct LibraryTab: View {
             )
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { isUpdateMangaModalPresented = true }) {
+                    Button(action: { isAddSourceModalPresented = true }) {
                         ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
                     }
                 }
             }
-            .sheet(isPresented: $isUpdateMangaModalPresented) { UpdateMangaModal() }
+            .sheet(isPresented: $isAddSourceModalPresented) { AddSourceModal() }
         }
     }
 

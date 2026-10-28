@@ -90,7 +90,7 @@ struct SourceSearchScreen: View {
         }
         .toolbar {
             if supportsGenreFilter || supportsStatusFilter {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
                 }
             }

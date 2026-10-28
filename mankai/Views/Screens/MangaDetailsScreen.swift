@@ -638,7 +638,7 @@ struct MangaDetailsScreen: View {
         }
         .toolbar {
             if plugin is Editable, detailedManga?.editable ?? true {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { isUpdateMangaModalPresented = true }) {
                         Label {
                             Text("editManga")
@@ -650,7 +650,7 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            ToolbarItemGroup(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 if plugin.supportsDownloads || plugin is any Browsable,
                     mangaData == nil || detailedManga != nil
                 {

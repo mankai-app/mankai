@@ -18,6 +18,7 @@ struct SourceLibraryScreen: View {
     @State private var tempSelectedStatus: Status = .any
 
     @State private var isLoading: Bool = false
+    @State private var listLoadID = UUID()
     @State private var mangasList: [String: [UInt: [Manga]]] = [:]
     @State private var showErrorAlert: Bool = false
     @State private var errorMessage: String = ""
@@ -27,6 +28,7 @@ struct SourceLibraryScreen: View {
     @State private var searchTask: Task<Void, Never>? = nil
     @State private var navigateToSearch: Bool = false
     @State private var readerRoute: ReaderRoute?
+    @State private var isUpdateMangaModalPresented = false
 
     private var supportsGenreFilter: Bool {
         plugin.supports(.list) && plugin.supports(.listByGenre)
@@ -176,9 +178,22 @@ struct SourceLibraryScreen: View {
                 tempSelectedStatus = selectedStatus
             }
         }
+        .sheet(isPresented: $isUpdateMangaModalPresented) {
+            if let editablePlugin = plugin as? any Editable {
+                UpdateMangaModal(plugin: editablePlugin, showSourceSelection: false)
+            }
+        }
         .toolbar {
-            if supportsGenreFilter || supportsStatusFilter {
+            if plugin is any Editable {
                 ToolbarItem(placement: .primaryAction) {
+                    Button(action: { isUpdateMangaModalPresented = true }) {
+                        ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
+                    }
+                }
+            }
+
+            if supportsGenreFilter || supportsStatusFilter {
+                ToolbarItem(placement: .topBarTrailing) {
                     FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
                 }
             }
@@ -186,12 +201,19 @@ struct SourceLibraryScreen: View {
         .navigationTitleWithSubtitle(
             title: Text(plugin.name ?? plugin.id), subtitle: Text("library")
         )
-        .onAppear { loadList() }
+        .onAppear { loadList() }.onReceive(plugin.objectWillChange) { reloadList() }
         .alert("failedToLoadList", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)
         }
+    }
+
+    private func reloadList() {
+        listLoadID = UUID()
+        mangasList = [:]
+        isLoading = false
+        loadList()
     }
 
     private func loadList() {
@@ -208,11 +230,15 @@ struct SourceLibraryScreen: View {
 
         let page = maxPage + 1
 
+        let loadID = listLoadID
+        let genre = selectedGenre
+        let status = selectedStatus
+
         isLoading = true
         Task {
             do {
-                let result = try await plugin.getList(
-                    page: page, genre: selectedGenre, status: selectedStatus)
+                let result = try await plugin.getList(page: page, genre: genre, status: status)
+                guard loadID == listLoadID else { return }
 
                 if mangasList[key] == nil { mangasList[key] = [:] }
 
@@ -220,6 +246,7 @@ struct SourceLibraryScreen: View {
 
                 isLoading = false
             } catch {
+                guard loadID == listLoadID else { return }
                 isLoading = false
                 errorMessage = error.localizedDescription
                 showErrorAlert = true

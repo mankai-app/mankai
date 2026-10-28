@@ -106,7 +106,7 @@ struct SourceQRCodeScannerModal: View {
         .navigationTitle(useManualInput ? Text("importLink") : Text("scanQRCode"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 Button {
                     toggleManualInput()
                 } label: {

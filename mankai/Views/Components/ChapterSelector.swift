@@ -65,7 +65,7 @@ struct ChapterSelector<ChapterRow: View>: View {
                     .resizable().frame(width: 20, height: 20)
                     .foregroundColor(selectedCount > 0 ? .accentColor : .secondary.opacity(0.5))
                 }
-                .buttonStyle(.plain).accessibilityLabel(Text("selectChapters"))
+                .buttonStyle(.plain)
             }
 
             HStack {

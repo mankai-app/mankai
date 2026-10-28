@@ -129,7 +129,7 @@ struct AddSourceModal: View {
             .navigationBarTitleDisplayMode(.inline).navigationTitle("addSource")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         SourceQRCodeScannerModal { dismiss() }
                     } label: {

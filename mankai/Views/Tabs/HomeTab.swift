@@ -169,7 +169,7 @@ struct HomeTab: View {
                     }
                 }
 
-                ToolbarItemGroup(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     Button(action: { showingDownloads = true }) {
                         ToolbarIcon(systemName: "arrow.down", legacySystemName: "arrow.down.circle")
                     }

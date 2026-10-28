@@ -60,25 +60,22 @@ struct FilesTab: View {
                         guard !(share is AppDirBrowsablePlugin) else { return }
                         sharePendingDeletion = share
                     }
-
-                    Button {
-                        showingAddFilesModal = true
-                    } label: {
-                        Label("addFiles", systemImage: "folder.badge.plus")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
                 } footer: {
                     Text("swipeToEditOrRemoveShare")
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         onImport()
                     } label: {
                         Label("import", systemImage: "square.and.arrow.down")
+                    }
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showingAddFilesModal = true }) {
+                        ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
                     }
                 }
             }

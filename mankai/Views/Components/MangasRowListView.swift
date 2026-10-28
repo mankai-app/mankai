@@ -15,6 +15,10 @@ struct MangasRowListView: View {
     var query: String? = nil
     let onRead: (ReaderRoute) -> Void
 
+    @State private var isUpdateMangaModalPresented = false
+
+    private var canCreateManga: Bool { query == nil && plugin is any Editable }
+
     var body: some View {
         VStack(alignment: .leading) {
             NavigationLink(destination: {
@@ -35,7 +39,7 @@ struct MangasRowListView: View {
             }
 
             if let mangas = mangas {
-                if mangas.isEmpty {
+                if mangas.isEmpty && !canCreateManga {
                     Text("noMangasAvailable").foregroundColor(.secondary)
                         .frame(
                             maxWidth: .infinity,
@@ -47,6 +51,11 @@ struct MangasRowListView: View {
                             ForEach(mangas) { manga in
                                 MangaItemView(manga: manga, plugin: plugin, onRead: onRead)
                                     .frame(width: horizontalSizeClass == .regular ? 144 : 120)
+                            }
+
+                            if canCreateManga {
+                                createMangaButton.frame(
+                                    width: horizontalSizeClass == .regular ? 144 : 120)
                             }
                         }
                     }
@@ -60,5 +69,31 @@ struct MangasRowListView: View {
                         alignment: .center)
             }
         }
+        .sheet(isPresented: $isUpdateMangaModalPresented) {
+            if let editablePlugin = plugin as? any Editable {
+                UpdateMangaModal(plugin: editablePlugin)
+            }
+        }
+    }
+
+    private var createMangaButton: some View {
+        Button {
+            isUpdateMangaModalPresented = true
+        } label: {
+            VStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: coverCornerRadius).fill(Color(.systemGray6))
+                    .aspectRatio(3 / 4, contentMode: .fit)
+                    .overlay { Image(systemName: "plus").font(.title) }
+
+                Text("createManga").font(.caption).lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var coverCornerRadius: CGFloat {
+        if #available(iOS 26.0, *) { return 12 }
+        return 8
     }
 }
