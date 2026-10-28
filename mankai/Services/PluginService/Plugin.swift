@@ -7,6 +7,26 @@
 
 import Foundation
 import GRDB
+import SwiftUI
+
+/// A plugin type's local icon, rendered with its type or instance color.
+enum PluginIcon {
+    case system(String)
+    case asset(String)
+    case text(String)
+    case folder(String)
+
+    @MainActor @ViewBuilder func view(color: Color) -> some View {
+        switch self { case .system(let name): Image(systemName: name) case .asset(let name):
+            Image(name).renderingMode(.original).resizable().scaledToFit()
+                .frame(width: 28, height: 28)
+            case .text(let text):
+                Text(verbatim: text).font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(.black)
+            case .folder(let label): LabeledFolderIcon(label: label, color: color)
+        }
+    }
+}
 
 struct Cooldown: Codable {
     var `default`: Int?
@@ -96,6 +116,16 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// The localized name of this plugin type, when available.
     class var typeName: String? { nil }
 
+    /// The default icon and background supplied by this plugin type.
+    class var defaultIcon: PluginIcon { .system("puzzlepiece.extension.fill") }
+
+    class var defaultColor: Color { .gray }
+
+    /// The type's icon, available before an instance is configured.
+    class var iconView: AnyView {
+        AnyView(PluginIconView(defaultIcon: defaultIcon, color: defaultColor))
+    }
+
     var syncType: String? { type(of: self).syncType }
 
     /// Restores the saved instances owned by this plugin type.
@@ -134,6 +164,17 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     var authors: [String] { [] }
 
     var repository: String? { nil }
+
+    var icon: String? { nil }
+
+    /// The custom icon when available, otherwise this plugin type's default.
+    var iconView: AnyView {
+        AnyView(PluginIconView(icon: icon, defaultIcon: type(of: self).defaultIcon, color: color))
+    }
+
+    var color: Color { type(of: self).defaultColor }
+
+    var homePage: String? { nil }
 
     var availableGenres: [Genre] { [] }
 
@@ -266,6 +307,15 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
 }
 
 extension Plugin {
+    var displayTags: [String] {
+        var tags = self.tags
+        if let version { tags.append("v\(version)") }
+        if self is Editable, !tags.contains(String(localized: "editable")) {
+            tags.append(String(localized: "editable"))
+        }
+        return tags
+    }
+
     func configuredURL(_ url: String, values: [ConfigValue]) -> String? {
         guard var components = URLComponents(string: url) else { return nil }
         let keys = Set(values.map(\.key))

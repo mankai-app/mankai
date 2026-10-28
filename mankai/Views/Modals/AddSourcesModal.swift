@@ -47,46 +47,43 @@ struct AddSourcesView: View {
             if candidate.isLoading {
                 ProgressView().frame(maxWidth: .infinity, alignment: .center)
             } else if let plugin = candidate.plugin {
-                Button {
-                    if selectedSourceIds.contains(candidate.id) {
-                        selectedSourceIds.remove(candidate.id)
-                    } else {
-                        selectedSourceIds.insert(candidate.id)
-                    }
-                } label: {
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(
-                            systemName: selectedSourceIds.contains(candidate.id)
-                                ? "checkmark.circle.fill" : "circle"
-                        )
-                        .font(.title3)
-                        .foregroundStyle(
-                            selectedSourceIds.contains(candidate.id)
-                                ? Color.accentColor : .secondary)
+                if sources.count == 1 {
+                    VStack(spacing: 16) {
+                        PluginInfoView(plugin: plugin)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 8) {
-                                Text(plugin.name ?? plugin.id).foregroundStyle(.primary)
-
-                                if let typeName = plugin.typeName { Text(typeName).smallTagStyle() }
-
-                                if let version = plugin.version {
-                                    Text(verbatim: "v\(version)").smallTagStyle()
-                                }
-                            }
-
-                            if let description = plugin.description {
-                                Text(description).font(.caption).foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                            }
+                        Button(action: addSelectedPlugins) {
+                            Text("add").frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
                     }
-                    .contentShape(Rectangle())
+                } else {
+                    Button {
+                        if selectedSourceIds.contains(candidate.id) {
+                            selectedSourceIds.remove(candidate.id)
+                        } else {
+                            selectedSourceIds.insert(candidate.id)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(
+                                systemName: selectedSourceIds.contains(candidate.id)
+                                    ? "checkmark.circle.fill" : "circle"
+                            )
+                            .font(.title3)
+                            .foregroundStyle(
+                                selectedSourceIds.contains(candidate.id)
+                                    ? Color.accentColor : .secondary)
+
+                            PluginListItemView(plugin: plugin)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             } else {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(spacing: 12) {
                     Image(systemName: "exclamationmark.circle.fill").font(.title3)
                         .foregroundStyle(.red)
 
@@ -99,11 +96,14 @@ struct AddSourcesView: View {
                 }
             }
         }
-        .navigationTitle("addSources").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(sources.count == 1 ? Text("addSource") : Text("addSources"))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("add") { addSelectedPlugins() }
-                    .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
+            if sources.count > 1 {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("add") { addSelectedPlugins() }
+                        .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
+                }
             }
         }
         .task { await loadCandidates() }

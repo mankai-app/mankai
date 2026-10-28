@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 
 final class SuwayomiPlugin: Plugin, Configurable {
     private var model: SuwayomiPluginModel
@@ -15,6 +16,10 @@ final class SuwayomiPlugin: Plugin, Configurable {
     override class var syncType: String? { "suwayomi" }
 
     override class var typeName: String? { String(localized: "suwayomi") }
+
+    override class var defaultIcon: PluginIcon { .asset("SuwayomiIcon") }
+
+    override class var defaultColor: Color { .clear }
 
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]

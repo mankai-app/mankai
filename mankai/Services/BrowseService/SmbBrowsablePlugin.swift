@@ -202,7 +202,9 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
 
     override var tags: [String] { ["SMB"] }
 
-    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "SMB", color: color)) }
+    override class var defaultIcon: PluginIcon { .folder("SMB") }
+
+    override class var defaultColor: Color { .orange }
 
     override class var syncType: String? { "smb" }
 

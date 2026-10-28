@@ -160,7 +160,9 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin<
 
     override var tags: [String] { ["WebDAV"] }
 
-    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "DAV", color: color)) }
+    override class var defaultIcon: PluginIcon { .folder("DAV") }
+
+    override class var defaultColor: Color { .teal }
 
     override class var syncType: String? { "webdav" }
 

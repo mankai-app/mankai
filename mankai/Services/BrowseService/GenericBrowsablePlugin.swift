@@ -137,7 +137,9 @@ where Session: BrowsableSession, Session.Config == Config {
 
     var displayName: String?
 
-    var icon: AnyView { AnyView(Image(systemName: "folder.fill")) }
+    override class var defaultIcon: PluginIcon { .system("folder.fill") }
+
+    override class var defaultColor: Color { .blue }
 
     override var availableGenres: [Genre] { Genre.allCases }
 
@@ -148,7 +150,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     override class var typeCapabilities: [PluginTypeCapability] { [] }
 
-    var color: Color { BrowsablePluginStyle.color(for: _id) }
+    override var color: Color { BrowsablePluginStyle.color(for: _id) }
 
     var configuration: Config {
         didSet {

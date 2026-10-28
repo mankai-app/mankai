@@ -38,12 +38,6 @@ struct Entity {
     /// When `nil`, the plugin uses its backend-specific default name.
     var displayName: String? { get set }
 
-    /// The icon used to represent this plugin.
-    var icon: AnyView { get }
-
-    /// The color used to visually distinguish this plugin.
-    var color: Color { get }
-
     /// Returns the entities at the given path.
     func getEntities(path: String?) async throws -> [Entity]
 

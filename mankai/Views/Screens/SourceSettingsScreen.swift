@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import WrappingHStack
 
 struct SourceSettingsScreen: View {
     @State private var showModal = false
@@ -30,15 +29,6 @@ struct SourceSettingsScreen: View {
         }
     }
 
-    private func displayTags(for plugin: Plugin) -> [String] {
-        var tags = plugin.tags
-        if let version = plugin.version { tags.append("v\(version)") }
-        if plugin is Editable, !tags.contains(String(localized: "editable")) {
-            tags.append(String(localized: "editable"))
-        }
-        return tags
-    }
-
     var body: some View {
         List {
             SettingsHeaderView(
@@ -48,21 +38,7 @@ struct SourceSettingsScreen: View {
 
             ForEach(sortedPlugins) { plugin in
                 NavigationLink(destination: { SourceInfoScreen(plugin: plugin) }) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(plugin.name ?? plugin.id)
-
-                        let tags = displayTags(for: plugin)
-                        if !tags.isEmpty {
-                            WrappingHStack(tags, id: \.self, lineSpacing: 4) { tag in
-                                Text(tag).smallTagStyle()
-                            }
-                        }
-
-                        if let description = plugin.description {
-                            Text(description).font(.caption).foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
+                    PluginListItemView(plugin: plugin)
                 }
                 .deleteDisabled(plugin is AppDirPlugin)
             }

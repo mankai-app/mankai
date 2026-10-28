@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 
 final class KavitaPlugin: Plugin, Configurable {
     private var model: KavitaPluginModel
@@ -15,6 +16,10 @@ final class KavitaPlugin: Plugin, Configurable {
     override class var syncType: String? { "kavita" }
 
     override class var typeName: String? { String(localized: "kavita") }
+
+    override class var defaultIcon: PluginIcon { .asset("KavitaIcon") }
+
+    override class var defaultColor: Color { .clear }
 
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]

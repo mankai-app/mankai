@@ -8,6 +8,7 @@
 import CryptoKit
 import Foundation
 import GRDB
+import SwiftUI
 
 enum ReadFsPluginConstants {
     /// Maximum number of search/list results per page
@@ -18,6 +19,11 @@ enum ReadFsPluginConstants {
 }
 
 class ReadFsPlugin: Plugin {
+
+    override class var defaultIcon: PluginIcon { .system("folder.fill") }
+
+    override class var defaultColor: Color { .blue }
+
     let url: URL
 
     // MARK: - Cache

@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 
 final class KomgaPlugin: Plugin, Configurable {
     private var model: KomgaPluginModel
@@ -15,6 +16,10 @@ final class KomgaPlugin: Plugin, Configurable {
     override class var syncType: String? { "komga" }
 
     override class var typeName: String? { String(localized: "komga") }
+
+    override class var defaultIcon: PluginIcon { .asset("KomgaIcon") }
+
+    override class var defaultColor: Color { .clear }
 
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]

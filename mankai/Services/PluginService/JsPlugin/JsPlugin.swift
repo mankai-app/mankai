@@ -8,6 +8,7 @@
 import Foundation
 import GRDB
 import ReerCodable
+import SwiftUI
 
 enum ScriptType: String {
     case isOnline
@@ -26,6 +27,12 @@ final class JsPlugin: Plugin, Configurable {
 
     override class var typeName: String? { String(localized: "js") }
 
+    override class var defaultIcon: PluginIcon { .text("JS") }
+
+    override class var defaultColor: Color {
+        Color(.sRGB, red: 0xEF / 255.0, green: 0xD8 / 255.0, blue: 0x1C / 255.0)
+    }
+
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
     }
@@ -38,6 +45,8 @@ final class JsPlugin: Plugin, Configurable {
     private var _description: String?
     private var _authors: [String]
     private var _repository: String?
+    private var _icon: String?
+    private var _homePage: String?
     private var _availableGenres: [Genre]
     private var _configs: [Config]
     private var _cooldown: Cooldown?
@@ -54,6 +63,10 @@ final class JsPlugin: Plugin, Configurable {
     override var authors: [String] { _authors }
 
     override var repository: String? { _repository }
+
+    override var icon: String? { _icon }
+
+    override var homePage: String? { _homePage }
 
     override var availableGenres: [Genre] { _availableGenres }
 
@@ -96,8 +109,9 @@ final class JsPlugin: Plugin, Configurable {
 
     init(
         id: String, name: String? = nil, version: String? = nil, description: String? = nil,
-        authors: [String] = [], repository: String? = nil, updatesUrl: String? = nil,
-        availableGenres: [Genre] = [], scripts: [ScriptType: String] = [:], configs: [Config] = [],
+        authors: [String] = [], repository: String? = nil, icon: String? = nil,
+        homePage: String? = nil, updatesUrl: String? = nil, availableGenres: [Genre] = [],
+        scripts: [ScriptType: String] = [:], configs: [Config] = [],
         getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
     ) {
@@ -108,6 +122,8 @@ final class JsPlugin: Plugin, Configurable {
         _description = description
         _authors = authors
         _repository = repository
+        _icon = icon
+        _homePage = homePage
         _updatesUrl = updatesUrl
         _availableGenres = availableGenres
         _configs = configs
@@ -168,10 +184,10 @@ final class JsPlugin: Plugin, Configurable {
         return JsPlugin(
             id: metadata.id, name: metadata.name, version: metadata.version,
             description: metadata.description, authors: metadata.authors,
-            repository: metadata.repository, updatesUrl: metadata.updatesUrl,
-            availableGenres: metadata.availableGenres, scripts: scripts, configs: metadata.configs,
-            getImageHeaders: metadata.getImageHeaders, cooldown: metadata.cooldown,
-            capabilities: metadata.capabilities)
+            repository: metadata.repository, icon: metadata.icon, homePage: metadata.homePage,
+            updatesUrl: metadata.updatesUrl, availableGenres: metadata.availableGenres,
+            scripts: scripts, configs: metadata.configs, getImageHeaders: metadata.getImageHeaders,
+            cooldown: metadata.cooldown, capabilities: metadata.capabilities)
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
@@ -276,9 +292,9 @@ final class JsPlugin: Plugin, Configurable {
 
         let metadata = JsPluginModel.Metadata(
             id: id, name: name, version: version, description: description, authors: authors,
-            repository: repository, updatesUrl: updatesUrl, availableGenres: availableGenres,
-            scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
-            cooldown: cooldown,
+            repository: repository, icon: icon, homePage: homePage, updatesUrl: updatesUrl,
+            availableGenres: availableGenres, scripts: scriptsDict, configs: configs,
+            getImageHeaders: _getImageHeaders, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
         return JsPluginModel(
             id: id, meta: metadata, configValues: Array(_configValues.values), sourceURL: sourceURL)
@@ -510,6 +526,8 @@ final class JsPlugin: Plugin, Configurable {
                 _description = newPlugin._description
                 _authors = newPlugin._authors
                 _repository = newPlugin._repository
+                _icon = newPlugin._icon
+                _homePage = newPlugin._homePage
                 _availableGenres = newPlugin._availableGenres
                 _configs = newPlugin._configs
                 _cooldown = newPlugin._cooldown

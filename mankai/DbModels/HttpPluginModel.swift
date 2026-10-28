@@ -37,6 +37,8 @@ extension HttpPluginModel {
         let description: String?
         @DecodingDefault([]) let authors: [String]
         let repository: String?
+        let icon: String?
+        let homePage: String?
         @DecodingDefault([]) let availableGenres: [Genre]
         let authenticationEnabled: Bool?
         @DecodingDefault(false) let editorEnabled: Bool

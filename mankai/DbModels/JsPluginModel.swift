@@ -37,6 +37,8 @@ extension JsPluginModel {
         let description: String?
         @DecodingDefault([]) let authors: [String]
         let repository: String?
+        let icon: String?
+        let homePage: String?
         let updatesUrl: String?
         @DecodingDefault([]) let availableGenres: [Genre]
         @DecodingDefault([:]) let scripts: [String: String]

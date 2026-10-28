@@ -33,21 +33,13 @@ struct AddFilesModal: View {
             }
         }
 
-        var color: Color {
-            switch self { case .filesystem: .blue case .smb: .orange case .sftp: .green case .nfs:
-                .purple
-                case .webdav: .teal
-                case .opds: .red
-            }
-        }
-
-        @ViewBuilder var icon: some View {
-            switch self { case .filesystem: Image(systemName: "folder.fill") case .smb:
-                LabeledFolderIcon(label: "SMB", color: color)
-                case .sftp: LabeledFolderIcon(label: "SSH", color: color)
-                case .nfs: LabeledFolderIcon(label: "NFS", color: color)
-                case .webdav: LabeledFolderIcon(label: "DAV", color: color)
-                case .opds: Image(systemName: "books.vertical.fill")
+        var pluginType: Plugin.Type {
+            switch self { case .filesystem: FsBrowsablePlugin.self case .smb:
+                SmbBrowsablePlugin.self
+                case .sftp: SftpBrowsablePlugin.self
+                case .nfs: NfsBrowsablePlugin.self
+                case .webdav: WebDavBrowsablePlugin.self
+                case .opds: OpdsBrowsablePlugin.self
             }
         }
     }
@@ -157,12 +149,10 @@ struct AddFilesModal: View {
         NavigationLink {
             configuration(for: type)
         } label: {
-            Label {
+            HStack(spacing: 12) {
+                type.pluginType.iconView
                 Text(type.localizedName)
-            } icon: {
-                type.icon
             }
-            .labelStyle(ColorfulIconLabelStyle(color: type.color))
         }
     }
 

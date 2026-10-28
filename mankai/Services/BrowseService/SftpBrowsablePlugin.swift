@@ -234,7 +234,9 @@ final class SftpBrowsablePlugin: GenericBrowsablePlugin<SftpConnectionConfigurat
 
     override var tags: [String] { ["SFTP"] }
 
-    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "SSH", color: color)) }
+    override class var defaultIcon: PluginIcon { .folder("SSH") }
+
+    override class var defaultColor: Color { .green }
 
     override class var syncType: String? { "sftp" }
 

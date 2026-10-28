@@ -33,12 +33,10 @@ struct FilesTab: View {
                 Section {
                     ForEach(browseService.plugins, id: \.id) { share in
                         NavigationLink(value: Destination.share(share.id)) {
-                            Label {
+                            HStack(spacing: 12) {
+                                share.iconView
                                 Text(share.name ?? share.id)
-                            } icon: {
-                                share.icon
                             }
-                            .labelStyle(ColorfulIconLabelStyle(color: share.color))
                         }
                         .deleteDisabled(share is AppDirBrowsablePlugin)
                         .swipeActions(edge: .leading, allowsFullSwipe: false) {

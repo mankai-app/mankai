@@ -35,41 +35,12 @@ struct AddSourceModal: View {
             }
         }
 
-        var color: Color {
-            switch self { case .jsPlugin:
-                Color(.sRGB, red: 0xEF / 255.0, green: 0xD8 / 255.0, blue: 0x1C / 255.0)
-
-                case .fsPlugin: .blue
-
-                case .httpPlugin: .clear
-
-                case .komgaPlugin: .clear
-
-                case .kavitaPlugin: .clear
-
-                case .suwayomiPlugin: .clear
-            }
-        }
-
-        @ViewBuilder var icon: some View {
-            switch self { case .jsPlugin:
-                Text(verbatim: "JS").font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.black)
-
-                case .fsPlugin: Image(systemName: "folder.fill")
-
-                case .httpPlugin:
-                    Image("SakuraIconPreview").resizable().scaledToFit()
-                        .frame(width: 28, height: 28)
-
-                case .komgaPlugin:
-                    Image("KomgaIcon").resizable().scaledToFit().frame(width: 28, height: 28)
-
-                case .kavitaPlugin:
-                    Image("KavitaIcon").resizable().scaledToFit().frame(width: 28, height: 28)
-
-                case .suwayomiPlugin:
-                    Image("SuwayomiIcon").resizable().scaledToFit().frame(width: 28, height: 28)
+        var pluginType: Plugin.Type {
+            switch self { case .jsPlugin: JsPlugin.self case .fsPlugin: ReadFsPlugin.self
+                case .httpPlugin: HttpPlugin.self
+                case .komgaPlugin: KomgaPlugin.self
+                case .kavitaPlugin: KavitaPlugin.self
+                case .suwayomiPlugin: SuwayomiPlugin.self
             }
         }
     }
@@ -160,12 +131,10 @@ struct AddSourceModal: View {
         NavigationLink {
             configuration(for: type)
         } label: {
-            Label {
+            HStack(spacing: 12) {
+                type.pluginType.iconView
                 Text(type.localizedName)
-            } icon: {
-                type.icon
             }
-            .labelStyle(ColorfulIconLabelStyle(color: type.color))
         }
     }
 

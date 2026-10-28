@@ -252,7 +252,9 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
 
     override var tags: [String] { ["NFS"] }
 
-    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "NFS", color: color)) }
+    override class var defaultIcon: PluginIcon { .folder("NFS") }
+
+    override class var defaultColor: Color { .purple }
 
     override class var syncType: String? { "nfs" }
 

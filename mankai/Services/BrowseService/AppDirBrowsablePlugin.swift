@@ -45,9 +45,13 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin, FileDeletable {
 
     override var name: String? { String(localized: "localDir") }
 
-    override var icon: AnyView { AnyView(Image(systemName: "iphone")) }
+    override var tags: [String] { super.tags + [String(localized: "builtin")] }
 
-    override var color: Color { .accentColor }
+    override class var defaultIcon: PluginIcon { .system("iphone") }
+
+    override class var defaultColor: Color { .accentColor }
+
+    override var color: Color { Self.defaultColor }
 
     var supportedExtensions: [String] {
         Array(Set(parsers.values.flatMap(\.supportedExtensions))).sorted()

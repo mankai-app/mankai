@@ -41,28 +41,21 @@ struct SourceInfoScreen: View {
     var body: some View {
         Group {
             List {
+                Section { PluginInfoView(plugin: plugin) }
+
                 Section("info") {
-                    HStack {
-                        Text("id")
-                        Spacer()
-                        Text(plugin.id).lineLimit(1).truncationMode(.middle)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let name = plugin.name { LabeledContent("name") { Text(name) } }
-
-                    if let version = plugin.version { LabeledContent("version") { Text(version) } }
-
-                    if let description = plugin.description {
-                        LabeledContent("description") { Text(description) }
-                    }
+                    LabeledContent("id") { Text(plugin.id).lineLimit(1).truncationMode(.middle) }
 
                     if !plugin.authors.isEmpty {
                         LabeledContent("authors") { Text(plugin.authors.joined(separator: ", ")) }
                     }
 
+                    if let homePage = plugin.homePage {
+                        LabeledContent("homePage") { metadataLink(homePage) }
+                    }
+
                     if let repository = plugin.repository {
-                        LabeledContent("repository") { Text(repository) }
+                        LabeledContent("repository") { metadataLink(repository) }
                     }
 
                     if plugin.availableGenres.isEmpty {
@@ -212,6 +205,14 @@ struct SourceInfoScreen: View {
             errorTitle = String(localized: "failedToSetConfigValue")
             errorMessage = error.localizedDescription
             showErrorAlert = true
+        }
+    }
+
+    @ViewBuilder private func metadataLink(_ value: String) -> some View {
+        if let url = URL.normalizedHTTPURL(value, allowsQuery: true, allowsFragment: true) {
+            Link(value, destination: url).buttonStyle(.plain)
+        } else {
+            Text(value)
         }
     }
 

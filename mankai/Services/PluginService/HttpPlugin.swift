@@ -8,11 +8,16 @@
 import Foundation
 import GRDB
 import ReerCodable
+import SwiftUI
 
 class HttpPlugin: Plugin, Configurable {
     override class var syncType: String? { "http" }
 
     override class var typeName: String? { String(localized: "mankaiCompatible") }
+
+    override class var defaultIcon: PluginIcon { .asset("SakuraIconPreview") }
+
+    override class var defaultColor: Color { .clear }
 
     override class var typeCapabilities: [PluginTypeCapability] {
         [.urlDecoding, .cache, .download]
@@ -24,6 +29,8 @@ class HttpPlugin: Plugin, Configurable {
     private var _description: String?
     private var _authors: [String]
     private var _repository: String?
+    private var _icon: String?
+    private var _homePage: String?
     private var _availableGenres: [Genre]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
@@ -39,6 +46,10 @@ class HttpPlugin: Plugin, Configurable {
     override var authors: [String] { _authors }
 
     override var repository: String? { _repository }
+
+    override var icon: String? { _icon }
+
+    override var homePage: String? { _homePage }
 
     override var availableGenres: [Genre] { _availableGenres }
 
@@ -84,7 +95,8 @@ class HttpPlugin: Plugin, Configurable {
     required init(
         id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil,
         version: String? = nil, description: String? = nil, authors: [String] = [],
-        repository: String? = nil, availableGenres: [Genre] = [], cooldown: Cooldown? = nil,
+        repository: String? = nil, icon: String? = nil, homePage: String? = nil,
+        availableGenres: [Genre] = [], cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
@@ -97,6 +109,8 @@ class HttpPlugin: Plugin, Configurable {
         _description = description
         _authors = authors
         _repository = repository
+        _icon = icon
+        _homePage = homePage
         _availableGenres = availableGenres
         _cooldown = cooldown
         _capabilities = capabilities
@@ -136,9 +150,9 @@ class HttpPlugin: Plugin, Configurable {
             return EditableHttpPlugin(
                 id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
                 name: metadata.name, version: metadata.version, description: metadata.description,
-                authors: metadata.authors, repository: metadata.repository,
-                availableGenres: metadata.availableGenres, cooldown: metadata.cooldown,
-                capabilities: metadata.capabilities)
+                authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
+                homePage: metadata.homePage, availableGenres: metadata.availableGenres,
+                cooldown: metadata.cooldown, capabilities: metadata.capabilities)
         }
 
         if !metadata.editorEnabled, self is EditableHttpPlugin.Type {
@@ -151,9 +165,9 @@ class HttpPlugin: Plugin, Configurable {
         return self.init(
             id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
             name: metadata.name, version: metadata.version, description: metadata.description,
-            authors: metadata.authors, repository: metadata.repository,
-            availableGenres: metadata.availableGenres, cooldown: metadata.cooldown,
-            capabilities: metadata.capabilities)
+            authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
+            homePage: metadata.homePage, availableGenres: metadata.availableGenres,
+            cooldown: metadata.cooldown, capabilities: metadata.capabilities)
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
@@ -267,6 +281,8 @@ class HttpPlugin: Plugin, Configurable {
             _description = metadata.description
             _authors = metadata.authors
             _repository = metadata.repository
+            _icon = metadata.icon
+            _homePage = metadata.homePage
             _availableGenres = metadata.availableGenres
             _authenticationEnabled = metadata.authenticationEnabled ?? false
             _capabilities = metadata.capabilities
@@ -311,9 +327,9 @@ class HttpPlugin: Plugin, Configurable {
     private func makeModel() -> HttpPluginModel {
         let metadata = HttpPluginModel.Metadata(
             id: id, name: name, version: version, description: description, authors: authors,
-            repository: repository, availableGenres: availableGenres,
-            authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
-            configs: configs, cooldown: cooldown,
+            repository: repository, icon: icon, homePage: homePage,
+            availableGenres: availableGenres, authenticationEnabled: authenticationEnabled,
+            editorEnabled: self is EditableHttpPlugin, configs: configs, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
         return HttpPluginModel(
             id: id, baseUrl: baseUrl, meta: metadata, configValues: Array(_configValues.values))
@@ -446,6 +462,8 @@ class HttpPlugin: Plugin, Configurable {
                 _description = newPlugin._description
                 _authors = newPlugin._authors
                 _repository = newPlugin._repository
+                _icon = newPlugin._icon
+                _homePage = newPlugin._homePage
                 _availableGenres = newPlugin._availableGenres
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities

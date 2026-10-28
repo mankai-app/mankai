@@ -28,7 +28,9 @@ struct MangasRowListView: View {
                     SourceLibraryScreen(plugin: plugin)
                 }
             }) {
-                HStack(spacing: 4) {
+                HStack {
+                    plugin.iconView.scaleEffect(24.0 / 28.0).frame(width: 24, height: 24)
+
                     Text(plugin.name ?? plugin.id).font(.title3).foregroundColor(.primary)
                         .fontWeight(.semibold)
                     Image(systemName: "chevron.right").font(.callout).foregroundColor(.secondary)

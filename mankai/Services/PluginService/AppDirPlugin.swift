@@ -33,9 +33,7 @@ final class AppDirPlugin: ReadWriteFsPlugin {
         super.init(url: mangaDir, id: "mankai")
     }
 
-    override var tags: [String] {
-        [String(localized: "builtin"), String(localized: "fs"), String(localized: "editable")]
-    }
+    override var tags: [String] { [String(localized: "builtin"), String(localized: "fs")] }
 
     override var description: String? { String(localized: "appFsSourceDescription") }
 

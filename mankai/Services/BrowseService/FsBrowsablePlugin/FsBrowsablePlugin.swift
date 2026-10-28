@@ -59,6 +59,8 @@ struct FilesystemSession: BrowsableSession {
 class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
     override var name: String? { displayName ?? dirName }
 
+    override var tags: [String] { [String(localized: "fs")] }
+
     var url: URL { configuration }
 
     private var isAccessingSecurityScopedResource = false

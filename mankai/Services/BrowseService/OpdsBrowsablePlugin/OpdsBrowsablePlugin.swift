@@ -94,6 +94,8 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         displayName ?? configuration.catalogURL.host ?? configuration.catalogURL.absoluteString
     }
 
+    override var tags: [String] { [String(localized: "opds")] }
+
     func convertToLocalPlugin() {
         _id = UUID().uuidString
         _shouldSync = false
@@ -108,9 +110,11 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     override class var typeCapabilities: [PluginTypeCapability] { [.urlDecoding] }
 
-    var icon: AnyView { AnyView(Image(systemName: "books.vertical.fill")) }
+    override class var defaultIcon: PluginIcon { .system("books.vertical.fill") }
 
-    var color: Color { BrowsablePluginStyle.color(for: _id) }
+    override class var defaultColor: Color { .red }
+
+    override var color: Color { BrowsablePluginStyle.color(for: _id) }
 
     convenience init(session: OpdsSession, name: String?) async throws {
         let rootCatalog = try await session.get(url: session.configuration.catalogURL)

@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 
 enum CacheDirectory {
     static let regular = "regular"
@@ -95,6 +96,14 @@ class CacheWrapper: Plugin {
     override var authors: [String] { plugin.authors }
 
     override var repository: String? { plugin.repository }
+
+    override var icon: String? { plugin.icon }
+
+    override var iconView: AnyView { plugin.iconView }
+
+    override var color: Color { plugin.color }
+
+    override var homePage: String? { plugin.homePage }
 
     override var availableGenres: [Genre] { plugin.availableGenres }
 

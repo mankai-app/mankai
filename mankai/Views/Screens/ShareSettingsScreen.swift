@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import WrappingHStack
 
 struct ShareSettingsScreen: View {
     @ObservedObject private var browseService = BrowseService.shared
@@ -14,12 +13,6 @@ struct ShareSettingsScreen: View {
     @State private var showingRemoveConfirmation = false
     @State private var shareIdsToRemove: [String] = []
     @State private var errorMessage: String?
-
-    private func displayTags(for share: BrowsablePlugin) -> [String] {
-        var tags = [shareTypeName(for: share)]
-        if share is AppDirBrowsablePlugin { tags.append(String(localized: "builtin")) }
-        return tags
-    }
 
     var body: some View {
         List {
@@ -32,18 +25,7 @@ struct ShareSettingsScreen: View {
                 NavigationLink {
                     ShareInfoScreen(share: share)
                 } label: {
-                    Label {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(share.name ?? share.id)
-
-                            WrappingHStack(displayTags(for: share), id: \.self, lineSpacing: 4) {
-                                tag in Text(tag).smallTagStyle()
-                            }
-                        }
-                    } icon: {
-                        share.icon
-                    }
-                    .labelStyle(ColorfulIconLabelStyle(color: share.color))
+                    PluginListItemView(plugin: share)
                 }
                 .deleteDisabled(share is AppDirBrowsablePlugin)
             }
@@ -100,16 +82,5 @@ struct ShareSettingsScreen: View {
         } message: {
             if let errorMessage { Text(errorMessage) }
         }
-    }
-}
-
-private func shareTypeName(for share: BrowsablePlugin) -> String {
-    switch share { case is AppDirBrowsablePlugin, is FsBrowsablePlugin:
-        return String(localized: "fs")
-        case is SmbBrowsablePlugin: return String(localized: "smb")
-        case is NfsBrowsablePlugin: return String(localized: "nfs")
-        case is WebDavBrowsablePlugin: return String(localized: "webdav")
-        case is OpdsBrowsablePlugin: return String(localized: "opds")
-        default: return String(localized: "share")
     }
 }
