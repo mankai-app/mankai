@@ -40,8 +40,8 @@ enum SettingsDefaults {
     static let CR_softSnap: Bool = false
 
     // Paged Reader Defaults
-    static let PR_navigationOrientation: NavigationOrientation = .vertical
-    static let PR_pageTransition: PageTransition = .scroll
+    static let PR_navigationOrientation: NavigationOrientation = .horizontal
+    static let PR_pageTransition: PageTransition = .pageCurl
     static let PR_readingDirection: ReadingDirection = .rightToLeft
     static let PR_tapNavigation: Bool = true
     static let PR_tapNavigationAcrossChapters: Bool = false

@@ -11,6 +11,7 @@ struct BooksSlider: View {
     @Binding var value: Double
 
     let bounds: ClosedRange<Double>
+    var readingDirection: ReadingDirection = .leftToRight
     var step: Double = 0
     var canScrub = true
     var previewTitle: String?
@@ -25,19 +26,23 @@ struct BooksSlider: View {
     @State private var feedbackTrigger = 0
 
     private var displayedValue: Double { previewValue ?? value }
+    private var isRightToLeft: Bool { readingDirection == .rightToLeft }
 
     var body: some View {
         ZStack {
             GeometryReader { proxy in
                 let progress = normalizedProgress(for: displayedValue)
                 let fillWidth = proxy.size.width * progress
+                let fillPosition = isRightToLeft ? proxy.size.width - fillWidth / 2 : fillWidth / 2
                 let startProgress = normalizedProgress(for: interactionStartValue ?? value)
-                let markerPosition = proxy.size.width * startProgress
+                let markerProgress = isRightToLeft ? 1 - startProgress : startProgress
+                let markerPosition = proxy.size.width * markerProgress
 
-                ZStack(alignment: .leading) {
+                ZStack {
                     Capsule().fill(.clear)
 
                     Rectangle().fill(Color.primary.opacity(0.24)).frame(width: fillWidth)
+                        .position(x: fillPosition, y: proxy.size.height / 2)
 
                     if isInteracting {
                         Capsule().fill(Color.primary.opacity(0.58)).frame(width: 3, height: 28)
@@ -69,7 +74,8 @@ struct BooksSlider: View {
                 HStack {
                     HStack(spacing: 0) {
                         Text("chapters")
-                        Text(verbatim: " · \(progressPercentage)%")
+                        Text(verbatim: " · ")
+                        Text(verbatim: "\(progressPercentage)%")
                     }
                     .lineLimit(1).layoutPriority(1)
 
@@ -111,7 +117,8 @@ struct BooksSlider: View {
 
     private func updatePreview(at location: CGFloat, width: CGFloat) {
         guard width > 0 else { return }
-        let progress = Double(min(max(location / width, 0), 1))
+        let position = Double(min(max(location / width, 0), 1))
+        let progress = isRightToLeft ? 1 - position : position
 
         let rawValue = bounds.lowerBound + progress * (bounds.upperBound - bounds.lowerBound)
         let newValue = normalized(rawValue)

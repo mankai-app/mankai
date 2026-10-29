@@ -9,6 +9,18 @@ import CoreGraphics
 import SwiftUI
 import UIKit
 
+extension UIView {
+    func pinEdges(to container: UIView) {
+        translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            topAnchor.constraint(equalTo: container.topAnchor),
+            leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+    }
+}
+
 extension UIApplication {
     static var windowBounds: CGRect {
         UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow?

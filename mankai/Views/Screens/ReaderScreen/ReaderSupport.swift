@@ -1,5 +1,5 @@
 //
-//  ReaderTypes.swift
+//  ReaderSupport.swift
 //  mankai
 //
 //  Created by Travis XU on 7/8/2026.
@@ -144,6 +144,78 @@ struct ReaderOverscrollIndicator: View {
                 }
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
         }
+    }
+}
+
+final class ScrollOverscrollIndicatorController: UIHostingController<ReaderOverscrollIndicator> {
+    let isLeading: Bool
+    var progress: Double { rootView.progress }
+    var spacing: CGFloat = READER_OVERSCROLL_MINIMUM_SPACING {
+        didSet {
+            guard spacing != oldValue else { return }
+            positionConstraint?.constant = isLeading ? -spacing : spacing
+        }
+    }
+    private var positionConstraint: NSLayoutConstraint?
+
+    init(isLeading: Bool) {
+        self.isLeading = isLeading
+        super
+            .init(
+                rootView: ReaderOverscrollIndicator(
+                    progress: 0, direction: .up, step: .previous, availability: .unavailable))
+        sizingOptions = .intrinsicContentSize
+        safeAreaRegions = []
+    }
+
+    @available(*, unavailable) required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func positionConstraints(in container: UIView, orientation: NavigationOrientation)
+        -> [NSLayoutConstraint]
+    {
+        let edge: NSLayoutConstraint
+        let alignment: [NSLayoutConstraint]
+        if orientation == .vertical {
+            edge =
+                isLeading
+                ? view.bottomAnchor.constraint(equalTo: container.topAnchor, constant: -spacing)
+                : view.topAnchor.constraint(equalTo: container.bottomAnchor, constant: spacing)
+            alignment = [
+                view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                view.widthAnchor.constraint(equalTo: container.widthAnchor)
+            ]
+        } else {
+            edge =
+                isLeading
+                ? view.trailingAnchor.constraint(
+                    equalTo: container.leadingAnchor, constant: -spacing)
+                : view.leadingAnchor.constraint(
+                    equalTo: container.trailingAnchor, constant: spacing)
+            alignment = [
+                view.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+                view.heightAnchor.constraint(equalTo: container.heightAnchor)
+            ]
+        }
+        positionConstraint = edge
+        return alignment + [edge]
+    }
+
+    func update(
+        offset: CGFloat, orientation: NavigationOrientation, step: ReaderStep,
+        isAtBoundary: Bool = true, availability: ReaderChapterAvailability
+    ) {
+        let distance = isAtBoundary ? max(isLeading ? -offset : offset, 0) : 0
+        let translation = isLeading ? distance : -distance
+        let isVertical = orientation == .vertical
+        view.isHidden = !isAtBoundary
+        view.transform = CGAffineTransform(
+            translationX: isVertical ? 0 : translation, y: isVertical ? translation : 0)
+        rootView = ReaderOverscrollIndicator(
+            progress: Double(readerOverscrollProgress(distance, spacing: spacing)),
+            direction: isVertical ? (isLeading ? .up : .down) : (isLeading ? .left : .right),
+            step: step, availability: availability)
     }
 }
 

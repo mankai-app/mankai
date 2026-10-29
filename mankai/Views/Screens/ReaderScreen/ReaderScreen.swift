@@ -921,13 +921,16 @@ struct ReaderScreen: View {
     private var readerSlider: some View {
         let pageCount = max(urls.count, 1)
         let displayedPage = min(currentPage + 1, pageCount)
+        let sliderDirection =
+            readerType == .paged && pagedNavigationOrientation == .horizontal
+            ? readingDirection : .leftToRight
 
         return BooksSlider(
             value: Binding(
                 get: { Double(displayedPage) },
                 set: { requestPage(Int($0.rounded()) - 1, animated: false) }),
-            bounds: 1...Double(pageCount), step: 1, canScrub: urls.count > 1,
-            previewTitle: currentChapter.map { $0.title ?? $0.id },
+            bounds: 1...Double(pageCount), readingDirection: sliderDirection, step: 1,
+            canScrub: urls.count > 1, previewTitle: currentChapter.map { $0.title ?? $0.id },
             action: { isShowingChapters = true }
         )
         .frame(minWidth: 200, idealWidth: 240, maxWidth: 420)
