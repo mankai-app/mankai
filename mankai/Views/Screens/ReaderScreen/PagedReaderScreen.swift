@@ -129,17 +129,9 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
     private var currentGroup = 0
     private var lastAppliedNavigationGeneration = -1
     private var lastReportedViewportSize = CGSize.zero
-    private var navigationBarHeight: CGFloat?
 
     private var pageViewport: ReaderPageViewport {
-        if navigationBarHeight == nil {
-            navigationBarHeight = navigationController?.navigationBar.frame.height
-        }
-        return ReaderPageViewport(
-            bounds: view.bounds,
-            contentInsets: readerContentSafeAreaInsets(
-                in: view, fullscreenDisplay: configuration.fullscreenDisplay,
-                navigationBarHeight: navigationBarHeight ?? 0))
+        ReaderPageViewport(bounds: view.bounds, contentInsets: configuration.contentSafeAreaInsets)
     }
 
     private var usesHorizontalRightToLeftNavigation: Bool {
@@ -206,8 +198,8 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
         let chapterChanged = renderState.chapterID != state.chapterID
         let contentChanged = renderState.revision != state.revision
         let groupsChanged = renderState.groups != state.groups
-        let fullscreenChanged =
-            self.configuration.fullscreenDisplay != configuration.fullscreenDisplay
+        let contentInsetsChanged =
+            self.configuration.contentSafeAreaInsets != configuration.contentSafeAreaInsets
         let presentationChanged =
             self.configuration.navigationOrientation != configuration.navigationOrientation
             || self.configuration.readingDirection != configuration.readingDirection
@@ -229,7 +221,7 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
                 updateVisibleGroup: chapterChanged || presentationChanged || groupsChanged)
         }
 
-        if fullscreenChanged { updatePageViewports() }
+        if contentInsetsChanged { updatePageViewports() }
 
         if let command = state.navigationCommand,
             command.generation != lastAppliedNavigationGeneration

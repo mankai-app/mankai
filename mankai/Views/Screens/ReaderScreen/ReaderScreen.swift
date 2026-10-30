@@ -152,6 +152,7 @@ private struct ReaderSystemBarsModifier: ViewModifier {
 
     let fullscreenDisplay: Bool
     @Binding var isChromeVisible: Bool
+    @Binding var contentSafeAreaInsets: UIEdgeInsets
 
     private var usesSwiftUIVisibility: Bool {
         if #available(iOS 27.1, *) { return isDuo && fullscreenDisplay }
@@ -180,9 +181,10 @@ private struct ReaderSystemBarsModifier: ViewModifier {
         .overlay {
             ReaderNavigationBarController(
                 isNavigationBarHidden: !isChromeVisible,
-                usesSwiftUIVisibility: usesSwiftUIVisibility
+                usesSwiftUIVisibility: usesSwiftUIVisibility, fullscreenDisplay: fullscreenDisplay,
+                contentSafeAreaInsets: $contentSafeAreaInsets
             ) { isChromeVisible = true }
-            .ignoresSafeArea(edges: .top).allowsHitTesting(false)
+            .ignoresSafeArea().allowsHitTesting(false)
         }
     }
 }
@@ -245,6 +247,8 @@ private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
 private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     let isNavigationBarHidden: Bool
     let usesSwiftUIVisibility: Bool
+    let fullscreenDisplay: Bool
+    @Binding var contentSafeAreaInsets: UIEdgeInsets
     let onWillDisappear: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(onWillDisappear: onWillDisappear) }
@@ -255,8 +259,13 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: Controller, context: Context) {
         context.coordinator.onWillDisappear = onWillDisappear
+        controller.fullscreenDisplay = fullscreenDisplay
+        controller.onContentSafeAreaInsetsChange = { insets in
+            if contentSafeAreaInsets != insets { contentSafeAreaInsets = insets }
+        }
         controller.setNavigationBarHidden(
             isNavigationBarHidden, usesSwiftUIVisibility: usesSwiftUIVisibility, animated: true)
+        controller.view.setNeedsLayout()
     }
 
     static func dismantleUIViewController(_ controller: Controller, coordinator _: Coordinator) {
@@ -273,7 +282,12 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     }
 
     final class Controller: UIViewController {
+        var fullscreenDisplay = false
+        var onContentSafeAreaInsetsChange: ((UIEdgeInsets) -> Void)?
+
         private let showChrome: () -> Void
+        private var navigationBarHeight: CGFloat?
+        private var lastContentSafeAreaInsets: UIEdgeInsets?
         private var shouldHideNavigationBar = false
         private var usesSwiftUIVisibility = false
         private var isAnimatingNavigationBar = false
@@ -318,9 +332,40 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
         override func viewDidLayoutSubviews() {
             super.viewDidLayoutSubviews()
+            updateContentSafeAreaInsets()
             guard !isAnimatingNavigationBar else { return }
             if #unavailable(iOS 26.0), !shouldHideNavigationBar { return }
             applyNavigationBarVisibility(animated: false)
+        }
+
+        override func viewSafeAreaInsetsDidChange() {
+            super.viewSafeAreaInsetsDidChange()
+            updateContentSafeAreaInsets()
+        }
+
+        private func updateContentSafeAreaInsets() {
+            guard let window = viewIfLoaded?.window else { return }
+            if navigationBarHeight == nil {
+                navigationBarHeight = navigationController?.navigationBar.bounds.height
+            }
+
+            var insets = view.safeAreaInsets
+            if fullscreenDisplay {
+                let windowInsets = window.safeAreaInsets
+                let hasCutoutLayout =
+                    windowInsets.top > 40 || windowInsets.left > 0 || windowInsets.right > 0
+                    || windowInsets.bottom > 0
+                if !UIDevice.isIPhone || UIDevice.isDuo || !hasCutoutLayout { insets = .zero }
+            }
+            insets.top = max(0, insets.top - (navigationBarHeight ?? 0))
+
+            guard insets != lastContentSafeAreaInsets else { return }
+            lastContentSafeAreaInsets = insets
+            // Publish after layout so SwiftUI state is not changed during an update.
+            Task { @MainActor [weak self] in
+                guard let self, let insets = lastContentSafeAreaInsets else { return }
+                onContentSafeAreaInsetsChange?(insets)
+            }
         }
 
         override func viewWillDisappear(_ animated: Bool) {
@@ -476,6 +521,7 @@ struct ReaderScreen: View {
     @State private var navigationGeneration = 0
     @State private var navigationCommand: ReaderNavigationCommand?
     @State private var viewportSize: CGSize = .zero
+    @State private var contentSafeAreaInsets: UIEdgeInsets = .zero
     @State private var isChromeVisible = true
     @State private var isShowingChapters = false
     @State private var isShowingReaderSettings = false
@@ -651,7 +697,7 @@ struct ReaderScreen: View {
 
     private var renderConfiguration: ReaderRenderConfiguration {
         ReaderRenderConfiguration(
-            fullscreenDisplay: fullscreenDisplay, readingDirection: readingDirection,
+            contentSafeAreaInsets: contentSafeAreaInsets, readingDirection: readingDirection,
             defaultGroupSize: defaultGroupSize,
 
             tapNavigation: readerType == .continuous ? continuousTapNavigation : pagedTapNavigation,
@@ -723,8 +769,7 @@ struct ReaderScreen: View {
                     .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
                 }
             }
-            .ignoresSafeArea(edges: .bottom).onAppear { updateViewportSize(proxy.size) }
-            .onChange(of: proxy.size) { _, size in updateViewportSize(size) }
+            .ignoresSafeArea(edges: .bottom)
         }
         .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
         .navigationBarTitleDisplayMode(.inline).toolbarBackground(.visible, for: .navigationBar)
@@ -736,7 +781,8 @@ struct ReaderScreen: View {
         )
         .modifier(
             ReaderSystemBarsModifier(
-                fullscreenDisplay: fullscreenDisplay, isChromeVisible: $isChromeVisible)
+                fullscreenDisplay: fullscreenDisplay, isChromeVisible: $isChromeVisible,
+                contentSafeAreaInsets: $contentSafeAreaInsets)
         )
         .sheet(isPresented: $isShowingChapters) {
             ChaptersModal(

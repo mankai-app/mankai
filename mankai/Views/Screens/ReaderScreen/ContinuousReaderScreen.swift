@@ -29,7 +29,6 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     private var currentPage = 0
     private var currentGroupIndex: Int?
     private var startY: CGFloat = 0
-    private var navigationBarHeight: CGFloat?
     private var renderedRevision = -1
     private var renderedChapterID: String?
     private var lastAppliedNavigationGeneration = -1
@@ -41,17 +40,6 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     private var imageSubscriptions: [String: AnyCancellable] = [:]
 
     private var isResizing = false
-
-    private var contentSafeAreaInsets: UIEdgeInsets {
-        if navigationBarHeight == nil {
-            navigationBarHeight = navigationController?.navigationBar.frame.height
-        }
-        return readerContentSafeAreaInsets(
-            in: view, fullscreenDisplay: configuration.fullscreenDisplay,
-            navigationBarHeight: navigationBarHeight ?? 0)
-    }
-
-    private var contentLayoutFrame: CGRect { view.bounds.inset(by: contentSafeAreaInsets) }
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
@@ -350,7 +338,7 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     }
 
     private func updateOverscrollLayout() {
-        let insets = contentSafeAreaInsets
+        let insets = configuration.contentSafeAreaInsets
         topOverscrollController.spacing = readerOverscrollLayoutSpacing(safeAreaInset: insets.top)
         bottomOverscrollController.spacing = readerOverscrollLayoutSpacing(
             safeAreaInset: insets.bottom)
@@ -444,7 +432,7 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     private func calculateFrames(ratios: [String: CGFloat], mode: CGFloat) -> (
         [String: CGRect], CGFloat
     ) {
-        let width = contentLayoutFrame.width
+        let width = view.bounds.inset(by: configuration.contentSafeAreaInsets).width
         guard width > 0 else { return ([:], 0) }
 
         let isRightToLeft = configuration.readingDirection == .rightToLeft
@@ -502,13 +490,14 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
 
         for url in renderState.urls { reconcileImageView(url: url, frame: frames[url] ?? .zero) }
 
-        startY = contentSafeAreaInsets.top
-        containerLeadingConstraint.constant = contentSafeAreaInsets.left
+        startY = configuration.contentSafeAreaInsets.top
+        containerLeadingConstraint.constant = configuration.contentSafeAreaInsets.left
         containerTopConstraint.constant = startY
-        containerWidthConstraint.constant = contentLayoutFrame.width
+        containerWidthConstraint.constant =
+            view.bounds.inset(by: configuration.contentSafeAreaInsets).width
         containerHeightConstraint.constant = finalY
         contentHeightConstraint.constant = max(
-            finalY + startY + contentSafeAreaInsets.bottom, view.bounds.height)
+            finalY + startY + configuration.contentSafeAreaInsets.bottom, view.bounds.height)
     }
 
     private func applyPendingNavigationCommand() {
