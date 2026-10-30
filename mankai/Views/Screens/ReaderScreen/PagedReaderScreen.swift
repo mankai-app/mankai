@@ -104,7 +104,7 @@ private final class OverscrollHostingController: UIHostingController<OverscrollV
     }
 }
 
-private final class PagedReaderViewController: UIViewController, UIPageViewControllerDataSource,
+final class PagedReaderViewController: UIViewController, UIPageViewControllerDataSource,
     UIPageViewControllerDelegate
 {
     private var renderState: ReaderRenderState
@@ -225,7 +225,8 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
         if presentationChanged || groupsChanged { recreatePageViewController() }
 
         if chapterChanged || contentChanged || presentationChanged || groupsChanged {
-            applyCurrentState()
+            applyCurrentState(
+                updateVisibleGroup: chapterChanged || presentationChanged || groupsChanged)
         }
 
         if fullscreenChanged { updatePageViewports() }
@@ -244,7 +245,7 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
         for page in contentPages.allObjects { page.setViewport(viewport) }
     }
 
-    private func applyCurrentState() {
+    private func applyCurrentState(updateVisibleGroup: Bool = true) {
         guard !renderState.groups.isEmpty else {
             let placeholders = (0..<pagesPerGroup)
                 .map { _ in
@@ -274,7 +275,7 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
             page.apply(images: images(for: renderState.groups[page.pageIndex]))
         }
 
-        if !isShowingGroup(currentGroup) {
+        if updateVisibleGroup, !isShowingGroup(currentGroup) {
             showGroup(currentGroup, direction: .forward, animated: false)
         }
     }
@@ -935,7 +936,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
     func viewForZooming(in _: UIScrollView) -> UIView? { contentStackView }
 }
 
-private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
+struct PagedReaderScreen: UIViewControllerRepresentable {
     let state: ReaderRenderState
     let configuration: ReaderRenderConfiguration
     let actions: ReaderRenderActions
@@ -946,16 +947,5 @@ private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
 
     func updateUIViewController(_ viewController: PagedReaderViewController, context _: Context) {
         viewController.apply(state: state, configuration: configuration, actions: actions)
-    }
-}
-
-struct PagedReaderScreen: View {
-    let state: ReaderRenderState
-    let configuration: ReaderRenderConfiguration
-    let actions: ReaderRenderActions
-
-    var body: some View {
-        PagedReaderViewControllerWrapper(
-            state: state, configuration: configuration, actions: actions)
     }
 }

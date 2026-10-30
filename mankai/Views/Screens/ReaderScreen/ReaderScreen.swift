@@ -1237,13 +1237,17 @@ struct ReaderScreen: View {
 
     private func regroup(keepCurrentPageVisible: Bool = false) {
         let currentURL = urls.indices.contains(currentPage) ? urls[currentPage] : nil
-        groups = ReaderGrouping.makeGroups(
+        let updatedGroups = ReaderGrouping.makeGroups(
             urls: urls, images: images, defaultGroupSize: defaultGroupSize,
             smartGrouping: smartGrouping && readingDirection != .vertical,
             smartGroupingSensitivity: smartGroupingSensitivity, adjacencyScores: adjacencyScores)
+        let groupsChanged = groups != updatedGroups
+        groups = updatedGroups
         contentRevision += 1
 
-        if keepCurrentPageVisible, let currentURL, urls.contains(currentURL) {
+        if keepCurrentPageVisible, readerType == .continuous || groupsChanged, let currentURL,
+            urls.contains(currentURL)
+        {
             navigationGeneration += 1
             navigationCommand = ReaderNavigationCommand(
                 generation: navigationGeneration, targetURL: currentURL, animated: false)
