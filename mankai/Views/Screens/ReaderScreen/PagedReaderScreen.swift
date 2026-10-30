@@ -31,7 +31,9 @@ private struct OverscrollView: View {
         } else {
             content.frame(
                 maxWidth: .infinity, maxHeight: .infinity,
-                alignment: placeAtLeading ? .leading : .trailing)
+                alignment: placeAtLeading ? .leading : .trailing
+            )
+            .padding()
         }
     }
 
