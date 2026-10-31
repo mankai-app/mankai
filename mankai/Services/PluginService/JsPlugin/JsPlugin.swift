@@ -48,6 +48,7 @@ final class JsPlugin: Plugin, Configurable {
     private var _icon: String?
     private var _homePage: String?
     private var _availableGenres: [Genre]
+    private var _availableCustomGenres: [String]
     private var _configs: [Config]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
@@ -69,6 +70,8 @@ final class JsPlugin: Plugin, Configurable {
     override var homePage: String? { _homePage }
 
     override var availableGenres: [Genre] { _availableGenres }
+
+    override var availableCustomGenres: [String] { _availableCustomGenres }
 
     var configs: [Config] { _configs }
 
@@ -111,8 +114,8 @@ final class JsPlugin: Plugin, Configurable {
         id: String, name: String? = nil, version: String? = nil, description: String? = nil,
         authors: [String] = [], repository: String? = nil, icon: String? = nil,
         homePage: String? = nil, updatesUrl: String? = nil, availableGenres: [Genre] = [],
-        scripts: [ScriptType: String] = [:], configs: [Config] = [],
-        getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
+        availableCustomGenres: [String] = [], scripts: [ScriptType: String] = [:],
+        configs: [Config] = [], getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
     ) {
         Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
@@ -126,6 +129,7 @@ final class JsPlugin: Plugin, Configurable {
         _homePage = homePage
         _updatesUrl = updatesUrl
         _availableGenres = availableGenres
+        _availableCustomGenres = availableCustomGenres
         _configs = configs
         _getImageHeaders = getImageHeaders
         _cooldown = cooldown
@@ -186,7 +190,8 @@ final class JsPlugin: Plugin, Configurable {
             description: metadata.description, authors: metadata.authors,
             repository: metadata.repository, icon: metadata.icon, homePage: metadata.homePage,
             updatesUrl: metadata.updatesUrl, availableGenres: metadata.availableGenres,
-            scripts: scripts, configs: metadata.configs, getImageHeaders: metadata.getImageHeaders,
+            availableCustomGenres: metadata.availableCustomGenres, scripts: scripts,
+            configs: metadata.configs, getImageHeaders: metadata.getImageHeaders,
             cooldown: metadata.cooldown, capabilities: metadata.capabilities)
     }
 
@@ -293,8 +298,9 @@ final class JsPlugin: Plugin, Configurable {
         let metadata = JsPluginModel.Metadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, icon: icon, homePage: homePage, updatesUrl: updatesUrl,
-            availableGenres: availableGenres, scripts: scriptsDict, configs: configs,
-            getImageHeaders: _getImageHeaders, cooldown: cooldown,
+            availableGenres: availableGenres, availableCustomGenres: availableCustomGenres,
+            scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
+            cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
         return JsPluginModel(
             id: id, meta: metadata, configValues: Array(_configValues.values), sourceURL: sourceURL)
@@ -343,14 +349,26 @@ final class JsPlugin: Plugin, Configurable {
     override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
         async throws -> [Manga]
     {
+        try await search(
+            query, page: page, genre: genre, status: status, isAuthor: isAuthor, customGenre: nil)
+    }
+
+    override func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool,
+        customGenre: String?
+    ) async throws -> [Manga] {
         Logger.jsPlugin.debug(
             "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor) (plugin: \(id))"
         )
 
         if _scripts[.search] == nil { fatalError("Script for search is not defined") }
 
+        guard customGenre == nil || supports(.searchByCustomGenre) else { return [] }
+        let customGenreArgument =
+            supports(.searchByCustomGenre)
+            ? "," + (customGenre.map { JsRuntime.javascriptStringLiteral($0) } ?? "null") : ""
         let script =
-            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue),\(isAuthor));"
+            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue),\(isAuthor)\(customGenreArgument));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
@@ -361,13 +379,23 @@ final class JsPlugin: Plugin, Configurable {
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
+        try await getList(page: page, genre: genre, status: status, customGenre: nil)
+    }
+
+    override func getList(page: UInt, genre: Genre, status: Status, customGenre: String?)
+        async throws -> [Manga]
+    {
         Logger.jsPlugin.debug(
             "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
 
         if _scripts[.getList] == nil { fatalError("Script for getList is not defined") }
 
+        guard customGenre == nil || supports(.listByCustomGenre) else { return [] }
+        let customGenreArgument =
+            supports(.listByCustomGenre)
+            ? "," + (customGenre.map { JsRuntime.javascriptStringLiteral($0) } ?? "null") : ""
         let script =
-            "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue));"
+            "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue)\(customGenreArgument));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
@@ -529,6 +557,7 @@ final class JsPlugin: Plugin, Configurable {
                 _icon = newPlugin._icon
                 _homePage = newPlugin._homePage
                 _availableGenres = newPlugin._availableGenres
+                _availableCustomGenres = newPlugin._availableCustomGenres
                 _configs = newPlugin._configs
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities

@@ -32,6 +32,7 @@ class HttpPlugin: Plugin, Configurable {
     private var _icon: String?
     private var _homePage: String?
     private var _availableGenres: [Genre]
+    private var _availableCustomGenres: [String]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
 
@@ -53,11 +54,18 @@ class HttpPlugin: Plugin, Configurable {
 
     override var availableGenres: [Genre] { _availableGenres }
 
+    override var availableCustomGenres: [String] {
+        self is EditableHttpPlugin ? [] : _availableCustomGenres
+    }
+
     override var cooldown: Cooldown? { _cooldown }
 
     override var capabilities: [PluginCapability] {
-        _capabilities.filter { $0 != .sync && $0 != .urlEncoding } + [.sync]
-            + (encodedURL != nil ? [.urlEncoding] : [])
+        _capabilities.filter {
+            $0 != .sync && $0 != .urlEncoding
+                && (!(self is EditableHttpPlugin)
+                    || ($0 != .listByCustomGenre && $0 != .searchByCustomGenre))
+        } + [.sync] + (encodedURL != nil ? [.urlEncoding] : [])
     }
 
     var configs: [Config] {
@@ -96,7 +104,8 @@ class HttpPlugin: Plugin, Configurable {
         id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil,
         version: String? = nil, description: String? = nil, authors: [String] = [],
         repository: String? = nil, icon: String? = nil, homePage: String? = nil,
-        availableGenres: [Genre] = [], cooldown: Cooldown? = nil,
+        availableGenres: [Genre] = [], availableCustomGenres: [String] = [],
+        cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
@@ -112,6 +121,7 @@ class HttpPlugin: Plugin, Configurable {
         _icon = icon
         _homePage = homePage
         _availableGenres = availableGenres
+        _availableCustomGenres = availableCustomGenres
         _cooldown = cooldown
         _capabilities = capabilities
     }
@@ -167,7 +177,8 @@ class HttpPlugin: Plugin, Configurable {
             name: metadata.name, version: metadata.version, description: metadata.description,
             authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
             homePage: metadata.homePage, availableGenres: metadata.availableGenres,
-            cooldown: metadata.cooldown, capabilities: metadata.capabilities)
+            availableCustomGenres: metadata.availableCustomGenres, cooldown: metadata.cooldown,
+            capabilities: metadata.capabilities)
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
@@ -284,6 +295,7 @@ class HttpPlugin: Plugin, Configurable {
             _icon = metadata.icon
             _homePage = metadata.homePage
             _availableGenres = metadata.availableGenres
+            _availableCustomGenres = metadata.availableCustomGenres
             _authenticationEnabled = metadata.authenticationEnabled ?? false
             _capabilities = metadata.capabilities
 
@@ -328,8 +340,9 @@ class HttpPlugin: Plugin, Configurable {
         let metadata = HttpPluginModel.Metadata(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, icon: icon, homePage: homePage,
-            availableGenres: availableGenres, authenticationEnabled: authenticationEnabled,
-            editorEnabled: self is EditableHttpPlugin, configs: configs, cooldown: cooldown,
+            availableGenres: availableGenres, availableCustomGenres: availableCustomGenres,
+            authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
+            configs: configs, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
         return HttpPluginModel(
             id: id, baseUrl: baseUrl, meta: metadata, configValues: Array(_configValues.values))
@@ -362,23 +375,39 @@ class HttpPlugin: Plugin, Configurable {
     override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
         async throws -> [Manga]
     {
+        try await search(
+            query, page: page, genre: genre, status: status, isAuthor: isAuthor, customGenre: nil)
+    }
+
+    override func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool,
+        customGenre: String?
+    ) async throws -> [Manga] {
         try await setup()
-        let (data, _) = try await authManager.get(
-            path: "/search",
-            query: [
-                "query": query, "page": String(page), "genre": genre.rawValue,
-                "status": String(status.rawValue), "isAuthor": String(isAuthor)
-            ])
+        guard customGenre == nil || supports(.searchByCustomGenre) else { return [] }
+        var parameters = [
+            "query": query, "page": String(page), "genre": genre.rawValue,
+            "status": String(status.rawValue), "isAuthor": String(isAuthor)
+        ]
+        if let customGenre { parameters["customGenre"] = customGenre }
+        let (data, _) = try await authManager.get(path: "/search", query: parameters)
         return try [Manga].decoded(from: data)
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
+        try await getList(page: page, genre: genre, status: status, customGenre: nil)
+    }
+
+    override func getList(page: UInt, genre: Genre, status: Status, customGenre: String?)
+        async throws -> [Manga]
+    {
         try await setup()
-        let (data, _) = try await authManager.get(
-            path: "/manga",
-            query: [
-                "page": String(page), "genre": genre.rawValue, "status": String(status.rawValue)
-            ])
+        guard customGenre == nil || supports(.listByCustomGenre) else { return [] }
+        var parameters = [
+            "page": String(page), "genre": genre.rawValue, "status": String(status.rawValue)
+        ]
+        if let customGenre { parameters["customGenre"] = customGenre }
+        let (data, _) = try await authManager.get(path: "/manga", query: parameters)
         return try [Manga].decoded(from: data)
     }
 
@@ -401,7 +430,9 @@ class HttpPlugin: Plugin, Configurable {
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         try await setup()
         let (data, _) = try await authManager.get(path: "/manga/\(id)")
-        return try DetailedManga.decoded(from: data)
+        var manga = try DetailedManga.decoded(from: data)
+        if self is EditableHttpPlugin { manga.customGenres = [] }
+        return manga
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
@@ -465,6 +496,7 @@ class HttpPlugin: Plugin, Configurable {
                 _icon = newPlugin._icon
                 _homePage = newPlugin._homePage
                 _availableGenres = newPlugin._availableGenres
+                _availableCustomGenres = newPlugin._availableCustomGenres
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities
                 _authenticationEnabled = newPlugin._authenticationEnabled

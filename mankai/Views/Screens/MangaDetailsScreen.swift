@@ -52,7 +52,7 @@ struct MangaDetailsScreen: View {
     @State private var isExportModalPresented = false
     @State private var openDownloadAfterExport = false
 
-    @State private var selectedGenre: Genre? = nil
+    @State private var selectedGenre: SourceGenreFilter? = nil
     @State private var showSourceLibraryScreen = false
 
     @State private var searchQuery: String? = nil
@@ -355,17 +355,22 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            if let genres = mangaData?.genres, !genres.isEmpty {
+            if let mangaData, !mangaData.genres.isEmpty || !mangaData.customGenres.isEmpty {
+                let genres =
+                    mangaData.genres.map(SourceGenreFilter.standard)
+                    + mangaData.customGenres.map(SourceGenreFilter.custom)
                 Section {
                     WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
-                        if plugin.supportsList(genre: genre) {
+                        if plugin.supportsList(
+                            genre: genre.standardGenre, customGenre: genre.customGenre)
+                        {
                             Button(action: {
                                 selectedGenre = genre
                                 showSourceLibraryScreen = true
-                            }) { Text(LocalizedStringKey(genre.rawValue)).genreTagStyle() }
+                            }) { genre.label.genreTagStyle() }
                             .buttonStyle(.borderless)
                         } else {
-                            Text(LocalizedStringKey(genre.rawValue)).genreTagStyle()
+                            genre.label.genreTagStyle()
                         }
                     }
                     .padding().listRowInsets(EdgeInsets())

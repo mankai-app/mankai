@@ -28,6 +28,7 @@ typealias ChapterGroups = [ChapterGroup]
     @DateCoding(.millisecondsSince1970) var updatedAt: Date?
     @DecodingDefault([]) var authors: [String]
     @DecodingDefault([]) var genres: [Genre]
+    @DecodingDefault([]) var customGenres: [String]
     @DecodingDefault([]) var chapters: ChapterGroups
     var remarks: String?
     var editable: Bool?
@@ -45,6 +46,7 @@ typealias ChapterGroups = [ChapterGroup]
         id = UUID().uuidString
         authors = []
         genres = []
+        customGenres = []
         chapters = [
             ChapterGroup(title: "series", chapters: []), ChapterGroup(title: "extra", chapters: []),
             ChapterGroup(title: "volume", chapters: [])

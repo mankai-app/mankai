@@ -9865,6 +9865,36 @@
         }
       }
     },
+    "listByCustomGenre" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List by Custom Genre"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムジャンルで一覧表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按自定义类型列出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依自訂類型列出"
+          }
+        }
+      }
+    },
     "listByGenre" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -14678,6 +14708,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按作者篩選搜尋"
+          }
+        }
+      }
+    },
+    "searchByCustomGenre" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by Custom Genre"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムジャンルで検索"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按自定义类型搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依自訂類型搜尋"
           }
         }
       }

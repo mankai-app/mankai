@@ -48,6 +48,9 @@ enum PluginCapability: String, Codable, CaseIterable {
     /// Requires `list` and genre filtering in `getList(page:genre:status:)`.
     case listByGenre
 
+    /// Opt-in support for the external source custom genre filter.
+    case listByCustomGenre
+
     /// Requires `list` and status filtering in `getList(page:genre:status:)`.
     case listByStatus
 
@@ -56,6 +59,9 @@ enum PluginCapability: String, Codable, CaseIterable {
 
     /// Requires `search` and genre filtering in `search(_:page:genre:status:isAuthor:)`.
     case searchByGenre
+
+    /// Opt-in support for the external source custom genre filter.
+    case searchByCustomGenre
 
     /// Requires `search` and status filtering in `search(_:page:genre:status:isAuthor:)`.
     case searchByStatus
@@ -86,7 +92,10 @@ enum PluginCapability: String, Codable, CaseIterable {
     case sync
 
     static var defaultCapabilities: [PluginCapability] {
-        allCases.filter { $0 != .mangaUpdates && $0 != .urlEncoding }
+        allCases.filter {
+            $0 != .mangaUpdates && $0 != .urlEncoding && $0 != .listByCustomGenre
+                && $0 != .searchByCustomGenre
+        }
     }
 }
 
@@ -178,6 +187,9 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
 
     var availableGenres: [Genre] { [] }
 
+    /// Opaque genre names provided by an external JS or HTTP source.
+    var availableCustomGenres: [String] { [] }
+
     var cooldown: Cooldown? { nil }
 
     /// Features supported by this plugin instance.
@@ -236,6 +248,15 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
         async throws -> [Manga]
     { fatalError("Not Implemented") }
 
+    /// External source search, with an optional opaque custom genre name.
+    func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool = false,
+        customGenre: String?
+    ) async throws -> [Manga] {
+        guard customGenre == nil else { return [] }
+        return try await search(query, page: page, genre: genre, status: status, isAuthor: isAuthor)
+    }
+
     /// Retrieves a list of manga based on optional filters.
     /// Required by `PluginCapability.list`.
     /// `listByGenre` and `listByStatus` require handling the corresponding filters.
@@ -247,6 +268,14 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// - Throws: An error if the request fails.
     func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
         fatalError("Not Implemented")
+    }
+
+    /// External source list, with an optional opaque custom genre name.
+    func getList(page: UInt, genre: Genre, status: Status, customGenre: String?) async throws
+        -> [Manga]
+    {
+        guard customGenre == nil else { return [] }
+        return try await getList(page: page, genre: genre, status: status)
     }
 
     /// Retrieves details for multiple mangas by their IDs.
@@ -334,10 +363,13 @@ extension Plugin {
 
     /// Returns whether the plugin can service a list request with the supplied filters.
     /// Filter capabilities augment, rather than replace, the base list capability.
-    func supportsList(genre: Genre = .all, status: Status = .any) -> Bool {
+    func supportsList(genre: Genre = .all, status: Status = .any, customGenre: String? = nil)
+        -> Bool
+    {
         guard supports(.list) else { return false }
 
         if genre != .all, !supports(.listByGenre) { return false }
+        if customGenre != nil, !supports(.listByCustomGenre) { return false }
         if status != .any, !supports(.listByStatus) { return false }
 
         return true
@@ -345,12 +377,15 @@ extension Plugin {
 
     /// Returns whether the plugin can service a search request with the supplied filters.
     /// Filter capabilities augment, rather than replace, the base search capability.
-    func supportsSearch(isAuthor: Bool = false, genre: Genre = .all, status: Status = .any) -> Bool
-    {
+    func supportsSearch(
+        isAuthor: Bool = false, genre: Genre = .all, status: Status = .any,
+        customGenre: String? = nil
+    ) -> Bool {
         guard supports(.search) else { return false }
 
         if isAuthor, !supports(.searchByAuthor) { return false }
         if genre != .all, !supports(.searchByGenre) { return false }
+        if customGenre != nil, !supports(.searchByCustomGenre) { return false }
         if status != .any, !supports(.searchByStatus) { return false }
 
         return true

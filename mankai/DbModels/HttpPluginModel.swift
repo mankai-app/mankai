@@ -40,6 +40,7 @@ extension HttpPluginModel {
         let icon: String?
         let homePage: String?
         @DecodingDefault([]) let availableGenres: [Genre]
+        @DecodingDefault([]) let availableCustomGenres: [String]
         let authenticationEnabled: Bool?
         @DecodingDefault(false) let editorEnabled: Bool
         @DecodingDefault([]) let configs: [Config]

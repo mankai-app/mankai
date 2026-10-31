@@ -13,11 +13,11 @@ struct SourceSearchScreen: View {
     let isAuthorSearch: Bool
     let pluginService = PluginService.shared
 
-    @State var selectedGenre: Genre
+    @State var selectedGenre: SourceGenreFilter
     @State private var selectedStatus: Status
     @State private var showingFilters = false
 
-    @State private var tempSelectedGenre: Genre
+    @State private var tempSelectedGenre: SourceGenreFilter
     @State private var tempSelectedStatus: Status
 
     @State var isLoading: Bool = false
@@ -31,11 +31,17 @@ struct SourceSearchScreen: View {
         plugin.supports(.search) && plugin.supports(.searchByGenre)
     }
 
+    private var supportsCustomGenreFilter: Bool {
+        plugin.supports(.search) && plugin.supports(.searchByCustomGenre)
+    }
+
     private var supportsStatusFilter: Bool {
         plugin.supports(.search) && plugin.supports(.searchByStatus)
     }
 
-    private var hasActiveFilters: Bool { selectedGenre != .all || selectedStatus != .any }
+    private var hasActiveFilters: Bool {
+        selectedGenre != .standard(.all) || selectedStatus != .any
+    }
 
     private var allMangas: [Manga] {
         let sortedKeys = mangas.keys.sorted()
@@ -43,14 +49,15 @@ struct SourceSearchScreen: View {
     }
 
     init(
-        plugin: Plugin, query: String, isAuthorSearch: Bool = false, genre: Genre = .all,
-        status: Status = .any
+        plugin: Plugin, query: String, isAuthorSearch: Bool = false,
+        genre: SourceGenreFilter = .standard(.all), status: Status = .any
     ) {
         self.plugin = plugin
         self.query = query
         self.isAuthorSearch = isAuthorSearch
         let normalizedGenre =
-            plugin.supports(.search) && plugin.supports(.searchByGenre) ? genre : .all
+            plugin.supportsSearch(genre: genre.standardGenre, customGenre: genre.customGenre)
+            ? genre : .standard(.all)
         let normalizedStatus =
             plugin.supports(.search) && plugin.supports(.searchByStatus) ? status : .any
         _selectedGenre = State(initialValue: normalizedGenre)
@@ -89,7 +96,7 @@ struct SourceSearchScreen: View {
                 initialPage: route.initialPage)
         }
         .toolbar {
-            if supportsGenreFilter || supportsStatusFilter {
+            if supportsGenreFilter || supportsCustomGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .topBarTrailing) {
                     FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
                 }
@@ -99,12 +106,21 @@ struct SourceSearchScreen: View {
             NavigationView {
                 List {
                     Section {
-                        if supportsGenreFilter {
+                        if supportsGenreFilter || supportsCustomGenreFilter {
                             Picker("genre", selection: $tempSelectedGenre) {
-                                Text(LocalizedStringKey(Genre.all.rawValue)).tag(Genre.all)
-
-                                ForEach(plugin.availableGenres, id: \.self) { genre in
-                                    Text(LocalizedStringKey(genre.rawValue)).tag(genre)
+                                Text("all").tag(SourceGenreFilter.standard(.all))
+                                if supportsGenreFilter {
+                                    ForEach(
+                                        plugin.availableGenres.filter { $0 != .all }, id: \.self
+                                    ) { genre in
+                                        Text(LocalizedStringKey(genre.rawValue))
+                                            .tag(SourceGenreFilter.standard(genre))
+                                    }
+                                }
+                                if supportsCustomGenreFilter {
+                                    ForEach(plugin.availableCustomGenres, id: \.self) { genre in
+                                        Text(verbatim: genre).tag(SourceGenreFilter.custom(genre))
+                                    }
                                 }
                             }
                             .pickerStyle(.menu)
@@ -164,8 +180,10 @@ struct SourceSearchScreen: View {
         }
     }
 
-    private func setFilters(genre: Genre, status: Status) {
-        let normalizedGenre = supportsGenreFilter ? genre : .all
+    private func setFilters(genre: SourceGenreFilter, status: Status) {
+        let normalizedGenre =
+            plugin.supportsSearch(genre: genre.standardGenre, customGenre: genre.customGenre)
+            ? genre : .standard(.all)
         let normalizedStatus = supportsStatusFilter ? status : .any
         guard selectedGenre != normalizedGenre || selectedStatus != normalizedStatus else { return }
 
@@ -178,15 +196,16 @@ struct SourceSearchScreen: View {
     }
 
     private func resetFilters() {
-        tempSelectedGenre = .all
+        tempSelectedGenre = .standard(.all)
         tempSelectedStatus = .any
-        setFilters(genre: .all, status: .any)
+        setFilters(genre: .standard(.all), status: .any)
     }
 
     private func search() {
         if isLoading
             || !plugin.supportsSearch(
-                isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus)
+                isAuthor: isAuthorSearch, genre: selectedGenre.standardGenre,
+                status: selectedStatus, customGenre: selectedGenre.customGenre)
         {
             return
         }
@@ -204,13 +223,14 @@ struct SourceSearchScreen: View {
         searchTask = Task {
             do {
                 let result = try await plugin.search(
-                    query, page: page, genre: requestGenre, status: requestStatus,
-                    isAuthor: isAuthorSearch)
+                    query, page: page, genre: requestGenre.standardGenre, status: requestStatus,
+                    isAuthor: isAuthorSearch, customGenre: requestGenre.customGenre)
 
                 guard !Task.isCancelled, requestGenre == selectedGenre,
                     requestStatus == selectedStatus,
                     plugin.supportsSearch(
-                        isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus)
+                        isAuthor: isAuthorSearch, genre: selectedGenre.standardGenre,
+                        status: selectedStatus, customGenre: selectedGenre.customGenre)
                 else { return }
 
                 mangas[page] = result

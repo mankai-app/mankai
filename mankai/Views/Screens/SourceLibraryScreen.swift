@@ -7,14 +7,42 @@
 
 import SwiftUI
 
+/// A source filter selects either a predefined genre or an opaque source-provided name.
+enum SourceGenreFilter: Hashable {
+    case standard(Genre)
+    case custom(String)
+
+    var standardGenre: Genre {
+        if case .standard(let genre) = self { return genre }
+        return .all
+    }
+
+    var customGenre: String? {
+        if case .custom(let genre) = self { return genre }
+        return nil
+    }
+
+    var label: Text {
+        switch self { case .standard(let genre): return Text(LocalizedStringKey(genre.rawValue))
+            case .custom(let genre): return Text(verbatim: genre)
+        }
+    }
+
+    var cacheKey: String {
+        switch self { case .standard(let genre): return "standard:" + genre.rawValue
+            case .custom(let genre): return "custom:" + genre
+        }
+    }
+}
+
 struct SourceLibraryScreen: View {
     let plugin: Plugin
 
-    @State var selectedGenre: Genre = .all
+    @State var selectedGenre: SourceGenreFilter = .standard(.all)
     @State private var selectedStatus: Status = .any
     @State private var showingFilters = false
 
-    @State private var tempSelectedGenre: Genre = .all
+    @State private var tempSelectedGenre: SourceGenreFilter = .standard(.all)
     @State private var tempSelectedStatus: Status = .any
 
     @State private var isLoading: Bool = false
@@ -34,22 +62,30 @@ struct SourceLibraryScreen: View {
         plugin.supports(.list) && plugin.supports(.listByGenre)
     }
 
+    private var supportsCustomGenreFilter: Bool {
+        plugin.supports(.list) && plugin.supports(.listByCustomGenre)
+    }
+
     private var supportsStatusFilter: Bool {
         plugin.supports(.list) && plugin.supports(.listByStatus)
     }
 
-    private var hasActiveFilters: Bool { selectedGenre != .all || selectedStatus != .any }
+    private var hasActiveFilters: Bool {
+        selectedGenre != .standard(.all) || selectedStatus != .any
+    }
 
-    init(plugin: Plugin, selectedGenre: Genre = .all) {
+    init(plugin: Plugin, selectedGenre: SourceGenreFilter = .standard(.all)) {
         self.plugin = plugin
         let normalizedGenre =
-            plugin.supports(.list) && plugin.supports(.listByGenre) ? selectedGenre : .all
+            plugin.supportsList(
+                genre: selectedGenre.standardGenre, customGenre: selectedGenre.customGenre)
+            ? selectedGenre : .standard(.all)
         _selectedGenre = State(initialValue: normalizedGenre)
         _tempSelectedGenre = State(initialValue: normalizedGenre)
     }
 
     private var allMangas: [Manga] {
-        let key = "\(selectedGenre.rawValue)_\(selectedStatus.rawValue)"
+        let key = "\(selectedGenre.cacheKey)_\(selectedStatus.rawValue)"
 
         guard let mangas = mangasList[key] else { return [] }
 
@@ -58,7 +94,7 @@ struct SourceLibraryScreen: View {
     }
 
     private var hasLoadedCurrentFilter: Bool {
-        let key = "\(selectedGenre.rawValue)_\(selectedStatus.rawValue)"
+        let key = "\(selectedGenre.cacheKey)_\(selectedStatus.rawValue)"
         return mangasList[key] != nil
     }
 
@@ -122,12 +158,21 @@ struct SourceLibraryScreen: View {
             NavigationView {
                 List {
                     Section {
-                        if supportsGenreFilter {
+                        if supportsGenreFilter || supportsCustomGenreFilter {
                             Picker("genre", selection: $tempSelectedGenre) {
-                                Text(LocalizedStringKey(Genre.all.rawValue)).tag(Genre.all)
-
-                                ForEach(plugin.availableGenres, id: \.self) { genre in
-                                    Text(LocalizedStringKey(genre.rawValue)).tag(genre)
+                                Text("all").tag(SourceGenreFilter.standard(.all))
+                                if supportsGenreFilter {
+                                    ForEach(
+                                        plugin.availableGenres.filter { $0 != .all }, id: \.self
+                                    ) { genre in
+                                        Text(LocalizedStringKey(genre.rawValue))
+                                            .tag(SourceGenreFilter.standard(genre))
+                                    }
+                                }
+                                if supportsCustomGenreFilter {
+                                    ForEach(plugin.availableCustomGenres, id: \.self) { genre in
+                                        Text(verbatim: genre).tag(SourceGenreFilter.custom(genre))
+                                    }
                                 }
                             }
                             .pickerStyle(.menu)
@@ -192,7 +237,7 @@ struct SourceLibraryScreen: View {
                 }
             }
 
-            if supportsGenreFilter || supportsStatusFilter {
+            if supportsGenreFilter || supportsCustomGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .topBarTrailing) {
                     FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
                 }
@@ -217,11 +262,15 @@ struct SourceLibraryScreen: View {
     }
 
     private func loadList() {
-        if isLoading || !plugin.supportsList(genre: selectedGenre, status: selectedStatus) {
+        if isLoading
+            || !plugin.supportsList(
+                genre: selectedGenre.standardGenre, status: selectedStatus,
+                customGenre: selectedGenre.customGenre)
+        {
             return
         }
 
-        let key = "\(selectedGenre.rawValue)_\(selectedStatus.rawValue)"
+        let key = "\(selectedGenre.cacheKey)_\(selectedStatus.rawValue)"
 
         let maxPage = mangasList[key]?.keys.max() ?? 0
 
@@ -237,7 +286,9 @@ struct SourceLibraryScreen: View {
         isLoading = true
         Task {
             do {
-                let result = try await plugin.getList(page: page, genre: genre, status: status)
+                let result = try await plugin.getList(
+                    page: page, genre: genre.standardGenre, status: status,
+                    customGenre: genre.customGenre)
                 guard loadID == listLoadID else { return }
 
                 if mangasList[key] == nil { mangasList[key] = [:] }
@@ -254,7 +305,7 @@ struct SourceLibraryScreen: View {
         }
     }
 
-    private func setGenre(_ genre: Genre) {
+    private func setGenre(_ genre: SourceGenreFilter) {
         guard genre != selectedGenre else { return }
 
         selectedGenre = genre
@@ -268,21 +319,26 @@ struct SourceLibraryScreen: View {
         loadList()
     }
 
-    private func setFilters(genre: Genre, status: Status) {
-        let normalizedGenre = supportsGenreFilter ? genre : .all
+    private func setFilters(genre: SourceGenreFilter, status: Status) {
+        let normalizedGenre =
+            plugin.supportsList(genre: genre.standardGenre, customGenre: genre.customGenre)
+            ? genre : .standard(.all)
         let normalizedStatus = supportsStatusFilter ? status : .any
 
-        if selectedGenre != normalizedGenre { selectedGenre = normalizedGenre }
-
-        if selectedStatus != normalizedStatus { selectedStatus = normalizedStatus }
+        if selectedGenre != normalizedGenre || selectedStatus != normalizedStatus {
+            listLoadID = UUID()
+            isLoading = false
+            selectedGenre = normalizedGenre
+            selectedStatus = normalizedStatus
+        }
 
         loadList()
     }
 
     private func resetFilters() {
-        tempSelectedGenre = .all
+        tempSelectedGenre = .standard(.all)
         tempSelectedStatus = .any
-        setFilters(genre: .all, status: .any)
+        setFilters(genre: .standard(.all), status: .any)
     }
 
     private func getSearchSuggestions(for query: String) {
