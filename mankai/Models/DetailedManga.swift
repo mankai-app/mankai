@@ -12,13 +12,13 @@ struct ChapterGroup: Codable {
     var id: String? = nil
     var title: String
     var chapters: [Chapter]
-    /// Untagged groups are the fallback when the chosen language has no groups.
+    /// Untagged groups are the fallback when no exact or broader language tag matches.
     var language: String? = nil
     var localizations: [String: ChapterLocalization]? = nil
 
     func localized(for language: String?) -> ChapterGroup {
         var group = self
-        if let language, let title = localizations?[language]?.title { group.title = title }
+        if let title = localizations?.localization(for: language)?.title { group.title = title }
         group.title = group.title.localizedChapterLabel
         group.chapters = chapters.map { $0.localized(for: language) }
         return group
@@ -85,7 +85,7 @@ typealias ChapterGroups = [ChapterGroup]
 
     func localized(for language: String?) -> DetailedManga {
         var manga = self
-        if let language, let overrides = localizations?[language] {
+        if let overrides = localizations?.localization(for: language) {
             manga.title = overrides.title ?? title
             manga.cover = overrides.cover ?? cover
             manga.status = overrides.status ?? status

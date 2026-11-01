@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Optional metadata overrides for one exact app language key.
+/// Optional metadata overrides by app language tag.
 struct PluginLocalization: Codable {
     var name: String?
     var description: String?

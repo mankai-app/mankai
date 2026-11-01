@@ -92,9 +92,13 @@ struct MangaDetailsScreen: View {
 
     private func chapterGroupIndices(in manga: DetailedManga) -> [Int] {
         if showsAllChapterGroups { return Array(manga.chapters.indices) }
-        let language = preferredLanguage
-        let groupLanguage = manga.chapters.contains { $0.language == language } ? language : nil
-        return manga.chapters.indices.filter { manga.chapters[$0].language == groupLanguage }
+        var indicesByLanguage: [String: [Int]] = [:]
+        for index in manga.chapters.indices {
+            guard let language = manga.chapters[index].language else { continue }
+            indicesByLanguage[language, default: []].append(index)
+        }
+        return indicesByLanguage.localization(for: preferredLanguage)
+            ?? manga.chapters.indices.filter { manga.chapters[$0].language == nil }
     }
 
     private func displayedManga(_ manga: DetailedManga) -> DetailedManga {

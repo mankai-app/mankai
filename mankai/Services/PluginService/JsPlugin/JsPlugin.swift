@@ -54,8 +54,7 @@ final class JsPlugin: Plugin, Configurable {
     private var _localizations: [String: PluginLocalization]?
 
     private var localization: PluginLocalization? {
-        guard let language = Bundle.main.preferredLocalizations.first else { return nil }
-        return _localizations?[language]
+        _localizations?.localization(for: Bundle.main.preferredLocalizations.first)
     }
 
     override var id: String { _id }

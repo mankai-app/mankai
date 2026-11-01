@@ -52,7 +52,7 @@ struct Chapter: Codable, Equatable {
 
     func localized(for language: String?) -> Chapter {
         var chapter = self
-        if let language, let title = localizations?[language]?.title { chapter.title = title }
+        if let title = localizations?.localization(for: language)?.title { chapter.title = title }
         chapter.title = chapter.title?.localizedChapterLabel
         return chapter
     }
@@ -60,7 +60,7 @@ struct Chapter: Codable, Equatable {
 
 struct ChapterLocalization: Codable, Equatable { var title: String? }
 
-/// Optional field overrides for one exact language key. Manga IDs remain language-independent.
+/// Optional field overrides by language tag. Manga IDs remain language-independent.
 struct MangaLocalization: Codable {
     var title: String?
     var cover: String?
@@ -88,7 +88,7 @@ struct MangaUpdateRequest: Codable {
 
     func localized(for language: String?) -> Manga {
         var manga = self
-        if let language, let overrides = localizations?[language] {
+        if let overrides = localizations?.localization(for: language) {
             manga.title = overrides.title ?? title
             manga.cover = overrides.cover ?? cover
             manga.status = overrides.status ?? status
@@ -104,5 +104,18 @@ struct MangaUpdateRequest: Codable {
             return nil
         }
         self = decoded
+    }
+}
+
+extension Dictionary where Key == String {
+    /// Tries the exact language tag, then removes subtags: zh-Hant-TW, zh-Hant, zh.
+    func localization(for language: String?) -> Value? {
+        guard var language else { return nil }
+        while !language.isEmpty {
+            if let localization = self[language] { return localization }
+            guard let separator = language.lastIndex(of: "-") else { return nil }
+            language = String(language[..<separator])
+        }
+        return nil
     }
 }
