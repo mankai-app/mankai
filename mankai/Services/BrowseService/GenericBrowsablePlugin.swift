@@ -354,6 +354,16 @@ where Session: BrowsableSession, Session.Config == Config {
             if let cover = routed.cover, !cover.isEmpty, !cover.hasPrefix(coverCachePrefix) {
                 routed.cover = try ImageRoute(manga: self, parserURL: cover).imageId
             }
+            routed.localizations = try routed.localizations?
+                .mapValues { localization in
+                    var localization = localization
+                    if let cover = localization.cover, !cover.isEmpty,
+                        !cover.hasPrefix(coverCachePrefix)
+                    {
+                        localization.cover = try ImageRoute(manga: self, parserURL: cover).imageId
+                    }
+                    return localization
+                }
             return routed
         }
 
@@ -508,6 +518,12 @@ where Session: BrowsableSession, Session.Config == Config {
         var transformed = parser.prepareForPresentation(stored, file: file)
         transformed.cover = await ensureCachedCover(
             for: transformed.cover, route: route, parser: parser, file: file)
+        for language in transformed.localizations?.keys.sorted() ?? [] {
+            guard var localization = transformed.localizations?[language] else { continue }
+            localization.cover = await ensureCachedCover(
+                for: localization.cover, route: route, parser: parser, file: file)
+            transformed.localizations?[language] = localization
+        }
         return try route.applying(transformed, coverCachePrefix: Self.coverCachePrefix)
     }
 
@@ -614,9 +630,9 @@ where Session: BrowsableSession, Session.Config == Config {
     ) async -> String? {
         guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
 
-        let ext = (cover as NSString).pathExtension.lowercased()
-        let filename = ext.isEmpty ? route.hash : "\(route.hash).\(ext)"
-        let coverURL = cacheDir.appendingPathComponent(filename)
+        // An archive can contain a different cover for each language.
+        let coverURL = FileUtilities.cacheURL(for: "\(route.hash):\(cover)", in: cacheDir)
+        let filename = coverURL.lastPathComponent
 
         if FileManager.default.fileExists(atPath: coverURL.path(percentEncoded: false)) {
             return "\(Self.coverCachePrefix)\(filename)"

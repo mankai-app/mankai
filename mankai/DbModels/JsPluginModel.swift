@@ -47,5 +47,6 @@ extension JsPluginModel {
         let getImageHeaders: [String: String]?
         let cooldown: Cooldown?
         @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
+        let localizations: [String: PluginLocalization]?
     }
 }

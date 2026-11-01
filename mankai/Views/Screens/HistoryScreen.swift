@@ -185,7 +185,7 @@ struct HistoryItemView: View {
 
                             HStack(spacing: 4) {
                                 if let chapterTitle = progress.chapterTitle {
-                                    Text(chapterTitle)
+                                    Text(chapterTitle.localizedChapterLabel)
                                 } else {
                                     Text(
                                         String(

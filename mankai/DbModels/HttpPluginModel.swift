@@ -46,5 +46,6 @@ extension HttpPluginModel {
         @DecodingDefault([]) let configs: [Config]
         let cooldown: Cooldown?
         @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
+        let localizations: [String: PluginLocalization]?
     }
 }

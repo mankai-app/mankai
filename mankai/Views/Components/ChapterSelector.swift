@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WrappingHStack
 
 struct ChapterSelection: Hashable {
     let groupIndex: Int
@@ -21,6 +22,8 @@ struct ChapterSelector<ChapterRow: View>: View {
     let chapterRow: (Chapter) -> ChapterRow
 
     @State private var expandedGroupIndex: Int?
+
+    private var hasGroupLanguages: Bool { groups.contains { $0.language != nil } }
 
     var body: some View {
         ForEach(Array(groups.enumerated()), id: \.offset) { groupIndex, group in
@@ -70,8 +73,17 @@ struct ChapterSelector<ChapterRow: View>: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(LocalizedStringKey(group.title))
+                    WrappingHStack(lineSpacing: 4) {
+                        Text(LocalizedStringKey(group.title)).foregroundColor(.primary)
+
+                        if let language = group.language {
+                            Text(
+                                Locale.current.localizedString(forIdentifier: language) ?? language
+                            )
+                            .smallTagStyle()
+                        } else if hasGroupLanguages {
+                            Text("defaultLanguage").smallTagStyle()
+                        }
 
                         Text(
                             String.localizedStringWithFormat(

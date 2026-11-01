@@ -65,20 +65,16 @@ struct MmaExporter: Sendable {
     ) async throws {
         try Task.checkCancellation()
         let archive = try Archive(url: url, accessMode: .create)
-        let totalFiles =
-            content.pages.values.reduce(0) { $0 + $1.count } + (content.cover == nil ? 0 : 1) + 1
+        let covers = Set(
+            [content.cover].compactMap { $0 }
+                + (content.manga.localizations?.values.compactMap(\.cover) ?? [])
+        )
+        .sorted()
+        let totalFiles = content.pages.values.reduce(0) { $0 + $1.count } + covers.count + 1
         var completedFiles = 0
+        var coverPaths: [String: String] = [:]
 
-        let encodedManga = try JSONEncoder().encode(content.manga)
-        guard var metadata = try JSONSerialization.jsonObject(with: encodedManga) as? [String: Any]
-        else { throw MankaiErrorCode.exportInvalidSelection.makeError() }
-
-        // Plugin metadata and edit permissions belong to the source, not to the portable archive.
-        metadata.removeValue(forKey: "meta")
-        metadata.removeValue(forKey: "editable")
-        metadata.removeValue(forKey: "cover")
-
-        if let cover = content.cover {
+        for (index, cover) in covers.enumerated() {
             let data: Data?
             do { data = try await loadImage(cover) } catch is CancellationError {
                 throw CancellationError()
@@ -88,18 +84,32 @@ struct MmaExporter: Sendable {
                 data = nil
             }
             if let data {
-                let path = "cover.\(imageExtension(for: cover))"
+                let path = "covers/\(index + 1).\(imageExtension(for: cover))"
                 try addData(data, path: path, to: archive)
-                metadata["cover"] = path
+                coverPaths[cover] = path
             }
             completedFiles += 1
             await progress(Double(completedFiles) / Double(totalFiles))
         }
 
-        var groups: [[String: Any]] = []
+        var exportManga = content.manga
+        exportManga.cover = content.cover.flatMap { coverPaths[$0] }
+        exportManga.localizations = exportManga.localizations?
+            .mapValues { localization in
+                var localization = localization
+                localization.cover = localization.cover.flatMap { coverPaths[$0] }
+                return localization
+            }
+        let encodedManga = try JSONEncoder().encode(exportManga)
+        guard var metadata = try JSONSerialization.jsonObject(with: encodedManga) as? [String: Any],
+            var groups = metadata["chapters"] as? [[String: Any]]
+        else { throw MankaiErrorCode.exportInvalidSelection.makeError() }
+
         var firstPagePath: String?
         for (groupIndex, group) in content.manga.chapters.enumerated() {
-            var chapters: [[String: Any]] = []
+            guard var chapters = groups[groupIndex]["chapters"] as? [[String: Any]] else {
+                throw MankaiErrorCode.exportInvalidSelection.makeError()
+            }
             for (chapterIndex, chapter) in group.chapters.enumerated() {
                 guard let pages = content.pages[chapter.id], !pages.isEmpty else {
                     throw MankaiErrorCode.exportChaptersNotDownloaded.makeError()
@@ -119,14 +129,10 @@ struct MmaExporter: Sendable {
                     await progress(Double(completedFiles) / Double(totalFiles))
                 }
 
-                var chapterMetadata: [String: Any] = ["id": chapter.id, "images": imagePaths]
-                if let title = chapter.title { chapterMetadata["title"] = title }
-                chapters.append(chapterMetadata)
+                chapters[chapterIndex]["images"] = imagePaths
             }
 
-            var groupMetadata: [String: Any] = ["title": group.title, "chapters": chapters]
-            if let id = group.id { groupMetadata["id"] = id }
-            groups.append(groupMetadata)
+            groups[groupIndex]["chapters"] = chapters
         }
 
         metadata["chapters"] = groups
@@ -226,6 +232,19 @@ struct MmaExporter: Sendable {
         exportManga.cover = nil
         exportManga.meta = nil
         exportManga.editable = nil
+        for language in exportManga.localizations?.keys.sorted() ?? [] {
+            guard var localization = exportManga.localizations?[language] else { continue }
+            localization.cover = downloadedManga.localizations?[language]?.cover
+            localization.meta = nil
+            localization.editable = nil
+            if let latestChapter = localization.latestChapter,
+                !selectedIds.contains(latestChapter.id)
+            {
+                localization.latestChapter = nil
+            }
+            localization.latestChapter?.locked = nil
+            exportManga.localizations?[language] = localization
+        }
 
         return Content(manga: exportManga, pages: pages, cover: downloadedManga.cover)
     }

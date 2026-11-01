@@ -61,12 +61,11 @@ struct SelectChaptersModal: View {
             guard let selectedIds = selectedChapters[groupIndex], !selectedIds.isEmpty else {
                 continue
             }
-            result.append(
-                ChapterGroup(
-                    id: group.id, title: group.title,
-                    chapters: group.chapters.filter {
-                        selectedIds.contains($0.id) && isSelectable($0)
-                    }))
+            var selectedGroup = group
+            selectedGroup.chapters = group.chapters.filter {
+                selectedIds.contains($0.id) && isSelectable($0)
+            }
+            result.append(selectedGroup)
         }
         return result
     }

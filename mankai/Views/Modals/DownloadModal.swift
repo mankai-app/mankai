@@ -277,7 +277,8 @@ struct DownloadChapterTaskRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.chapter.title ?? task.chapter.chapterId).font(.subheadline).lineLimit(1)
+                Text((task.chapter.title ?? task.chapter.chapterId).localizedChapterLabel)
+                    .font(.subheadline).lineLimit(1)
 
                 if status != .downloading {
                     Text(status.label).font(.caption)

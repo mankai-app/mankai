@@ -7,7 +7,6 @@
 
 import Foundation
 import GRDB
-import ReerCodable
 import SwiftUI
 
 class HttpPlugin: Plugin, Configurable {
@@ -35,22 +34,28 @@ class HttpPlugin: Plugin, Configurable {
     private var _availableCustomGenres: [String]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
+    private var _localizations: [String: PluginLocalization]?
+
+    private var localization: PluginLocalization? {
+        guard let language = Bundle.main.preferredLocalizations.first else { return nil }
+        return _localizations?[language]
+    }
 
     override var id: String { _id }
 
-    override var name: String? { _name }
+    override var name: String? { localization?.name ?? _name }
 
     override var version: String? { _version }
 
-    override var description: String? { _description }
+    override var description: String? { localization?.description ?? _description }
 
-    override var authors: [String] { _authors }
+    override var authors: [String] { localization?.authors ?? _authors }
 
-    override var repository: String? { _repository }
+    override var repository: String? { localization?.repository ?? _repository }
 
-    override var icon: String? { _icon }
+    override var icon: String? { localization?.icon ?? _icon }
 
-    override var homePage: String? { _homePage }
+    override var homePage: String? { localization?.homePage ?? _homePage }
 
     override var availableGenres: [Genre] { _availableGenres }
 
@@ -106,7 +111,8 @@ class HttpPlugin: Plugin, Configurable {
         repository: String? = nil, icon: String? = nil, homePage: String? = nil,
         availableGenres: [Genre] = [], availableCustomGenres: [String] = [],
         cooldown: Cooldown? = nil,
-        capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
+        capabilities: [PluginCapability] = PluginCapability.defaultCapabilities,
+        localizations: [String: PluginLocalization]? = nil
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
         _id = id
@@ -124,6 +130,7 @@ class HttpPlugin: Plugin, Configurable {
         _availableCustomGenres = availableCustomGenres
         _cooldown = cooldown
         _capabilities = capabilities
+        _localizations = localizations
     }
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
@@ -162,7 +169,8 @@ class HttpPlugin: Plugin, Configurable {
                 name: metadata.name, version: metadata.version, description: metadata.description,
                 authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
                 homePage: metadata.homePage, availableGenres: metadata.availableGenres,
-                cooldown: metadata.cooldown, capabilities: metadata.capabilities)
+                cooldown: metadata.cooldown, capabilities: metadata.capabilities,
+                localizations: metadata.localizations)
         }
 
         if !metadata.editorEnabled, self is EditableHttpPlugin.Type {
@@ -178,7 +186,7 @@ class HttpPlugin: Plugin, Configurable {
             authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
             homePage: metadata.homePage, availableGenres: metadata.availableGenres,
             availableCustomGenres: metadata.availableCustomGenres, cooldown: metadata.cooldown,
-            capabilities: metadata.capabilities)
+            capabilities: metadata.capabilities, localizations: metadata.localizations)
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
@@ -298,6 +306,7 @@ class HttpPlugin: Plugin, Configurable {
             _availableCustomGenres = metadata.availableCustomGenres
             _authenticationEnabled = metadata.authenticationEnabled ?? false
             _capabilities = metadata.capabilities
+            _localizations = metadata.localizations
 
             try PluginService.shared.savePlugin(self)
             isMetaUpdated = true
@@ -338,12 +347,13 @@ class HttpPlugin: Plugin, Configurable {
 
     private func makeModel() -> HttpPluginModel {
         let metadata = HttpPluginModel.Metadata(
-            id: id, name: name, version: version, description: description, authors: authors,
-            repository: repository, icon: icon, homePage: homePage,
+            id: id, name: _name, version: version, description: _description, authors: _authors,
+            repository: _repository, icon: _icon, homePage: _homePage,
             availableGenres: availableGenres, availableCustomGenres: availableCustomGenres,
             authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
             configs: configs, cooldown: cooldown,
-            capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
+            capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding },
+            localizations: _localizations)
         return HttpPluginModel(
             id: id, baseUrl: baseUrl, meta: metadata, configValues: Array(_configValues.values))
     }
@@ -499,6 +509,7 @@ class HttpPlugin: Plugin, Configurable {
                 _availableCustomGenres = newPlugin._availableCustomGenres
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities
+                _localizations = newPlugin._localizations
                 _authenticationEnabled = newPlugin._authenticationEnabled
 
                 try PluginService.shared.savePlugin(self)

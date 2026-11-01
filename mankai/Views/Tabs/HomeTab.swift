@@ -32,6 +32,7 @@ private struct HomeLibraryState {
 struct HomeTab: View {
     private let pluginService = PluginService.shared
     private let browseService = BrowseService.shared
+    @ObservedObject private var mangaLanguageService = MangaLanguageService.shared
     @ObservedObject private var syncService = SyncService.shared
     @ObservedObject private var updateService = UpdateService.shared
 
@@ -208,6 +209,7 @@ struct HomeTab: View {
                 if !isDownloadsMode { applySnapshotChange(change) }
             }
             .onReceive(ProgressService.shared.changes) { change in applyProgressChange(change) }
+            .onChange(of: mangaLanguageService.languages) { filterManga() }
             .onReceive(
                 NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             ) { _ in checkInternetAndPrompt() }
@@ -397,13 +399,20 @@ struct HomeTab: View {
         filterManga(&state)
     }
 
+    private func localizedManga(for key: String, in state: HomeLibraryState) -> Manga? {
+        guard let manga = state.mangas[key] else { return nil }
+        guard let plugin = state.plugins[key] else { return manga }
+        return mangaLanguageService.localized(manga, plugin: plugin)
+    }
+
     private func filterManga(_ state: inout HomeLibraryState) {
         var filtered = state.orders
 
         // Filter by search text
         if !searchText.isEmpty {
             filtered = filtered.filter { key in
-                state.mangas[key]?.title?.localizedCaseInsensitiveContains(searchText) ?? false
+                localizedManga(for: key, in: state)?.title?
+                    .localizedCaseInsensitiveContains(searchText) ?? false
             }
         }
 
@@ -417,7 +426,8 @@ struct HomeTab: View {
             // Filter by status
             if status != .all {
                 filtered = filtered.filter { key in
-                    guard let manga = state.mangas[key], let libraryItem = state.libraryItems[key]
+                    guard let manga = localizedManga(for: key, in: state),
+                        let libraryItem = state.libraryItems[key]
                     else { return false }
 
                     switch status { case .all: return true case .onGoing:

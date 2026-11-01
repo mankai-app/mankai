@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MangaItemView: View {
-    let manga: Manga
+    private let sourceManga: Manga
     let plugin: Plugin
     var progress: ProgressModel? = nil
     var libraryItem: LibraryModel? = nil
@@ -16,9 +16,34 @@ struct MangaItemView: View {
     var allowUnsupportedDetailsNavigation: Bool = false
     var onRead: (ReaderRoute) -> Void
 
+    @ObservedObject private var mangaLanguageService = MangaLanguageService.shared
+
+    init(
+        manga: Manga, plugin: Plugin, progress: ProgressModel? = nil,
+        libraryItem: LibraryModel? = nil, showsUnreadTag: Bool = false,
+        allowUnsupportedDetailsNavigation: Bool = false, onRead: @escaping (ReaderRoute) -> Void
+    ) {
+        sourceManga = manga
+        self.plugin = plugin
+        self.progress = progress
+        self.libraryItem = libraryItem
+        self.showsUnreadTag = showsUnreadTag
+        self.allowUnsupportedDetailsNavigation = allowUnsupportedDetailsNavigation
+        self.onRead = onRead
+    }
+
+    private var preferredLanguage: String? {
+        mangaLanguageService.preferredLanguage(mangaId: sourceManga.id, pluginId: plugin.id)
+    }
+
+    private var manga: Manga { mangaLanguageService.localized(sourceManga, plugin: plugin) }
+
     private var latestChapter: Chapter? {
         guard let libraryItem else { return manga.latestChapter }
-        return libraryItem.latestChapter ?? manga.latestChapter
+        if let chapter = manga.latestChapter, chapter.id == libraryItem.latestChapter?.id {
+            return chapter
+        }
+        return (libraryItem.latestChapter ?? manga.latestChapter)?.localized(for: preferredLanguage)
     }
 
     private var isUnread: Bool { showsUnreadTag && progress == nil }
@@ -32,7 +57,7 @@ struct MangaItemView: View {
 
     var body: some View {
         if plugin.supports(.mangaDetails) || allowUnsupportedDetailsNavigation {
-            NavigationLink(destination: MangaDetailsScreen(plugin: plugin, manga: manga)) {
+            NavigationLink(destination: MangaDetailsScreen(plugin: plugin, manga: sourceManga)) {
                 itemContent
             }
             .buttonStyle(.plain)
@@ -48,7 +73,7 @@ struct MangaItemView: View {
                 tagColor: coverTag?.color
             )
             .aspectRatio(3 / 4, contentMode: .fit)
-            .modifier(MangaItemContextMenu(manga: manga, plugin: plugin, onRead: onRead))
+            .modifier(MangaItemContextMenu(manga: sourceManga, plugin: plugin, onRead: onRead))
 
             VStack {
                 // Title
@@ -58,7 +83,7 @@ struct MangaItemView: View {
                 HStack(spacing: 4) {
                     if let progress = progress {
                         if let title = progress.chapterTitle {
-                            Text(title)
+                            Text(title.localizedChapterLabel)
                         } else {
                             Text(
                                 String(

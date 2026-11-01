@@ -239,13 +239,16 @@ enum DownloadState: Equatable {
                 guard !missing.isEmpty else { continue }
 
                 if let index = groups.firstIndex(where: {
+                    guard $0.language == group.language else { return false }
                     if let a = $0.id, let b = group.id { return a == b }
 
                     return $0.title == group.title
                 }) {
                     groups[index].chapters.append(contentsOf: missing)
                 } else {
-                    groups.append(ChapterGroup(id: group.id, title: group.title, chapters: missing))
+                    var missingGroup = group
+                    missingGroup.chapters = missing
+                    groups.append(missingGroup)
                 }
             }
 
@@ -535,7 +538,11 @@ enum DownloadState: Equatable {
         let taskId = task.id
         let database = try db
 
-        if let coverUrl = download.manga.cover {
+        let coverUrls = Set(
+            [manga.cover].compactMap { $0 }
+                + (manga.localizations?.values.compactMap(\.cover) ?? []))
+        for coverUrl in coverUrls.sorted() {
+            try checkCurrent(task, in: download)
             do {
                 let cover = try await database.write { db in
 

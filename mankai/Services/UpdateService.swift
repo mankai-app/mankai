@@ -204,6 +204,9 @@ import Foundation
                         manga.latestChapter = latestChapter
                     }
                     if let meta = result.meta { manga.meta = meta }
+                    if let localizations = result.localizations {
+                        manga.localizations = localizations
+                    }
                     manga.updates = nil
                     unresolvedHydrationIds.remove(result.id)
 

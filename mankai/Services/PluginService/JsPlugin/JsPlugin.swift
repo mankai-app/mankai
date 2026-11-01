@@ -7,7 +7,6 @@
 
 import Foundation
 import GRDB
-import ReerCodable
 import SwiftUI
 
 enum ScriptType: String {
@@ -52,22 +51,28 @@ final class JsPlugin: Plugin, Configurable {
     private var _configs: [Config]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
+    private var _localizations: [String: PluginLocalization]?
+
+    private var localization: PluginLocalization? {
+        guard let language = Bundle.main.preferredLocalizations.first else { return nil }
+        return _localizations?[language]
+    }
 
     override var id: String { _id }
 
-    override var name: String? { _name }
+    override var name: String? { localization?.name ?? _name }
 
     override var version: String? { _version }
 
-    override var description: String? { _description }
+    override var description: String? { localization?.description ?? _description }
 
-    override var authors: [String] { _authors }
+    override var authors: [String] { localization?.authors ?? _authors }
 
-    override var repository: String? { _repository }
+    override var repository: String? { localization?.repository ?? _repository }
 
-    override var icon: String? { _icon }
+    override var icon: String? { localization?.icon ?? _icon }
 
-    override var homePage: String? { _homePage }
+    override var homePage: String? { localization?.homePage ?? _homePage }
 
     override var availableGenres: [Genre] { _availableGenres }
 
@@ -116,7 +121,8 @@ final class JsPlugin: Plugin, Configurable {
         homePage: String? = nil, updatesUrl: String? = nil, availableGenres: [Genre] = [],
         availableCustomGenres: [String] = [], scripts: [ScriptType: String] = [:],
         configs: [Config] = [], getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
-        capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
+        capabilities: [PluginCapability] = PluginCapability.defaultCapabilities,
+        localizations: [String: PluginLocalization]? = nil
     ) {
         Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
         _id = id
@@ -134,6 +140,7 @@ final class JsPlugin: Plugin, Configurable {
         _getImageHeaders = getImageHeaders
         _cooldown = cooldown
         _capabilities = capabilities
+        _localizations = localizations
 
         _scripts = scripts
         for (scriptType, script) in scripts {
@@ -192,7 +199,8 @@ final class JsPlugin: Plugin, Configurable {
             updatesUrl: metadata.updatesUrl, availableGenres: metadata.availableGenres,
             availableCustomGenres: metadata.availableCustomGenres, scripts: scripts,
             configs: metadata.configs, getImageHeaders: metadata.getImageHeaders,
-            cooldown: metadata.cooldown, capabilities: metadata.capabilities)
+            cooldown: metadata.cooldown, capabilities: metadata.capabilities,
+            localizations: metadata.localizations)
     }
 
     override class func decodeURL(_ url: String, sourceId: String? = nil) async -> Plugin? {
@@ -296,12 +304,13 @@ final class JsPlugin: Plugin, Configurable {
         }
 
         let metadata = JsPluginModel.Metadata(
-            id: id, name: name, version: version, description: description, authors: authors,
-            repository: repository, icon: icon, homePage: homePage, updatesUrl: updatesUrl,
+            id: id, name: _name, version: version, description: _description, authors: _authors,
+            repository: _repository, icon: _icon, homePage: _homePage, updatesUrl: updatesUrl,
             availableGenres: availableGenres, availableCustomGenres: availableCustomGenres,
             scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
             cooldown: cooldown,
-            capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding })
+            capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding },
+            localizations: _localizations)
         return JsPluginModel(
             id: id, meta: metadata, configValues: Array(_configValues.values), sourceURL: sourceURL)
     }
@@ -561,6 +570,7 @@ final class JsPlugin: Plugin, Configurable {
                 _configs = newPlugin._configs
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities
+                _localizations = newPlugin._localizations
 
                 _updatesUrl = newPlugin._updatesUrl
                 _getImageHeaders = newPlugin._getImageHeaders

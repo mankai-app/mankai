@@ -381,7 +381,7 @@ struct UpdateMangaContent: View {
                         ForEach(Array(manga.chapters.enumerated()), id: \.offset) {
                             chapterGroupIndex, chapterGroup in
                             HStack {
-                                Text(LocalizedStringKey(chapterGroup.title))
+                                Text(LocalizedStringKey(chapterGroup.title.localizedChapterLabel))
                                 Spacer()
 
                                 Button {

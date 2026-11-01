@@ -72,6 +72,16 @@ final class MmaParser: Parser {
         } else {
             manga.latestChapter = manga.chapters.flatMap(\.chapters).last
         }
+        for language in manga.localizations?.keys.sorted() ?? [] {
+            guard var localization = manga.localizations?[language] else { continue }
+            if let cover = localization.cover { try validateImagePath(cover) }
+            if let latestChapter = localization.latestChapter, pages[latestChapter.id] == nil {
+                throw MankaiErrorCode.browseArchiveInvalidMetadata.makeError()
+            }
+            localization.meta = nil
+            localization.editable = nil
+            manga.localizations?[language] = localization
+        }
         manga.meta = try ParserChapterMetadata(chapters: pages).encoded()
         return manga
     }

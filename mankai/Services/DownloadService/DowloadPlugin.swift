@@ -72,13 +72,25 @@ final class DownloadPlugin: Plugin {
 
         manga.meta = model.pluginId
 
-        let cover =
+        let covers =
             try DownloadImageModel.filter(
                 Column("mangaId") == model.id && Column("chapterId") == nil
-                    && Column("url") == model.cover && Column("completed") == true
+                    && Column("completed") == true
             )
-            .fetchOne(db)
-        manga.cover = cover?.reference
+            .fetchAll(db)
+
+        func downloadedCover(_ url: String?) -> String? {
+            guard let url else { return nil }
+            return covers.first { $0.url == url }?.reference
+        }
+
+        manga.cover = downloadedCover(manga.cover)
+        manga.localizations = manga.localizations?
+            .mapValues { localization in
+                var localization = localization
+                localization.cover = downloadedCover(localization.cover)
+                return localization
+            }
 
         return manga
     }

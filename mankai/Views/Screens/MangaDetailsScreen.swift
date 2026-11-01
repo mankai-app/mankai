@@ -31,12 +31,14 @@ struct MangaDetailsScreen: View {
     @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
 
     @State private var detailedManga: DetailedManga? = nil
+    @ObservedObject private var mangaLanguageService = MangaLanguageService.shared
     @State private var hasFinishedInitialLoad = false
     @State private var shouldDismissForLoadFailure = false
 
     @State private var showingChaptersModal = false
     @State private var isChaptersPaneVisible = false
     @State private var selectedChapterGroupIndex: Int? = nil
+    @State private var showsAllChapterGroups = false
     @State private var isReversed = true
 
     @State private var readerRoute: ReaderRoute?
@@ -71,7 +73,41 @@ struct MangaDetailsScreen: View {
     @State private var downloadManga: DetailedManga?
     @State private var downloadedChapterIds: Set<String>?
 
-    private var mangaData: DetailedManga? { return detailedManga ?? downloadManga }
+    private var selectedLanguage: String? {
+        mangaLanguageService.language(mangaId: manga.id, pluginId: plugin.id)
+    }
+
+    private var preferredLanguage: String? {
+        mangaLanguageService.preferredLanguage(mangaId: manga.id, pluginId: plugin.id)
+    }
+
+    private var localizedManga: Manga { mangaLanguageService.localized(manga, plugin: plugin) }
+
+    private var sourceManga: DetailedManga? { detailedManga ?? downloadManga }
+
+    private var mangaData: DetailedManga? {
+        guard let manga = sourceManga else { return nil }
+        return displayedManga(manga)
+    }
+
+    private func chapterGroupIndices(in manga: DetailedManga) -> [Int] {
+        if showsAllChapterGroups { return Array(manga.chapters.indices) }
+        let language = preferredLanguage
+        let groupLanguage = manga.chapters.contains { $0.language == language } ? language : nil
+        return manga.chapters.indices.filter { manga.chapters[$0].language == groupLanguage }
+    }
+
+    private func displayedManga(_ manga: DetailedManga) -> DetailedManga {
+        var localized = mangaLanguageService.localized(manga, plugin: plugin)
+        localized.chapters = chapterGroupIndices(in: manga).map { localized.chapters[$0] }
+        return localized
+    }
+
+    private var availableLanguages: [String] {
+        var languages = Set(manga.localizations?.keys.map { $0 } ?? [])
+        languages.formUnion((detailedManga ?? downloadManga)?.availableLanguages ?? [])
+        return languages.sorted()
+    }
 
     private var selectedChapterGroup: ChapterGroup? {
         guard let mangaData, let selectedChapterGroupIndex,
@@ -81,8 +117,14 @@ struct MangaDetailsScreen: View {
         return mangaData.chapters[selectedChapterGroupIndex]
     }
 
+    private var progressChapter: Chapter? {
+        guard let progress else { return nil }
+        return sourceManga?.chapters.lazy.flatMap(\.chapters).first { $0.id == progress.chapterId }
+    }
+
     private var hasReadableChapter: Bool {
-        mangaData?.chapters.flatMap(\.chapters).contains(where: canRead) == true
+        if let progressChapter, canRead(progressChapter) { return true }
+        return mangaData?.chapters.flatMap(\.chapters).contains(where: canRead) == true
     }
 
     private var shouldPresentChaptersModal: Bool {
@@ -113,25 +155,37 @@ struct MangaDetailsScreen: View {
     private func navigateToChapter(
         _ chapter: Chapter, page: Int? = nil, chapterGroupIndex: Int? = nil
     ) {
-        guard let mangaData,
-            let readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex,
+        guard let sourceManga,
+            let displayedGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex,
             canRead(chapter)
         else { return }
+        let sourceIndices = chapterGroupIndices(in: sourceManga)
+        guard sourceIndices.indices.contains(displayedGroupIndex) else { return }
 
         showingChaptersModal = false
         readerRoute = ReaderRoute(
-            plugin: plugin, manga: mangaData, downloadManga: downloadManga,
+            plugin: plugin, manga: sourceManga, downloadManga: downloadManga,
             usesDownloadedMetadata: detailedManga == nil,
-            chapterGroupIndex: readerChapterGroupIndex, chapter: chapter, initialPage: page)
+            chapterGroupIndex: sourceIndices[displayedGroupIndex], chapter: chapter,
+            initialPage: page)
+    }
+
+    private func revealChapterGroup(containing chapterId: String) -> Int? {
+        guard let sourceManga,
+            let sourceIndex = sourceManga.chapters.firstIndex(where: { group in
+                group.chapters.contains { $0.id == chapterId }
+            })
+        else { return nil }
+
+        let visibleIndices = chapterGroupIndices(in: sourceManga)
+        if let visibleIndex = visibleIndices.firstIndex(of: sourceIndex) { return visibleIndex }
+
+        showsAllChapterGroups = true
+        return sourceIndex
     }
 
     private func scrollToProgress(proxy: ScrollViewProxy) {
-        guard let progress = progress, let mangaData = mangaData else { return }
-
-        guard
-            let targetIndex = mangaData.chapters.firstIndex(where: { group in
-                group.chapters.contains { $0.id == progress.chapterId }
-            })
+        guard let progress, let targetIndex = revealChapterGroup(containing: progress.chapterId)
         else { return }
 
         if selectedChapterGroupIndex == targetIndex {
@@ -142,15 +196,13 @@ struct MangaDetailsScreen: View {
     }
 
     private func handleReadContinueAction() {
-        if let progress = progress, let mangaData = mangaData {
-            for (groupIndex, group) in mangaData.chapters.enumerated() {
-                if let chapter = group.chapters.first(where: {
-                    $0.id == progress.chapterId && canRead($0)
-                }) {
-                    navigateToChapter(chapter, page: progress.page, chapterGroupIndex: groupIndex)
-                    return
-                }
-            }
+        if let progress, let progressChapter, canRead(progressChapter),
+            let groupIndex = revealChapterGroup(containing: progressChapter.id)
+        {
+            navigateToChapter(
+                progressChapter.localized(for: preferredLanguage), page: progress.page,
+                chapterGroupIndex: groupIndex)
+            return
         }
 
         if let mangaData = mangaData {
@@ -228,13 +280,15 @@ struct MangaDetailsScreen: View {
             Section {
             } header: {
                 VStack {
-                    MangaCoverView(coverUrl: mangaData?.cover ?? manga.cover, plugin: plugin)
-                        .aspectRatio(3 / 4, contentMode: .fit).padding(.horizontal)
-                        .padding(.horizontal).frame(maxWidth: 400)
+                    MangaCoverView(
+                        coverUrl: mangaData?.cover ?? localizedManga.cover, plugin: plugin
+                    )
+                    .aspectRatio(3 / 4, contentMode: .fit).padding(.horizontal).padding(.horizontal)
+                    .frame(maxWidth: 400)
 
-                    Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id).font(.title2)
-                        .fontWeight(.bold).multilineTextAlignment(.center).textSelection(.enabled)
-                        .padding(.top, 12).foregroundColor(.primary)
+                    Text(mangaData?.title ?? localizedManga.title ?? mangaData?.id ?? manga.id)
+                        .font(.title2).fontWeight(.bold).multilineTextAlignment(.center)
+                        .textSelection(.enabled).padding(.top, 12).foregroundColor(.primary)
 
                     if let authors = mangaData?.authors, !authors.isEmpty {
                         HStack(spacing: 4) {
@@ -322,7 +376,7 @@ struct MangaDetailsScreen: View {
 
                             if let chapterTitle = progress.chapterTitle {
                                 Text(verbatim: "•")
-                                Text(chapterTitle).lineLimit(1)
+                                Text(chapterTitle.localizedChapterLabel).lineLimit(1)
                             } else {
                                 Text(verbatim: "•")
                                 Text(
@@ -379,7 +433,9 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            if let mangaData = mangaData, !mangaData.chapters.isEmpty {
+            if let mangaData = mangaData,
+                (detailedManga ?? downloadManga)?.chapters.isEmpty == false
+            {
                 Section {
                     ForEach(Array(mangaData.chapters.enumerated()), id: \.offset) {
                         groupIndex, group in
@@ -389,9 +445,19 @@ struct MangaDetailsScreen: View {
                         }) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 8) {
+                                    WrappingHStack(lineSpacing: 4) {
                                         Text(LocalizedStringKey(group.title))
                                             .foregroundColor(.primary)
+
+                                        if let language = group.language {
+                                            Text(
+                                                Locale.current.localizedString(
+                                                    forIdentifier: language) ?? language
+                                            )
+                                            .smallTagStyle()
+                                        } else if !availableLanguages.isEmpty {
+                                            Text("defaultLanguage").smallTagStyle()
+                                        }
 
                                         Text(
                                             String.localizedStringWithFormat(
@@ -420,7 +486,20 @@ struct MangaDetailsScreen: View {
                         }
                     }
                 } header: {
-                    Text("chapters").padding(.top)
+                    HStack {
+                        Text("contents")
+
+                        Spacer()
+
+                        if !availableLanguages.isEmpty {
+                            Button(showsAllChapterGroups ? "showLess" : "showAll") {
+                                selectedChapterGroupIndex = nil
+                                showsAllChapterGroups.toggle()
+                            }
+                            .buttonStyle(.plain).foregroundStyle(.tint)
+                        }
+                    }
+                    .padding(.top)
                 }
             }
         }
@@ -562,9 +641,13 @@ struct MangaDetailsScreen: View {
                 let selectedChapterGroupIndex = selectedChapterGroupIndex,
                 let editablePlugin = plugin as? any Editable
             {
-                UpdateChaptersModal(
-                    plugin: editablePlugin, manga: detailedManga,
-                    chapterGroupIndex: selectedChapterGroupIndex, isRootOfSheet: true)
+                let sourceIndices = chapterGroupIndices(in: detailedManga)
+                if sourceIndices.indices.contains(selectedChapterGroupIndex) {
+                    UpdateChaptersModal(
+                        plugin: editablePlugin, manga: detailedManga,
+                        chapterGroupIndex: sourceIndices[selectedChapterGroupIndex],
+                        isRootOfSheet: true)
+                }
             }
         }
         .sheet(
@@ -591,7 +674,7 @@ struct MangaDetailsScreen: View {
         .sheet(isPresented: $isSelectChaptersModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga {
                 SelectChaptersModal(
-                    plugin: plugin, detailedManga: detailedManga,
+                    plugin: plugin, detailedManga: displayedManga(detailedManga),
                     downloadChapters: { chapters in
                         Task {
                             do {
@@ -617,8 +700,8 @@ struct MangaDetailsScreen: View {
             if let mangaData {
                 ExportModal(
                     manga: mangaData, downloadMangaId: downloadMangaId,
-                    chapterGroups: downloadManga?.chapters ?? mangaData.chapters,
-                    downloadedChapterIds: downloadedChapterIds ?? [],
+                    chapterGroups: downloadManga.map { displayedManga($0).chapters }
+                        ?? mangaData.chapters, downloadedChapterIds: downloadedChapterIds ?? [],
                     downloadedCoverUrl: downloadManga?.cover,
                     onDownload: plugin.supportsDownloads && detailedManga != nil
                         ? { openDownloadAfterExport = true } : nil)
@@ -642,20 +725,30 @@ struct MangaDetailsScreen: View {
             }
         }
         .toolbar {
-            if plugin is Editable, detailedManga?.editable ?? true {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: { isUpdateMangaModalPresented = true }) {
-                        Label {
-                            Text("editManga")
-                        } icon: {
-                            ToolbarIcon(systemName: "pencil", legacySystemName: "pencil.circle")
-                        }
-                    }
-                    .labelStyle(.iconOnly).disabled(detailedManga == nil)
-                }
-            }
-
             ToolbarItemGroup(placement: .topBarTrailing) {
+                if !availableLanguages.isEmpty {
+                    Picker(
+                        selection: Binding(
+                            get: { selectedLanguage },
+                            set: {
+                                mangaLanguageService.setLanguage(
+                                    $0, mangaId: manga.id, pluginId: plugin.id)
+                            })
+                    ) {
+                        Text("auto").tag(String?.none)
+                        Text("defaultLanguage").tag(String?.some(""))
+                        ForEach(availableLanguages, id: \.self) { language in
+                            Text(
+                                Locale.current.localizedString(forIdentifier: language) ?? language
+                            )
+                            .tag(Optional(language))
+                        }
+                    } label: {
+                        Label("language", systemImage: "globe")
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 if plugin.supportsDownloads || plugin is any Browsable,
                     mangaData == nil || detailedManga != nil
                 {
@@ -684,6 +777,17 @@ struct MangaDetailsScreen: View {
                         Label("openInBrowser", systemImage: "arrow.up.right.square")
                     }
                 }
+
+                if plugin is Editable, detailedManga?.editable ?? true {
+                    Button(action: { isUpdateMangaModalPresented = true }) {
+                        Label {
+                            Text("editManga")
+                        } icon: {
+                            ToolbarIcon(systemName: "pencil", legacySystemName: "pencil.circle")
+                        }
+                    }
+                    .disabled(detailedManga == nil)
+                }
             } label: {
                 Label {
                     Text("actions")
@@ -693,7 +797,7 @@ struct MangaDetailsScreen: View {
             }
         }
         .navigationTitleWithSubtitle(
-            title: Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id),
+            title: Text(mangaData?.title ?? localizedManga.title ?? mangaData?.id ?? manga.id),
             subtitle: Text(plugin.name ?? plugin.id)
         )
         .onAppear {
@@ -716,6 +820,15 @@ struct MangaDetailsScreen: View {
         }
         .onReceive(LibraryService.shared.objectWillChange) { updateLibraryItem() }
         .onReceive(ProgressService.shared.objectWillChange) { updateProgress() }
+        .onChange(of: selectedLanguage) {
+            selectedChapterGroupIndex = nil
+            showingChaptersModal = false
+            updateSelectedChapterGroup()
+        }
+        .onChange(of: showsAllChapterGroups) {
+            showingChaptersModal = false
+            updateSelectedChapterGroup()
+        }
         .background { MangaDetailsLoadFailureDismissal(shouldDismiss: shouldDismissForLoadFailure) }
         .toolbarBackground(
             horizontalSizeClass == .regular ? .visible : .automatic, for: .navigationBar)

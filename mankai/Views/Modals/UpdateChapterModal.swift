@@ -161,14 +161,15 @@ struct UpdateChapterModal: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(
-            title: Text("editChapter"), subtitle: Text(chapter.title ?? chapter.id)
+            title: Text("editChapter"),
+            subtitle: Text((chapter.title ?? chapter.id).localizedChapterLabel)
         ) {
             Button(action: showRenameAlert) {
                 VStack {
                     Text("editChapter").font(.headline).foregroundColor(.primary)
 
                     HStack(spacing: 4) {
-                        Text(chapter.title ?? chapter.id).font(.caption)
+                        Text((chapter.title ?? chapter.id).localizedChapterLabel).font(.caption)
                         Image(systemName: "pencil").font(.caption2)
                     }
 

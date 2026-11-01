@@ -98,7 +98,10 @@ struct UpdateChaptersModal: View {
                         UpdateChapterModal(
                             plugin: plugin, manga: manga, chapter: chapter,
                             onRename: { id, title in renameChapter(for: id, to: title) })
-                    }) { Text(chapter.title ?? chapter.id).foregroundColor(.primary) }
+                    }) {
+                        Text((chapter.title ?? chapter.id).localizedChapterLabel)
+                            .foregroundColor(.primary)
+                    }
                     .padding(.horizontal, 20)
                 }
                 .onMove(perform: moveChapter)
@@ -120,7 +123,8 @@ struct UpdateChaptersModal: View {
             if isRootOfSheet {
                 chapterList.navigationTitleWithSubtitle(
                     title: Text("editChapters"),
-                    subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
+                    subtitle: Text(
+                        LocalizedStringKey((chapterGroupTitle ?? "").localizedChapterLabel))
                 )
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) { Button("close") { dismiss() } }
@@ -185,7 +189,8 @@ struct UpdateChaptersModal: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(
-            title: Text("editChapters"), subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
+            title: Text("editChapters"),
+            subtitle: Text(LocalizedStringKey((chapterGroupTitle ?? "").localizedChapterLabel))
         )
         .task {
             do {

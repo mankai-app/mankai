@@ -44,6 +44,7 @@ struct MangaItemContextMenu: ViewModifier {
     }
 
     @State private var loadedRecords: Records?
+    @ObservedObject private var mangaLanguageService = MangaLanguageService.shared
     @State private var detailedManga: DetailedManga?
     @State private var downloadManga: DetailedManga?
     @State private var sheet: Sheet?
@@ -186,7 +187,9 @@ struct MangaItemContextMenu: ViewModifier {
             switch sheet { case .download:
                 if let detailedManga {
                     SelectChaptersModal(
-                        plugin: plugin, detailedManga: detailedManga,
+                        plugin: plugin,
+                        detailedManga: mangaLanguageService.localized(
+                            detailedManga, plugin: plugin),
                         downloadChapters: { chapters in
                             perform {
                                 try await DownloadService.shared.queue(
@@ -199,13 +202,15 @@ struct MangaItemContextMenu: ViewModifier {
                         UpdateMangaModal(plugin: editablePlugin, manga: detailedManga)
                     }
                 case .share:
-                    if let manga, let mangaData = detailedManga ?? downloadManga {
+                    if let manga, let sourceManga = detailedManga ?? downloadManga {
+                        let mangaData = mangaLanguageService.localized(sourceManga, plugin: plugin)
                         ExportModal(
                             manga: mangaData,
                             downloadMangaId: DownloadMangaModel.makeId(
                                 pluginId: plugin.id, mangaId: manga.id),
-                            chapterGroups: downloadManga?.chapters ?? mangaData.chapters,
-                            downloadedChapterIds: downloadedChapterIds,
+                            chapterGroups: downloadManga.map {
+                                mangaLanguageService.localized($0, plugin: plugin).chapters
+                            } ?? mangaData.chapters, downloadedChapterIds: downloadedChapterIds,
                             downloadedCoverUrl: downloadManga?.cover,
                             onDownload: plugin.supportsDownloads && detailedManga != nil
                                 ? { openDownloadAfterExport = true } : nil)
@@ -382,7 +387,8 @@ struct MangaItemContextMenu: ViewModifier {
     }
 
     private func startReading(progress: ProgressModel?) {
-        guard let mangaData = detailedManga ?? downloadManga else { return }
+        guard let sourceManga = detailedManga ?? downloadManga else { return }
+        let mangaData = mangaLanguageService.localized(sourceManga, plugin: plugin)
         let downloadedIds = downloadedChapterIds
         let canRead: (Chapter) -> Bool = {
             downloadedIds.contains($0.id) || ($0.locked != true && plugin.supportsRemoteReading)
@@ -410,7 +416,7 @@ struct MangaItemContextMenu: ViewModifier {
 
         onRead(
             ReaderRoute(
-                plugin: plugin, manga: mangaData, downloadManga: downloadManga,
+                plugin: plugin, manga: sourceManga, downloadManga: downloadManga,
                 usesDownloadedMetadata: detailedManga == nil, chapterGroupIndex: target.groupIndex,
                 chapter: target.chapter, initialPage: target.page))
     }

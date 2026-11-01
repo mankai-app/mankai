@@ -14,6 +14,7 @@ enum SettingsKey: String {
     case checkClipboard
     case filesViewMode
     case accentColor
+    case mangaLanguages
 
     /// Cache Settings
     case inMemoryCacheItemCount

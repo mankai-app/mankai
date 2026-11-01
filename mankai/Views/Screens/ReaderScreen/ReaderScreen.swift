@@ -459,6 +459,7 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
 struct ReaderScreen: View {
     let plugin: Plugin
+    private let sourceManga: DetailedManga
     let manga: DetailedManga
     let downloadManga: DetailedManga?
     let usesDownloadedMetadata: Bool
@@ -535,7 +536,9 @@ struct ReaderScreen: View {
         initialPage: Int? = nil
     ) {
         self.plugin = plugin
-        self.manga = manga
+        sourceManga = manga
+        let localizedManga = MangaLanguageService.shared.localized(manga, plugin: plugin)
+        self.manga = localizedManga
         self.downloadManga = downloadManga
         self.usesDownloadedMetadata = usesDownloadedMetadata
         self.chapterGroupIndex = chapterGroupIndex
@@ -543,8 +546,8 @@ struct ReaderScreen: View {
         self.initialPage = initialPage
 
         let chapters =
-            manga.chapters.indices.contains(chapterGroupIndex)
-            ? manga.chapters[chapterGroupIndex].chapters : []
+            localizedManga.chapters.indices.contains(chapterGroupIndex)
+            ? localizedManga.chapters[chapterGroupIndex].chapters : []
         _currentChapterIndex = State(
             initialValue: chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1)
         _pendingInitialPage = State(initialValue: initialPage)
@@ -1332,14 +1335,17 @@ struct ReaderScreen: View {
         let position = ReaderSavedPosition(chapterID: chapter.id, page: page)
         guard lastSavedPosition != position else { return }
 
+        let sourceTitle = sourceManga.chapters.lazy.flatMap(\.chapters)
+            .first { $0.id == chapter.id }?
+            .title
         let progress = ProgressModel(
             mangaId: manga.id, pluginId: plugin.id, datetime: Date(), chapterId: chapter.id,
-            chapterTitle: chapter.title, page: page, shouldSync: plugin.supports(.sync))
+            chapterTitle: sourceTitle, page: page, shouldSync: plugin.supports(.sync))
 
         do {
             if !usesDownloadedMetadata {
                 let mangaModel = MangaSnapshotService.shared.makeSnapshot(
-                    for: manga.toManga(), pluginId: plugin.id)
+                    for: sourceManga.toManga(), pluginId: plugin.id)
                 _ = try? await MangaSnapshotService.shared.upsert(mangaModel)
             }
 
