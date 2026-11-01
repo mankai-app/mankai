@@ -66,7 +66,6 @@ struct MangaLocalization: Codable {
     var cover: String?
     var status: Status?
     var latestChapter: Chapter?
-    var updates: Bool?
     var meta: String?
 }
 
@@ -94,7 +93,6 @@ struct MangaUpdateRequest: Codable {
             manga.cover = overrides.cover ?? cover
             manga.status = overrides.status ?? status
             manga.latestChapter = overrides.latestChapter ?? latestChapter
-            manga.updates = overrides.updates ?? updates
             manga.meta = overrides.meta ?? meta
         }
         manga.latestChapter = manga.latestChapter?.localized(for: language)
