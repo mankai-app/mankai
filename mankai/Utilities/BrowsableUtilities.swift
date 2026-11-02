@@ -142,16 +142,3 @@ struct LabeledFolderIcon: View {
             }
     }
 }
-
-enum BrowsablePluginStyle {
-    static let palette: [Color] = [
-        .red, .orange, .yellow, .green, .mint, .teal, .cyan, .blue, .indigo, .purple, .pink, .brown
-    ]
-
-    static func color(for id: String) -> Color {
-        var hash: UInt64 = 5381
-        for byte in id.utf8 { hash = (hash &<< 5) &+ hash &+ UInt64(byte) }
-        let index = Int(hash % UInt64(palette.count))
-        return palette[index]
-    }
-}

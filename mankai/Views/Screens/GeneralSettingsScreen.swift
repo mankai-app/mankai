@@ -50,6 +50,7 @@ struct GeneralSettingsScreen: View {
     @State private var indexCacheSize: String = ""
     @State private var showClearCacheAlert = false
     @State private var showClearIndexCacheAlert = false
+    @State private var showClearMangaLanguageCacheAlert = false
 
     var body: some View {
         List {
@@ -147,6 +148,19 @@ struct GeneralSettingsScreen: View {
                     Button("cancel", role: .cancel) {}
                 } message: {
                     Text("clearIndexMessage")
+                }
+
+                Button("clearMangaLanguageCache", role: .destructive) {
+                    showClearMangaLanguageCacheAlert = true
+                }
+                .confirmationDialog(
+                    "clearMangaLanguageCache", isPresented: $showClearMangaLanguageCacheAlert,
+                    titleVisibility: .visible
+                ) {
+                    Button("clear", role: .destructive) { MangaLanguageService.shared.clearCache() }
+                    Button("cancel", role: .cancel) {}
+                } message: {
+                    Text("clearMangaLanguageCacheMessage")
                 }
             } header: {
                 Text("storageAndPerformance")

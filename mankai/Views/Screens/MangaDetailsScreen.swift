@@ -731,26 +731,30 @@ struct MangaDetailsScreen: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if !availableLanguages.isEmpty {
-                    Picker(
-                        selection: Binding(
-                            get: { selectedLanguage },
-                            set: {
-                                mangaLanguageService.setLanguage(
-                                    $0, mangaId: manga.id, pluginId: plugin.id)
-                            })
-                    ) {
-                        Text("auto").tag(String?.none)
-                        Text("defaultLanguage").tag(String?.some(""))
-                        ForEach(availableLanguages, id: \.self) { language in
-                            Text(
-                                Locale.current.localizedString(forIdentifier: language) ?? language
-                            )
-                            .tag(Optional(language))
+                    Menu {
+                        Picker(
+                            "language",
+                            selection: Binding(
+                                get: { selectedLanguage },
+                                set: {
+                                    mangaLanguageService.setLanguage(
+                                        $0, mangaId: manga.id, pluginId: plugin.id)
+                                })
+                        ) {
+                            Text("auto").tag(String?.none)
+                            Text("defaultLanguage").tag(String?.some(""))
+                            ForEach(availableLanguages, id: \.self) { language in
+                                Text(
+                                    Locale.current.localizedString(forIdentifier: language)
+                                        ?? language
+                                )
+                                .tag(Optional(language))
+                            }
                         }
+                        .pickerStyle(.inline)
                     } label: {
                         Label("language", systemImage: "globe")
                     }
-                    .pickerStyle(.menu)
                 }
 
                 if plugin.supportsDownloads || plugin is any Browsable,

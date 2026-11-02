@@ -2196,6 +2196,62 @@
         }
       }
     },
+    "clearMangaLanguageCache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Manga Language Cache"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫画の言語キャッシュを消去"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除漫画语言缓存"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除漫畫語言快取"
+          }
+        }
+      }
+    },
+    "clearMangaLanguageCacheMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will clear all saved manga language selections and reset them to Auto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存されたすべての漫画の言語設定が消去され、自動にリセットされます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这将清除所有已保存的漫画语言选择，并将其重置为自动。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這將清除所有已儲存的漫畫語言選擇，並將其重設為自動。"
+          }
+        }
+      }
+    },
     "clearSyncCache" : {
       "localizations" : {
         "en" : {

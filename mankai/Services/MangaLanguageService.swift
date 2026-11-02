@@ -34,6 +34,11 @@ import Foundation
         UserDefaults.standard.set(languages, forKey: SettingsKey.mangaLanguages.rawValue)
     }
 
+    func clearCache() {
+        languages = [:]
+        UserDefaults.standard.removeObject(forKey: SettingsKey.mangaLanguages.rawValue)
+    }
+
     func localized(_ manga: Manga, plugin: Plugin) -> Manga {
         manga.localized(for: preferredLanguage(mangaId: manga.id, pluginId: plugin.id))
     }

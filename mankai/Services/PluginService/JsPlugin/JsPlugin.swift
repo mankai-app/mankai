@@ -71,6 +71,8 @@ final class JsPlugin: Plugin, Configurable {
 
     override var icon: String? { localization?.icon ?? _icon }
 
+    override var color: Color { Self.defaultColor }
+
     override var homePage: String? { localization?.homePage ?? _homePage }
 
     override var availableGenres: [Genre] { _availableGenres }

@@ -150,8 +150,6 @@ where Session: BrowsableSession, Session.Config == Config {
 
     override class var typeCapabilities: [PluginTypeCapability] { [] }
 
-    override var color: Color { BrowsablePluginStyle.color(for: _id) }
-
     var configuration: Config {
         didSet {
             let previousSession = session

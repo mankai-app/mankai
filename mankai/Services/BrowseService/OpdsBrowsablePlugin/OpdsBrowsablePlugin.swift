@@ -114,8 +114,6 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     override class var defaultColor: Color { .red }
 
-    override var color: Color { BrowsablePluginStyle.color(for: _id) }
-
     convenience init(session: OpdsSession, name: String?) async throws {
         let rootCatalog = try await session.get(url: session.configuration.catalogURL)
         let id =

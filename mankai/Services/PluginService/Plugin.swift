@@ -28,6 +28,19 @@ enum PluginIcon {
     }
 }
 
+enum PluginStyle {
+    static let palette: [Color] = [
+        .red, .orange, .yellow, .green, .mint, .teal, .cyan, .blue, .indigo, .purple, .pink, .brown
+    ]
+
+    static func color(for id: String) -> Color {
+        var hash: UInt64 = 5381
+        for byte in id.utf8 { hash = (hash &<< 5) &+ hash &+ UInt64(byte) }
+        let index = Int(hash % UInt64(palette.count))
+        return palette[index]
+    }
+}
+
 struct Cooldown: Codable {
     var `default`: Int?
     var getImage: Int?
@@ -181,7 +194,7 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
         AnyView(PluginIconView(icon: icon, defaultIcon: type(of: self).defaultIcon, color: color))
     }
 
-    var color: Color { type(of: self).defaultColor }
+    var color: Color { PluginStyle.color(for: id) }
 
     var homePage: String? { nil }
 
