@@ -583,6 +583,12 @@ struct MangaDetailsScreen: View {
                     }
                 }
             }
+        } else if hasFinishedInitialLoad, mangaData?.chapters.isEmpty == true {
+            ContentUnavailableView {
+                Label("noContentAvailable", image: "custom.list.bullet.slash")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground))
         } else {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(.systemGroupedBackground))

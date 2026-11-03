@@ -2847,25 +2847,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Contents"
+            "value" : "Content"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目次"
+            "value" : "コンテンツ"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目录"
+            "value" : "内容"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目錄"
+            "value" : "內容"
           }
         }
       }
@@ -11560,6 +11560,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有設定"
+          }
+        }
+      }
+    },
+    "noContentAvailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Content Available"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "利用可能なコンテンツはありません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可用的内容"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可用的內容"
           }
         }
       }
