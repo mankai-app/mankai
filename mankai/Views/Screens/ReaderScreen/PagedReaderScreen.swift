@@ -889,9 +889,16 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         }
 
         if let spreadPageIndex, urls.count <= 2, !spansSpread {
-            // Fit pages to a shared height, each against its side of the native spine.
+            // A single portrait stays on the first leaf, the other leaf is hidden.
+            let imageIndex = min(spreadPageIndex, urls.count - 1)
+            let imageURL = urls[imageIndex]
+
             let fittingHeights = urls.enumerated()
-                .map { index, url in
+                .compactMap { index, url -> CGFloat? in
+                    if case .success = images[imageURL], case .loading = images[url] ?? .loading {
+                        return nil
+                    }
+
                     let isRightPage = (index == 0) == isRightToLeft
                     let pageWidth = max(
                         isRightPage
@@ -900,9 +907,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
                     return pageWidth / ratios[url, default: 1]
                 }
             imageHeight = min(availableHeight, fittingHeights.min() ?? availableHeight)
-            // A single portrait stays on the first leaf, the other leaf is hidden.
-            let imageIndex = min(spreadPageIndex, urls.count - 1)
-            let imageWidth = imageHeight * ratios[urls[imageIndex], default: 1]
+            let imageWidth = imageHeight * ratios[imageURL, default: 1]
             let isRightPage = (imageIndex == 0) == isRightToLeft
             centerX = viewportBounds.midX + (isRightPage ? imageWidth / 2 : -imageWidth / 2)
         } else {
