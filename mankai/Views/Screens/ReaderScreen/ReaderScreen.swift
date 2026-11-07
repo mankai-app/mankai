@@ -581,7 +581,11 @@ struct ReaderScreen: View {
             )
             .allowsHitTesting(false)
         }
-        .ignoresSafeArea().navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
+        .ignoresSafeArea()
+        .overlay(alignment: layoutDirection == .rightToLeft ? .topLeading : .topTrailing) {
+            if isChromeVisible && loadPhase == .ready { readerPageIndicator }
+        }
+        .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
         .navigationBarTitleDisplayMode(.inline).toolbarBackground(.visible, for: .navigationBar)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { readerSettingsMenu } }
         .modifier(
@@ -786,9 +790,21 @@ struct ReaderScreen: View {
                 trailing: 16 + trailingInset))
     }
 
+    private var pageCount: Int { max(urls.count, 1) }
+
+    private var displayedPage: Int { min(currentPage + 1, pageCount) }
+
+    private var readerPageIndicator: some View {
+        Text(
+            verbatim: String.localizedStringWithFormat(
+                String(localized: "readerPageProgressFormat"), displayedPage, pageCount)
+        )
+        .font(.subheadline.weight(.semibold)).monospacedDigit().padding(.horizontal, 12)
+        .padding(.vertical, 6).adaptiveGlassBackground(in: Capsule()).padding()
+        .allowsHitTesting(false)
+    }
+
     private var readerSlider: some View {
-        let pageCount = max(urls.count, 1)
-        let displayedPage = min(currentPage + 1, pageCount)
         let sliderDirection =
             readerType == .paged && pagedNavigationOrientation == .horizontal
             ? readingDirection : .leftToRight
@@ -799,7 +815,12 @@ struct ReaderScreen: View {
                 set: { requestPage(Int($0.rounded()) - 1, animated: false) }),
             bounds: 1...Double(pageCount), readingDirection: sliderDirection, step: 1,
             canScrub: urls.count > 1, previewTitle: currentChapter.map { $0.title ?? $0.id },
-            action: { isShowingChapters = true }
+            previewImage: { page in
+                let index = page - 1
+                guard urls.indices.contains(index), case .success(let image) = images[urls[index]]
+                else { return nil }
+                return image
+            }, action: { isShowingChapters = true }
         )
         .frame(minWidth: 200, idealWidth: 240, maxWidth: 420)
     }

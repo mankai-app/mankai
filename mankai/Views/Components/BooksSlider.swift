@@ -15,6 +15,7 @@ struct BooksSlider: View {
     var step: Double = 0
     var canScrub = true
     var previewTitle: String?
+    var previewImage: (Int) -> AppImage? = { _ in nil }
     var action: () -> Void = {}
     var onEditingChanged: (Bool) -> Void = { _ in }
 
@@ -90,10 +91,9 @@ struct BooksSlider: View {
         .allowsHitTesting(isEnabled)
         .overlay(alignment: .bottom) {
             if let previewValue {
-                BooksSliderPageIndicator(title: previewTitle, page: Int(previewValue.rounded()))
-                    .frame(width: 240).offset(y: -56)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .allowsHitTesting(false)
+                let page = Int(previewValue.rounded())
+                BooksSliderPageIndicator(title: previewTitle, page: page, image: previewImage(page))
+                    .offset(y: -56).transition(.opacity).allowsHitTesting(false)
             }
         }
         .animation(.easeInOut(duration: 0.18), value: isInteracting)
@@ -153,15 +153,28 @@ struct BooksSlider: View {
 private struct BooksSliderPageIndicator: View {
     let title: String?
     let page: Int
+    let image: AppImage?
 
     var body: some View {
         VStack(spacing: 2) {
             if let title, !title.isEmpty { Text(verbatim: title).font(.subheadline).lineLimit(1) }
 
+            if let image { BooksSliderPageThumbnail(image: image) }
+
             Text(verbatim: String(format: String(localized: "pageFormat"), page.description))
                 .font(.subheadline).foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 18).padding(.vertical, 9).frame(maxWidth: .infinity)
-        .adaptiveGlassBackground(in: Capsule())
+        .padding(.horizontal, 18).padding(.vertical, 9)
+        .adaptiveGlassBackground(in: RoundedRectangle(cornerRadius: 20))
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct BooksSliderPageThumbnail: View {
+    @ObservedObject var image: AppImage
+
+    var body: some View {
+        Image(uiImage: image.image).resizable().scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: 8)).frame(height: 144)
     }
 }
