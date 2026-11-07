@@ -305,7 +305,6 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.maximumZoomScale = 3
         scrollView.delegate = self
-        hideReaderScrollEdgeEffects(scrollView)
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
 

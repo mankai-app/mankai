@@ -177,7 +177,6 @@ private struct ReaderSystemBarsModifier: ViewModifier {
                 readerContent.statusBarHidden(fullscreenDisplay && !isChromeVisible)
             }
         }
-        // Keep the gradient controller mounted for both visibility paths.
         .overlay {
             ReaderNavigationBarController(
                 isNavigationBarHidden: !isChromeVisible,
@@ -209,38 +208,6 @@ private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
                 content
             }
         #endif
-    }
-}
-
-@available(iOS 26.0, *) private final class ReaderNavigationBarGradientView: UIView {
-    override class var layerClass: AnyClass { CAGradientLayer.self }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        isOpaque = false
-        isUserInteractionEnabled = false
-        registerForTraitChanges([UITraitUserInterfaceStyle.self]) {
-            (view: ReaderNavigationBarGradientView, _: UITraitCollection) in view.updateColors()
-        }
-        updateColors()
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        updateColors()
-    }
-
-    private func updateColors() {
-        guard let gradientLayer = layer as? CAGradientLayer else { return }
-        let backgroundColor = UIColor.systemBackground.resolvedColor(with: traitCollection)
-        gradientLayer.colors = [
-            backgroundColor.withAlphaComponent(0.85).cgColor,
-            backgroundColor.withAlphaComponent(0).cgColor
-        ]
-    }
-
-    @available(*, unavailable) required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }
 
@@ -291,7 +258,6 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
         private var shouldHideNavigationBar = false
         private var usesSwiftUIVisibility = false
         private var isAnimatingNavigationBar = false
-        private var navigationBarGradientView: UIView?
 
         init(showChrome: @escaping () -> Void) {
             self.showChrome = showChrome
@@ -306,11 +272,6 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             super.viewDidLoad()
             view.backgroundColor = .clear
             view.isUserInteractionEnabled = false
-            if #available(iOS 26.0, *) {
-                let gradientView = ReaderNavigationBarGradientView(frame: .zero)
-                view.addSubview(gradientView)
-                navigationBarGradientView = gradientView
-            }
             NotificationCenter.default.addObserver(
                 self, selector: #selector(sceneDidBecomeActive(_:)),
                 name: UIScene.didActivateNotification, object: nil)
@@ -333,8 +294,7 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
         override func viewDidLayoutSubviews() {
             super.viewDidLayoutSubviews()
             updateContentSafeAreaInsets()
-            guard !isAnimatingNavigationBar else { return }
-            if #unavailable(iOS 26.0), !shouldHideNavigationBar { return }
+            guard shouldHideNavigationBar, !isAnimatingNavigationBar else { return }
             applyNavigationBarVisibility(animated: false)
         }
 
@@ -403,27 +363,11 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
             // Use untransformed geometry so repeated updates preserve the hidden position.
             let bottomY = navigationBar.center.y + navigationBar.bounds.height / 2
-            updateNavigationBarGradient(navigationBar, bottomY: bottomY)
             let transform =
                 shouldHideNavigationBar
                 ? CGAffineTransform(translationX: 0, y: -bottomY) : .identity
 
             updateNavigationBar(navigationBar, transform: transform, animated: animated)
-        }
-
-        private func updateNavigationBarGradient(_ navigationBar: UINavigationBar, bottomY: CGFloat)
-        {
-            guard #available(iOS 26.0, *), let gradientView = navigationBarGradientView,
-                let containerView = navigationBar.superview, view.window != nil
-            else { return }
-
-            let frame = view.convert(
-                CGRect(
-                    x: navigationBar.center.x - navigationBar.bounds.width / 2, y: 0,
-                    width: navigationBar.bounds.width, height: max(bottomY, 0)), from: containerView
-            )
-            gradientView.bounds = CGRect(origin: .zero, size: frame.size)
-            gradientView.center = CGPoint(x: frame.midX, y: frame.midY)
         }
 
         func restoreNavigationBar(animated: Bool = false) {
@@ -434,13 +378,8 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
         private func updateNavigationBar(
             _ navigationBar: UINavigationBar, transform: CGAffineTransform, animated: Bool
         ) {
-            let changes = {
-                if !self.usesSwiftUIVisibility { navigationBar.transform = transform }
-                self.navigationBarGradientView?.transform =
-                    self.usesSwiftUIVisibility ? .identity : transform
-                self.navigationBarGradientView?.alpha =
-                    self.usesSwiftUIVisibility && self.shouldHideNavigationBar ? 0 : 1
-            }
+            guard !usesSwiftUIVisibility else { return }
+            let changes = { navigationBar.transform = transform }
 
             guard animated else {
                 changes()
