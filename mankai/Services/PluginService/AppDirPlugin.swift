@@ -7,11 +7,14 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 
 final class AppDirPlugin: ReadWriteFsPlugin {
     static let shared = AppDirPlugin()
 
     override class func loadPlugins() -> [Plugin] { [shared] }
+
+    override class var defaultColor: Color { .accentColor }
 
     private init() {
         let fileManager = FileManager.default
@@ -40,6 +43,8 @@ final class AppDirPlugin: ReadWriteFsPlugin {
     override var name: String? { String(localized: "appName") }
 
     override var capabilities: [PluginCapability] { super.capabilities.filter { $0 != .sync } }
+
+    override var color: Color { Self.defaultColor }
 
     /// Built-in plugin, do nothing
     override func savePlugin(db: Database? = nil) throws {}
