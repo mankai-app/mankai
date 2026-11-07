@@ -87,40 +87,92 @@ struct ReaderOverscrollIndicator: View {
     let availability: ReaderChapterAvailability
 
     var body: some View {
+        if availability == .available {
+            ProgressArrowView(
+                progress: progress, direction: direction, size: READER_OVERSCROLL_INDICATOR_SIZE,
+                completionScale: 1.2)
+        } else {
+            ReaderOverscrollStatus(direction: direction, step: step, availability: availability)
+        }
+    }
+}
+
+struct ReaderOverscrollStatus: View {
+    let direction: ProgressArrowDirection
+    let step: ReaderStep
+    let availability: ReaderChapterAvailability
+
+    var isCentered = false
+
+    var body: some View {
+        let (systemName, text) = status
         Group {
-            switch availability { case .available:
-                ProgressArrowView(
-                    progress: progress, direction: direction,
-                    size: READER_OVERSCROLL_INDICATOR_SIZE, completionScale: 1.2)
-                case .locked:
-                    statusContent(
-                        systemName: "lock.fill",
-                        text: step == .previous
-                            ? String(localized: "previousChapterIsLocked")
-                            : String(localized: "nextChapterIsLocked"))
-                case .unavailable:
-                    statusContent(
-                        systemName: "xmark",
-                        text: step == .previous
-                            ? String(localized: "noPreviousChapter")
-                            : String(localized: "noNextChapter"))
+            if isCentered {
+                VStack(spacing: 16) {
+                    Image(systemName: systemName).resizable().scaledToFit()
+                        .frame(width: 48, height: 48)
+                    Text(text).multilineTextAlignment(.center)
+                }
+            } else {
+                let content = HStack(spacing: 8) {
+                    Image(systemName: systemName)
+                    Text(text)
+                    Image(systemName: systemName)
+                }
+
+                switch direction { case .left, .right:
+                    RotatedStatusLayout {
+                        content.rotationEffect(.degrees(direction == .left ? -90 : 90))
+                    }
+                    case .up, .down: content
+                }
             }
+        }
+        .foregroundStyle(Color(uiColor: .secondaryLabel))
+    }
+
+    private var status: (systemName: String, text: String) {
+        switch availability { case .available:
+            // The row rotation turns an upward arrow toward the horizontal chapter edge.
+            return (
+                direction == .down ? "arrow.down" : "arrow.up",
+                step == .previous
+                    ? String(localized: "turnToLoadPreviousChapter")
+                    : String(localized: "turnToLoadNextChapter")
+            )
+            case .locked:
+                return (
+                    "lock.fill",
+                    step == .previous
+                        ? String(localized: "previousChapterIsLocked")
+                        : String(localized: "nextChapterIsLocked")
+                )
+            case .unavailable:
+                return (
+                    "xmark",
+                    step == .previous
+                        ? String(localized: "noPreviousChapter")
+                        : String(localized: "noNextChapter")
+                )
         }
     }
 
-    @ViewBuilder private func statusContent(systemName: String, text: String) -> some View {
-        switch direction { case .left, .right:
-            VStack(spacing: 8) {
-                Image(systemName: systemName)
-                Text(text).multilineTextAlignment(.center)
-            }
-            .frame(width: 80).foregroundStyle(Color(uiColor: .secondaryLabel))
-            case .up, .down:
-                HStack(spacing: 8) {
-                    Image(systemName: systemName)
-                    Text(text)
-                }
-                .foregroundStyle(Color(uiColor: .secondaryLabel))
+    // rotationEffect leaves the layout size unchanged, so swap the axes for the hosting view.
+    private struct RotatedStatusLayout: Layout {
+        func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+        {
+            let size = subviews[0]
+                .sizeThatFits(ProposedViewSize(width: proposal.height, height: proposal.width))
+            return CGSize(width: size.height, height: size.width)
+        }
+
+        func placeSubviews(
+            in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
+        ) {
+            subviews[0]
+                .place(
+                    at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center,
+                    proposal: ProposedViewSize(width: bounds.height, height: bounds.width))
         }
     }
 }

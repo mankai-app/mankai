@@ -10,20 +10,36 @@ import SwiftUI
 import UIKit
 
 private struct OverscrollView: View {
+    @Environment(\.layoutDirection) private var layoutDirection
+
     let step: ReaderStep
     let orientation: NavigationOrientation
     let readingDirection: ReadingDirection
     let pageTransition: PageTransition
     let availability: ReaderChapterAvailability
+    var contentSafeAreaInsets: UIEdgeInsets
     var showsContent = true
 
     var body: some View {
-        positionedContent.opacity(showsContent ? 1 : 0)
+        positionedContent.padding(contentPadding).opacity(showsContent ? 1 : 0)
             .background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 
+    private var contentPadding: EdgeInsets {
+        let isRightToLeft = layoutDirection == .rightToLeft
+        return EdgeInsets(
+            top: contentSafeAreaInsets.top,
+            leading: isRightToLeft ? contentSafeAreaInsets.right : contentSafeAreaInsets.left,
+            bottom: contentSafeAreaInsets.bottom,
+            trailing: isRightToLeft ? contentSafeAreaInsets.left : contentSafeAreaInsets.right)
+    }
+
     @ViewBuilder private var positionedContent: some View {
-        if availability != .available {
+        let isCentered = availability != .available
+        let content = ReaderOverscrollStatus(
+            direction: direction, step: step, availability: availability, isCentered: isCentered)
+
+        if isCentered {
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if orientation == .vertical {
             content.frame(
@@ -37,50 +53,20 @@ private struct OverscrollView: View {
         }
     }
 
-    private var content: some View {
-        VStack(spacing: 16) {
-            Image(systemName: imageName).resizable().scaledToFit().frame(width: 48, height: 48)
-            Text(message).multilineTextAlignment(.center)
-        }
-        .foregroundStyle(Color(uiColor: .secondaryLabel))
+    private var direction: ProgressArrowDirection {
+        if orientation == .vertical { return step == .previous ? .up : .down }
+        let pointsLeft = (step == .previous) != (readingDirection == .rightToLeft)
+        return pointsLeft ? .left : .right
     }
 
     private var placeAtLeading: Bool {
-        let placeAtLeading = (readingDirection == .rightToLeft) == (step == .previous)
+        let placeAtLeading = direction == .right
         return pageTransition == .pageCurl ? !placeAtLeading : placeAtLeading
     }
 
     private var placeAtTop: Bool {
         let placeAtTop = step == .next
         return pageTransition == .pageCurl ? !placeAtTop : placeAtTop
-    }
-
-    private var imageName: String {
-        switch availability { case .unavailable: return "xmark" case .locked: return "lock.fill"
-            case .available:
-                if orientation == .vertical {
-                    return step == .previous ? "chevron.up" : "chevron.down"
-                } else if readingDirection == .rightToLeft {
-                    return step == .previous ? "chevron.right" : "chevron.left"
-                } else {
-                    return step == .previous ? "chevron.left" : "chevron.right"
-                }
-        }
-    }
-
-    private var message: String {
-        switch availability { case .unavailable:
-            return step == .previous
-                ? String(localized: "noPreviousChapter") : String(localized: "noNextChapter")
-            case .locked:
-                return step == .previous
-                    ? String(localized: "previousChapterIsLocked")
-                    : String(localized: "nextChapterIsLocked")
-            case .available:
-                return step == .previous
-                    ? String(localized: "turnToLoadPreviousChapter")
-                    : String(localized: "turnToLoadNextChapter")
-        }
     }
 }
 
@@ -99,6 +85,7 @@ private final class OverscrollHostingController: UIHostingController<OverscrollV
     init(pagePosition: Int, rootView: OverscrollView) {
         self.pagePosition = pagePosition
         super.init(rootView: rootView)
+        safeAreaRegions = []
     }
 
     @available(*, unavailable) required init?(coder _: NSCoder) {
@@ -115,6 +102,7 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
 
     private var pageViewController: UIPageViewController!
     private let contentPages = NSHashTable<PageContentViewController>.weakObjects()
+    private let overscrollPages = NSHashTable<OverscrollHostingController>.weakObjects()
     private let pageContainerScrollView = UIScrollView()
     private let overscrollIndicators = [
         ScrollOverscrollIndicatorController(isLeading: true),
@@ -223,7 +211,15 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
                 updateVisibleGroup: chapterChanged || presentationChanged || groupsChanged)
         }
 
-        if contentInsetsChanged { updatePageViewports() }
+        if contentInsetsChanged {
+            updatePageViewports()
+            for page in overscrollPages.allObjects {
+                let insets = overscrollInsets(for: page.pagePosition)
+                if page.rootView.contentSafeAreaInsets != insets {
+                    page.rootView.contentSafeAreaInsets = insets
+                }
+            }
+        }
 
         if let command = state.navigationCommand,
             command.generation != lastAppliedNavigationGeneration
@@ -558,13 +554,27 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
         // The next chapter hint belongs on the second leaf in reading order.
         let isFirstLeaf = pagePosition.isMultiple(of: 2)
         let showsContent = !usesNativeDoublePage || (step == .previous ? isFirstLeaf : !isFirstLeaf)
-        return OverscrollHostingController(
+        let page = OverscrollHostingController(
             pagePosition: pagePosition,
             rootView: OverscrollView(
                 step: step, orientation: configuration.navigationOrientation,
                 readingDirection: configuration.readingDirection,
                 pageTransition: configuration.pageTransition,
-                availability: chapterAvailability(for: step), showsContent: showsContent))
+                availability: chapterAvailability(for: step),
+                contentSafeAreaInsets: overscrollInsets(for: pagePosition),
+                showsContent: showsContent))
+        overscrollPages.add(page)
+        return page
+    }
+
+    private func overscrollInsets(for pagePosition: Int) -> UIEdgeInsets {
+        var insets = configuration.contentSafeAreaInsets
+        if usesNativeDoublePage {
+            let isLeftLeaf = pagePosition.isMultiple(of: 2) != usesHorizontalRightToLeftNavigation
+            // The reader insets describe the outside edges of the spread.
+            if isLeftLeaf { insets.right = 0 } else { insets.left = 0 }
+        }
+        return insets
     }
 
     func pageViewController(
