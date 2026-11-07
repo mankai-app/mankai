@@ -141,49 +141,23 @@ private enum ReaderImageLoadResult: Sendable {
     case failed(String)
 }
 
-private struct ReaderLegacyTabBarModifier: ViewModifier {
-    @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 18.0, *) { content } else { content.toolbar(.hidden, for: .tabBar) }
-    }
-}
-
 private struct ReaderSystemBarsModifier: ViewModifier {
-    @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
-
     let fullscreenDisplay: Bool
-    @Binding var isChromeVisible: Bool
-    @Binding var contentSafeAreaInsets: UIEdgeInsets
+    let isChromeVisible: Bool
+    let isTabBarHidden: Bool
+    let isDuo: Bool
 
-    private var usesSwiftUIVisibility: Bool {
-        if #available(iOS 27.1, *) { return isDuo && fullscreenDisplay }
-        return false
-    }
-
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        let hideSystemBars = fullscreenDisplay && !isChromeVisible
         let readerContent =
-            content.persistentSystemOverlays(
-                fullscreenDisplay && !isChromeVisible ? .hidden : .automatic
-            )
-            .modifier(ReaderLegacyTabBarModifier())
+            content.toolbar(isChromeVisible ? .automatic : .hidden, for: .navigationBar)
+            .toolbar(isTabBarHidden ? .hidden : .automatic, for: .tabBar)
+            .persistentSystemOverlays(hideSystemBars ? .hidden : .automatic)
 
-        Group {
-            if #available(iOS 27.1, *), usesSwiftUIVisibility {
-                readerContent.toolbarVisibility(.hidden, for: .tabBar)
-                    .toolbarVisibility(!isChromeVisible ? .hidden : .automatic, for: .navigationBar)
-                    .toolbarVisibility(
-                        fullscreenDisplay && !isChromeVisible ? .hidden : .automatic,
-                        for: .statusBar)
-            } else {
-                readerContent.statusBarHidden(fullscreenDisplay && !isChromeVisible)
-            }
-        }
-        .overlay {
-            ReaderNavigationBarController(
-                isNavigationBarHidden: !isChromeVisible,
-                usesSwiftUIVisibility: usesSwiftUIVisibility, fullscreenDisplay: fullscreenDisplay,
-                contentSafeAreaInsets: $contentSafeAreaInsets
-            ) { isChromeVisible = true }
-            .ignoresSafeArea().allowsHitTesting(false)
+        if #available(iOS 27.1, *), isDuo && fullscreenDisplay {
+            readerContent.toolbarVisibility(hideSystemBars ? .hidden : .automatic, for: .statusBar)
+        } else {
+            readerContent.statusBarHidden(hideSystemBars)
         }
     }
 }
@@ -211,192 +185,73 @@ private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
     }
 }
 
-private struct ReaderNavigationBarController: UIViewControllerRepresentable {
-    let isNavigationBarHidden: Bool
-    let usesSwiftUIVisibility: Bool
+private struct ReaderWindowInsets: UIViewRepresentable {
     let fullscreenDisplay: Bool
-    @Binding var contentSafeAreaInsets: UIEdgeInsets
-    let onWillDisappear: () -> Void
+    @Binding var windowInsets: UIEdgeInsets
 
-    func makeCoordinator() -> Coordinator { Coordinator(onWillDisappear: onWillDisappear) }
+    func makeUIView(context: Context) -> ProbeView { ProbeView() }
 
-    func makeUIViewController(context: Context) -> Controller {
-        Controller { context.coordinator.onWillDisappear() }
+    func updateUIView(_ view: ProbeView, context: Context) {
+        view.fullscreenDisplay = fullscreenDisplay
+        view.onInsetsChange = { insets in if windowInsets != insets { windowInsets = insets } }
+        view.scheduleUpdate()
     }
 
-    func updateUIViewController(_ controller: Controller, context: Context) {
-        context.coordinator.onWillDisappear = onWillDisappear
-        controller.fullscreenDisplay = fullscreenDisplay
-        controller.onContentSafeAreaInsetsChange = { insets in
-            if contentSafeAreaInsets != insets { contentSafeAreaInsets = insets }
+    final class ProbeView: UIView {
+        private struct WindowGeometry: Equatable {
+            let window: ObjectIdentifier
+            let bounds: CGRect
+            let orientation: UIInterfaceOrientation?
         }
-        controller.setNavigationBarHidden(
-            isNavigationBarHidden, usesSwiftUIVisibility: usesSwiftUIVisibility, animated: true)
-        controller.view.setNeedsLayout()
-    }
 
-    static func dismantleUIViewController(_ controller: Controller, coordinator _: Coordinator) {
-        controller.restoreNavigationBar()
-        if #available(iOS 18.0, *) {
-            controller.tabBarController?.setTabBarHidden(false, animated: true)
-        }
-    }
-
-    final class Coordinator {
-        var onWillDisappear: () -> Void
-
-        init(onWillDisappear: @escaping () -> Void) { self.onWillDisappear = onWillDisappear }
-    }
-
-    final class Controller: UIViewController {
         var fullscreenDisplay = false
-        var onContentSafeAreaInsetsChange: ((UIEdgeInsets) -> Void)?
+        var onInsetsChange: ((UIEdgeInsets) -> Void)?
 
-        private let showChrome: () -> Void
-        private var navigationBarHeight: CGFloat?
-        private var lastContentSafeAreaInsets: UIEdgeInsets?
-        private var shouldHideNavigationBar = false
-        private var usesSwiftUIVisibility = false
-        private var isAnimatingNavigationBar = false
+        private var lastGeometry: WindowGeometry?
+        private var updateScheduled = false
 
-        init(showChrome: @escaping () -> Void) {
-            self.showChrome = showChrome
-            super.init(nibName: nil, bundle: nil)
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            scheduleUpdate()
         }
 
-        @available(*, unavailable) required init?(coder _: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            scheduleUpdate()
         }
 
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            view.backgroundColor = .clear
-            view.isUserInteractionEnabled = false
-            NotificationCenter.default.addObserver(
-                self, selector: #selector(sceneDidBecomeActive(_:)),
-                name: UIScene.didActivateNotification, object: nil)
+        override func safeAreaInsetsDidChange() {
+            super.safeAreaInsetsDidChange()
+            scheduleUpdate()
         }
 
-        deinit { NotificationCenter.default.removeObserver(self) }
-
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            if #available(iOS 18.0, *) {
-                tabBarController?.setTabBarHidden(true, animated: animated)
-            }
-        }
-
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            applyNavigationBarVisibility(animated: false)
-        }
-
-        override func viewDidLayoutSubviews() {
-            super.viewDidLayoutSubviews()
-            updateContentSafeAreaInsets()
-            guard shouldHideNavigationBar, !isAnimatingNavigationBar else { return }
-            applyNavigationBarVisibility(animated: false)
-        }
-
-        override func viewSafeAreaInsetsDidChange() {
-            super.viewSafeAreaInsetsDidChange()
-            updateContentSafeAreaInsets()
-        }
-
-        private func updateContentSafeAreaInsets() {
-            guard let window = viewIfLoaded?.window else { return }
-            if navigationBarHeight == nil {
-                navigationBarHeight = navigationController?.navigationBar.bounds.height
-            }
-
-            var insets = view.safeAreaInsets
-            if fullscreenDisplay {
-                let windowInsets = window.safeAreaInsets
-                let hasCutoutLayout =
-                    windowInsets.top > 40 || windowInsets.left > 0 || windowInsets.right > 0
-                    || windowInsets.bottom > 0
-                if !UIDevice.isIPhone || UIDevice.isDuo || !hasCutoutLayout { insets = .zero }
-            }
-            insets.top = max(0, insets.top - (navigationBarHeight ?? 0))
-
-            guard insets != lastContentSafeAreaInsets else { return }
-            lastContentSafeAreaInsets = insets
-            // Publish after layout so SwiftUI state is not changed during an update.
+        func scheduleUpdate() {
+            guard !updateScheduled else { return }
+            updateScheduled = true
+            // Read the window after layout and publish outside SwiftUI's view update.
             Task { @MainActor [weak self] in
-                guard let self, let insets = lastContentSafeAreaInsets else { return }
-                onContentSafeAreaInsetsChange?(insets)
+                guard let self else { return }
+                updateScheduled = false
+                updateInsets()
             }
         }
 
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-            shouldHideNavigationBar = false
-            restoreNavigationBar(animated: animated)
-            if #available(iOS 18.0, *) {
-                tabBarController?.setTabBarHidden(false, animated: animated)
-            }
-            showChrome()
-        }
-
-        @objc private func sceneDidBecomeActive(_ notification: Notification) {
-            guard let scene = notification.object as? UIScene,
-                scene === viewIfLoaded?.window?.windowScene
-            else { return }
-            applyNavigationBarVisibility(animated: false)
-        }
-
-        func setNavigationBarHidden(_ isHidden: Bool, usesSwiftUIVisibility: Bool, animated: Bool) {
-            guard
-                shouldHideNavigationBar != isHidden
-                    || self.usesSwiftUIVisibility != usesSwiftUIVisibility
-            else { return }
-            if usesSwiftUIVisibility && !self.usesSwiftUIVisibility {
-                navigationController?.navigationBar.transform = .identity
-            }
-            shouldHideNavigationBar = isHidden
-            self.usesSwiftUIVisibility = usesSwiftUIVisibility
-            applyNavigationBarVisibility(animated: animated)
-        }
-
-        private func applyNavigationBarVisibility(animated: Bool) {
-            guard let navigationBar = navigationController?.navigationBar else { return }
-
-            // Use untransformed geometry so repeated updates preserve the hidden position.
-            let bottomY = navigationBar.center.y + navigationBar.bounds.height / 2
-            let transform =
-                shouldHideNavigationBar
-                ? CGAffineTransform(translationX: 0, y: -bottomY) : .identity
-
-            updateNavigationBar(navigationBar, transform: transform, animated: animated)
-        }
-
-        func restoreNavigationBar(animated: Bool = false) {
-            guard let navigationBar = navigationController?.navigationBar else { return }
-            updateNavigationBar(navigationBar, transform: .identity, animated: animated)
-        }
-
-        private func updateNavigationBar(
-            _ navigationBar: UINavigationBar, transform: CGAffineTransform, animated: Bool
-        ) {
-            guard !usesSwiftUIVisibility else { return }
-            let changes = { navigationBar.transform = transform }
-
-            guard animated else {
-                changes()
-                return
-            }
-
-            isAnimatingNavigationBar = true
-            UIView.animate(
-                withDuration: 0.2, delay: 0,
-                options: [.curveLinear, .beginFromCurrentState, .allowUserInteraction],
-                animations: changes
-            ) { _ in self.isAnimatingNavigationBar = false }
+        private func updateInsets() {
+            guard let window, !window.bounds.isEmpty, let onInsetsChange else { return }
+            let geometry = WindowGeometry(
+                window: ObjectIdentifier(window), bounds: window.bounds,
+                orientation: window.windowScene?.effectiveGeometry.interfaceOrientation)
+            // Fullscreen also toggles system overlays. Keep the same insets until the window changes.
+            guard !fullscreenDisplay || geometry != lastGeometry else { return }
+            lastGeometry = geometry
+            onInsetsChange(window.safeAreaInsets)
         }
     }
 }
 
 struct ReaderScreen: View {
+    @Environment(\.layoutDirection) private var layoutDirection
+
     let plugin: Plugin
     private let sourceManga: DetailedManga
     let manga: DetailedManga
@@ -410,6 +265,7 @@ struct ReaderScreen: View {
         SettingsDefaults.readerType.rawValue
     @AppStorage(SettingsKey.fullscreenDisplay.rawValue) private var fullscreenDisplay: Bool =
         SettingsDefaults.fullscreenDisplay
+    @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
@@ -461,8 +317,9 @@ struct ReaderScreen: View {
     @State private var navigationGeneration = 0
     @State private var navigationCommand: ReaderNavigationCommand?
     @State private var viewportSize: CGSize = .zero
-    @State private var contentSafeAreaInsets: UIEdgeInsets = .zero
+    @State private var windowSafeAreaInsets: UIEdgeInsets = .zero
     @State private var isChromeVisible = true
+    @State private var isTabBarHidden = false
     @State private var isShowingChapters = false
     @State private var isShowingReaderSettings = false
     @State private var saveScheduled = false
@@ -637,6 +494,15 @@ struct ReaderScreen: View {
         )
     }
 
+    private var contentSafeAreaInsets: UIEdgeInsets {
+        let insets = windowSafeAreaInsets
+        guard fullscreenDisplay else { return insets }
+
+        let hasCutoutLayout =
+            insets.top > 40 || insets.left > 0 || insets.right > 0 || insets.bottom > 0
+        return UIDevice.isIPhone && !isDuo && hasCutoutLayout ? insets : .zero
+    }
+
     private var renderConfiguration: ReaderRenderConfiguration {
         ReaderRenderConfiguration(
             contentSafeAreaInsets: contentSafeAreaInsets, readingDirection: readingDirection,
@@ -686,34 +552,36 @@ struct ReaderScreen: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                renderer.ignoresSafeArea()
+        ZStack {
+            renderer
 
-                loadOverlay
+            loadOverlay
 
-                if #available(iOS 26.0, *) {
-                    GlassEffectContainer {
-                        if isChromeVisible {
-                            readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
-                                .frame(maxHeight: .infinity, alignment: .bottom)
-                        }
+            if #available(iOS 26.0, *) {
+                GlassEffectContainer {
+                    if isChromeVisible {
+                        readerControls.frame(maxHeight: .infinity, alignment: .bottom)
                     }
-                    .animation(.default, value: isChromeVisible)
-                } else {
-                    ZStack(alignment: .bottom) {
-                        if isChromeVisible {
-                            readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                    .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
                 }
+                .animation(.default, value: isChromeVisible)
+            } else {
+                ZStack(alignment: .bottom) {
+                    if isChromeVisible {
+                        readerControls.transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
             }
-            .ignoresSafeArea(edges: .bottom)
         }
-        .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            ReaderWindowInsets(
+                fullscreenDisplay: fullscreenDisplay, windowInsets: $windowSafeAreaInsets
+            )
+            .allowsHitTesting(false)
+        }
+        .ignoresSafeArea().navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
         .navigationBarTitleDisplayMode(.inline).toolbarBackground(.visible, for: .navigationBar)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { readerSettingsMenu } }
         .modifier(
@@ -723,8 +591,8 @@ struct ReaderScreen: View {
         )
         .modifier(
             ReaderSystemBarsModifier(
-                fullscreenDisplay: fullscreenDisplay, isChromeVisible: $isChromeVisible,
-                contentSafeAreaInsets: $contentSafeAreaInsets)
+                fullscreenDisplay: fullscreenDisplay, isChromeVisible: isChromeVisible,
+                isTabBarHidden: isTabBarHidden, isDuo: isDuo)
         )
         .sheet(isPresented: $isShowingChapters) {
             ChaptersModal(
@@ -760,7 +628,12 @@ struct ReaderScreen: View {
             }
             regroup(keepCurrentPageVisible: true)
         }
-        .onDisappear { finishReading() }
+        .onAppear { withAnimation { isTabBarHidden = true } }
+        .onDisappear {
+            isTabBarHidden = false
+            isChromeVisible = true
+            finishReading()
+        }
     }
 
     private var readerSettingsMenu: some View {
@@ -888,8 +761,12 @@ struct ReaderScreen: View {
         }
     }
 
-    private func readerControls(bottomSafeAreaInset: CGFloat) -> some View {
-        HStack {
+    private var readerControls: some View {
+        let isRightToLeft = layoutDirection == .rightToLeft
+        let leadingInset = isRightToLeft ? windowSafeAreaInsets.right : windowSafeAreaInsets.left
+        let trailingInset = isRightToLeft ? windowSafeAreaInsets.left : windowSafeAreaInsets.right
+
+        return HStack {
             chapterButton(
                 systemImage: "chevron.left.to.line", label: "previousChapter",
                 enabled: previousChapterAvailability == .available
@@ -902,8 +779,11 @@ struct ReaderScreen: View {
                 enabled: nextChapterAvailability == .available
             ) { stepChapter(.next) }
         }
-        .disabled(loadPhase != .ready).padding(.horizontal, 16)
-        .padding(.bottom, max(8, bottomSafeAreaInset))
+        .disabled(loadPhase != .ready)
+        .padding(
+            EdgeInsets(
+                top: 0, leading: 16 + leadingInset, bottom: max(8, windowSafeAreaInsets.bottom),
+                trailing: 16 + trailingInset))
     }
 
     private var readerSlider: some View {
