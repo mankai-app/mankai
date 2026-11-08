@@ -15,10 +15,6 @@ struct SourceSearchScreen: View {
 
     @State var selectedGenre: SourceGenreFilter
     @State private var selectedStatus: Status
-    @State private var showingFilters = false
-
-    @State private var tempSelectedGenre: SourceGenreFilter
-    @State private var tempSelectedStatus: Status
 
     @State var isLoading: Bool = false
     @State var mangas: [UInt: [Manga]] = [:]
@@ -62,8 +58,6 @@ struct SourceSearchScreen: View {
             plugin.supports(.search) && plugin.supports(.searchByStatus) ? status : .any
         _selectedGenre = State(initialValue: normalizedGenre)
         _selectedStatus = State(initialValue: normalizedStatus)
-        _tempSelectedGenre = State(initialValue: normalizedGenre)
-        _tempSelectedStatus = State(initialValue: normalizedStatus)
     }
 
     var body: some View {
@@ -98,77 +92,8 @@ struct SourceSearchScreen: View {
         .toolbar {
             if supportsGenreFilter || supportsCustomGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .topBarTrailing) {
-                    FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
+                    FilterButton(hasActiveFilters: hasActiveFilters, menu: filterMenuContent)
                 }
-            }
-        }
-        .sheet(isPresented: $showingFilters) {
-            NavigationView {
-                List {
-                    Section {
-                        if supportsGenreFilter || supportsCustomGenreFilter {
-                            Picker("genre", selection: $tempSelectedGenre) {
-                                Text("all").tag(SourceGenreFilter.standard(.all))
-                                if supportsGenreFilter {
-                                    ForEach(
-                                        plugin.availableGenres.filter { $0 != .all }, id: \.self
-                                    ) { genre in
-                                        Text(LocalizedStringKey(genre.rawValue))
-                                            .tag(SourceGenreFilter.standard(genre))
-                                    }
-                                }
-                                if supportsCustomGenreFilter {
-                                    ForEach(plugin.availableCustomGenres, id: \.self) { genre in
-                                        Text(verbatim: genre).tag(SourceGenreFilter.custom(genre))
-                                    }
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-
-                        if supportsStatusFilter {
-                            Picker("status", selection: $tempSelectedStatus) {
-                                Text(Status.any.localizedName).tag(Status.any)
-                                Text(Status.onGoing.localizedName).tag(Status.onGoing)
-                                Text(Status.completed.localizedName).tag(Status.completed)
-                            }
-                            .pickerStyle(.menu)
-                        }
-                    } header: {
-                        Spacer(minLength: 0)
-                    }
-
-                    Section {
-                        Button(
-                            "reset", role: .destructive,
-                            action: {
-                                resetFilters()
-                                showingFilters = false
-                            })
-                    }
-                }
-                .navigationTitle("filters").navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(action: {
-                            tempSelectedGenre = selectedGenre
-                            tempSelectedStatus = selectedStatus
-                            showingFilters = false
-                        }) { Text("cancel") }
-                    }
-
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(action: {
-                            setFilters(genre: tempSelectedGenre, status: tempSelectedStatus)
-                            showingFilters = false
-                        }) { Text("done") }
-                    }
-                }
-            }
-            .presentationDetents([.medium])
-            .onAppear {
-                tempSelectedGenre = selectedGenre
-                tempSelectedStatus = selectedStatus
             }
         }
         .onAppear { search() }.onReceive(pluginService.objectWillChange) { search() }
@@ -178,6 +103,18 @@ struct SourceSearchScreen: View {
         } message: {
             if !errorMessage.isEmpty { Text(errorMessage) }
         }
+    }
+
+    private var filterMenuContent: some View {
+        SourceFilterMenuContent(
+            plugin: plugin, supportsGenreFilter: supportsGenreFilter,
+            supportsCustomGenreFilter: supportsCustomGenreFilter,
+            supportsStatusFilter: supportsStatusFilter,
+            genre: Binding(
+                get: { selectedGenre }, set: { setFilters(genre: $0, status: selectedStatus) }),
+            status: Binding(
+                get: { selectedStatus }, set: { setFilters(genre: selectedGenre, status: $0) }),
+            onReset: { setFilters(genre: .standard(.all), status: .any) })
     }
 
     private func setFilters(genre: SourceGenreFilter, status: Status) {
@@ -193,12 +130,6 @@ struct SourceSearchScreen: View {
         mangas = [:]
         isLoading = false
         search()
-    }
-
-    private func resetFilters() {
-        tempSelectedGenre = .standard(.all)
-        tempSelectedStatus = .any
-        setFilters(genre: .standard(.all), status: .any)
     }
 
     private func search() {

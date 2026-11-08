@@ -43,7 +43,6 @@ struct HomeTab: View {
     @State private var showPlugins: [String] = []
     @State private var status: HomeMangaStatus = .all
     @State private var dataSource: HomeDataSource = .collections
-    @State private var showingFilters = false
     @State private var showingDownloads = false
 
     /// Downloads state
@@ -175,7 +174,7 @@ struct HomeTab: View {
                         ToolbarIcon(systemName: "arrow.down", legacySystemName: "arrow.down.circle")
                     }
 
-                    FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
+                    FilterButton(hasActiveFilters: hasActiveFilters, menu: filterMenuContent)
                         .disabled(isDownloadsMode)
                 }
             }
@@ -213,12 +212,6 @@ struct HomeTab: View {
             .onReceive(
                 NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             ) { _ in checkInternetAndPrompt() }
-            .sheet(isPresented: $showingFilters) {
-                HomeFilterModal(
-                    isPresented: $showingFilters, showPlugins: $showPlugins,
-                    availablePlugins: availablePlugins, availableShares: availableShares,
-                    onReset: resetFilters, onApply: filterManga)
-            }
             .sheet(isPresented: $showingDownloads) {
                 DownloadModal { plugin, manga in
                     navigateToDetails = true
@@ -248,6 +241,39 @@ struct HomeTab: View {
                 Text("noInternetConnectionMessage")
             }
         }
+    }
+
+    @ViewBuilder private var filterMenuContent: some View {
+        if !availablePlugins.isEmpty {
+            Section("sources") {
+                ForEach(availablePlugins, id: \.id) { plugin in filterToggle(for: plugin) }
+            }
+        }
+
+        if !availableShares.isEmpty {
+            Section("shares") {
+                ForEach(availableShares, id: \.id) { share in filterToggle(for: share) }
+            }
+        }
+
+        Section { Button("reset", role: .destructive, action: resetFilters) }
+    }
+
+    private func filterToggle(for plugin: Plugin) -> some View {
+        Toggle(
+            plugin.name ?? plugin.id,
+            isOn: Binding(
+                get: { showPlugins.contains(plugin.id) },
+                set: { isShown in
+                    if isShown {
+                        showPlugins.append(plugin.id)
+                    } else {
+                        showPlugins.removeAll { $0 == plugin.id }
+                    }
+                    filterManga()
+                })
+        )
+        .menuActionDismissBehavior(.disabled)
     }
 
     private func updateLibrary() {

@@ -7,23 +7,34 @@
 
 import SwiftUI
 
-struct FilterButton: View {
+struct FilterButton<MenuContent: View>: View {
     let hasActiveFilters: Bool
-    let action: () -> Void
+    let menu: MenuContent
 
-    @ViewBuilder var body: some View {
+    var body: some View {
         if #available(iOS 26.0, *) {
-            Toggle(isOn: Binding(get: { hasActiveFilters }, set: { _ in action() })) {
+            Toggle(isOn: .constant(hasActiveFilters)) {
                 Image(systemName: "line.3.horizontal.decrease")
                     .foregroundStyle(hasActiveFilters ? .white : .primary)
             }
+            .overlay {
+                Menu {
+                    menu
+                } label: {
+                    Color.clear.contentShape(Rectangle())
+                }
+                .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
+            }
         } else {
-            Button(action: action) {
+            Menu {
+                menu
+            } label: {
                 Image(
                     systemName: hasActiveFilters
                         ? "line.3.horizontal.decrease.circle.fill"
                         : "line.3.horizontal.decrease.circle")
             }
+            .menuIndicator(.hidden)
         }
     }
 }

@@ -40,10 +40,6 @@ struct SourceLibraryScreen: View {
 
     @State var selectedGenre: SourceGenreFilter = .standard(.all)
     @State private var selectedStatus: Status = .any
-    @State private var showingFilters = false
-
-    @State private var tempSelectedGenre: SourceGenreFilter = .standard(.all)
-    @State private var tempSelectedStatus: Status = .any
 
     @State private var isLoading: Bool = false
     @State private var listLoadID = UUID()
@@ -81,7 +77,6 @@ struct SourceLibraryScreen: View {
                 genre: selectedGenre.standardGenre, customGenre: selectedGenre.customGenre)
             ? selectedGenre : .standard(.all)
         _selectedGenre = State(initialValue: normalizedGenre)
-        _tempSelectedGenre = State(initialValue: normalizedGenre)
     }
 
     private var allMangas: [Manga] {
@@ -154,75 +149,6 @@ struct SourceLibraryScreen: View {
             SourceSearchScreen(
                 plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus)
         }
-        .sheet(isPresented: $showingFilters) {
-            NavigationView {
-                List {
-                    Section {
-                        if supportsGenreFilter || supportsCustomGenreFilter {
-                            Picker("genre", selection: $tempSelectedGenre) {
-                                Text("all").tag(SourceGenreFilter.standard(.all))
-                                if supportsGenreFilter {
-                                    ForEach(
-                                        plugin.availableGenres.filter { $0 != .all }, id: \.self
-                                    ) { genre in
-                                        Text(LocalizedStringKey(genre.rawValue))
-                                            .tag(SourceGenreFilter.standard(genre))
-                                    }
-                                }
-                                if supportsCustomGenreFilter {
-                                    ForEach(plugin.availableCustomGenres, id: \.self) { genre in
-                                        Text(verbatim: genre).tag(SourceGenreFilter.custom(genre))
-                                    }
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-
-                        if supportsStatusFilter {
-                            Picker("status", selection: $tempSelectedStatus) {
-                                Text(Status.any.localizedName).tag(Status.any)
-                                Text(Status.onGoing.localizedName).tag(Status.onGoing)
-                                Text(Status.completed.localizedName).tag(Status.completed)
-                            }
-                            .pickerStyle(.menu)
-                        }
-                    } header: {
-                        Spacer(minLength: 0)
-                    }
-
-                    Section {
-                        Button(
-                            "reset", role: .destructive,
-                            action: {
-                                resetFilters()
-                                showingFilters = false
-                            })
-                    }
-                }
-                .navigationTitle("filters").navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(action: {
-                            tempSelectedGenre = selectedGenre
-                            tempSelectedStatus = selectedStatus
-                            showingFilters = false
-                        }) { Text("cancel") }
-                    }
-
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(action: {
-                            setFilters(genre: tempSelectedGenre, status: tempSelectedStatus)
-                            showingFilters = false
-                        }) { Text("done") }
-                    }
-                }
-            }
-            .presentationDetents([.medium])
-            .onAppear {
-                tempSelectedGenre = selectedGenre
-                tempSelectedStatus = selectedStatus
-            }
-        }
         .sheet(isPresented: $isUpdateMangaModalPresented) {
             if let editablePlugin = plugin as? any Editable {
                 UpdateMangaModal(plugin: editablePlugin, showSourceSelection: false)
@@ -239,7 +165,7 @@ struct SourceLibraryScreen: View {
 
             if supportsGenreFilter || supportsCustomGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .topBarTrailing) {
-                    FilterButton(hasActiveFilters: hasActiveFilters) { showingFilters = true }
+                    FilterButton(hasActiveFilters: hasActiveFilters, menu: filterMenuContent)
                 }
             }
         }
@@ -305,18 +231,16 @@ struct SourceLibraryScreen: View {
         }
     }
 
-    private func setGenre(_ genre: SourceGenreFilter) {
-        guard genre != selectedGenre else { return }
-
-        selectedGenre = genre
-        loadList()
-    }
-
-    private func setStatus(_ status: Status) {
-        guard status != selectedStatus else { return }
-
-        selectedStatus = status
-        loadList()
+    private var filterMenuContent: some View {
+        SourceFilterMenuContent(
+            plugin: plugin, supportsGenreFilter: supportsGenreFilter,
+            supportsCustomGenreFilter: supportsCustomGenreFilter,
+            supportsStatusFilter: supportsStatusFilter,
+            genre: Binding(
+                get: { selectedGenre }, set: { setFilters(genre: $0, status: selectedStatus) }),
+            status: Binding(
+                get: { selectedStatus }, set: { setFilters(genre: selectedGenre, status: $0) }),
+            onReset: { setFilters(genre: .standard(.all), status: .any) })
     }
 
     private func setFilters(genre: SourceGenreFilter, status: Status) {
@@ -333,12 +257,6 @@ struct SourceLibraryScreen: View {
         }
 
         loadList()
-    }
-
-    private func resetFilters() {
-        tempSelectedGenre = .standard(.all)
-        tempSelectedStatus = .any
-        setFilters(genre: .standard(.all), status: .any)
     }
 
     private func getSearchSuggestions(for query: String) {
