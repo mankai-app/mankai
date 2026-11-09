@@ -79,7 +79,6 @@ final class MmaParser: Parser {
                 throw MankaiErrorCode.browseArchiveInvalidMetadata.makeError()
             }
             localization.meta = nil
-            localization.editable = nil
             manga.localizations?[language] = localization
         }
         manga.meta = try ParserChapterMetadata(chapters: pages).encoded()

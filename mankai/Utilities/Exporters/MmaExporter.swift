@@ -236,7 +236,6 @@ struct MmaExporter: Sendable {
             guard var localization = exportManga.localizations?[language] else { continue }
             localization.cover = downloadedManga.localizations?[language]?.cover
             localization.meta = nil
-            localization.editable = nil
             if let latestChapter = localization.latestChapter,
                 !selectedIds.contains(latestChapter.id)
             {

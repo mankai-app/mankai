@@ -41,7 +41,6 @@ typealias ChapterGroups = [ChapterGroup]
     var genres: [Genre]?
     var customGenres: [String]?
     var remarks: String?
-    var editable: Bool?
     var meta: String?
 
     func toMangaLocalization() -> MangaLocalization {
@@ -98,7 +97,6 @@ typealias ChapterGroups = [ChapterGroup]
             manga.genres = overrides.genres ?? genres
             manga.customGenres = overrides.customGenres ?? customGenres
             manga.remarks = overrides.remarks ?? remarks
-            manga.editable = overrides.editable ?? editable
             manga.meta = overrides.meta ?? meta
         }
         manga.latestChapter = manga.latestChapter?.localized(for: language)
