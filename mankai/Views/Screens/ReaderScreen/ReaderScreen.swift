@@ -891,15 +891,20 @@ struct ReaderScreen: View {
 
     private func requestPage(_ page: Int, animated: Bool) {
         guard urls.indices.contains(page) else { return }
-        let selectedURL = urls[page]
-        guard let group = groups.first(where: { $0.contains(selectedURL) }),
-            let targetURL = group.urls.first, let targetPage = urls.firstIndex(of: targetURL)
-        else { return }
+
+        // Paged navigation keeps the requested image as its anchor through regrouping.
+        var targetPage = page
+        if readerType == .continuous {
+            guard let group = groups.first(where: { $0.contains(urls[page]) }),
+                let firstURL = group.urls.first, let firstPage = urls.firstIndex(of: firstURL)
+            else { return }
+            targetPage = firstPage
+        }
 
         currentPage = targetPage
         navigationGeneration += 1
         navigationCommand = ReaderNavigationCommand(
-            generation: navigationGeneration, targetURL: targetURL, animated: animated)
+            generation: navigationGeneration, targetURL: urls[targetPage], animated: animated)
         scheduleSave()
     }
 
