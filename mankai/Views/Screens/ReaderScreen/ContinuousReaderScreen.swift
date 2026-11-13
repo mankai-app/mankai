@@ -344,17 +344,18 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        let location = gesture.location(in: view)
-        let width = view.bounds.width
-
         guard configuration.tapNavigation else {
             actions.toggleChrome()
             return
         }
 
-        if location.x < width / 3 {
+        let location = gesture.location(in: view)
+        let width = view.bounds.width
+        let edgeWidth = readerTapNavigationEdgeWidth(in: width)
+
+        if location.x < edgeWidth {
             actions.requestGroupStep(.previous)
-        } else if location.x > width * 2 / 3 {
+        } else if location.x > width - edgeWidth {
             actions.requestGroupStep(.next)
         } else {
             actions.toggleChrome()

@@ -500,16 +500,16 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        let location = gesture.location(in: view)
-        let width = view.bounds.width
-
         guard configuration.tapNavigation else {
             actions.toggleChrome()
             return
         }
 
-        let isLeading = location.x < width / 3
-        guard isLeading || location.x > width * 2 / 3 else {
+        let location = gesture.location(in: view)
+        let width = view.bounds.width
+        let edgeWidth = readerTapNavigationEdgeWidth(in: width)
+        let isLeading = location.x < edgeWidth
+        guard isLeading || location.x > width - edgeWidth else {
             actions.toggleChrome()
             return
         }

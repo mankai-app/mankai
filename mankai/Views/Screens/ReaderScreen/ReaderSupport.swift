@@ -23,6 +23,10 @@ func readerOverscrollProgress(_ distance: CGFloat, spacing: CGFloat) -> CGFloat 
     return min(visibleDistance / READER_OVERSCROLL_THRESHOLD, 1)
 }
 
+func readerTapNavigationEdgeWidth(in viewportWidth: CGFloat) -> CGFloat {
+    min(viewportWidth / 3, 160)
+}
+
 @MainActor struct ReaderRoute: Identifiable, Hashable {
     let plugin: Plugin
     let manga: DetailedManga
