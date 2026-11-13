@@ -27,6 +27,20 @@ struct ConfigView<ConfigurableObject: Configurable & ObservableObject>: View {
     }
 }
 
+extension Config {
+    fileprivate var nameLabel: Text {
+        if let label = localization?.name { return Text(verbatim: label) }
+        return Text(LocalizedStringKey(name))
+    }
+
+    fileprivate var descriptionLabel: String? { localization?.description ?? description }
+
+    fileprivate func optionLabel(_ option: String) -> Text {
+        if let label = localization?.options?[option] { return Text(verbatim: label) }
+        return Text(LocalizedStringKey(option))
+    }
+}
+
 private struct ConfigTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration.padding(.horizontal).padding(.vertical, 8)
@@ -46,9 +60,9 @@ private struct TextConfigView<ConfigurableObject: Configurable & ObservableObjec
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading) {
-                Text(LocalizedStringKey(config.name))
+                config.nameLabel
 
-                if let description = config.description {
+                if let description = config.descriptionLabel {
                     Text(description).font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -109,7 +123,7 @@ private struct SliderConfigView<ConfigurableObject: Configurable & ObservableObj
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(LocalizedStringKey(config.name))
+                config.nameLabel
                 Spacer()
                 Text(sliderValue, format: .number).foregroundStyle(.secondary)
             }
@@ -123,7 +137,7 @@ private struct SliderConfigView<ConfigurableObject: Configurable & ObservableObj
                     }
                 }
 
-            if let description = config.description {
+            if let description = config.descriptionLabel {
                 Text(description).font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -164,9 +178,9 @@ private struct NumberConfigView<ConfigurableObject: Configurable & ObservableObj
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading) {
-                Text(LocalizedStringKey(config.name))
+                config.nameLabel
 
-                if let description = config.description {
+                if let description = config.descriptionLabel {
                     Text(description).font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -217,9 +231,9 @@ private struct BooleanConfigView<ConfigurableObject: Configurable & ObservableOb
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle(LocalizedStringKey(config.name), isOn: $boolValue)
+            Toggle(isOn: $boolValue) { config.nameLabel }
 
-            if let description = config.description {
+            if let description = config.descriptionLabel {
                 Text(description).font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -261,10 +275,10 @@ private struct SelectConfigView<ConfigurableObject: Configurable & ObservableObj
                 VStack(alignment: .leading, spacing: 8) {
                     Picker(selection: $selectedValue) {
                         ForEach(options, id: \.self) { option in
-                            Text(LocalizedStringKey(option)).tag(option)
+                            config.optionLabel(option).tag(option)
                         }
                     } label: {
-                        Text(LocalizedStringKey(config.name))
+                        config.nameLabel
                     }
                     .pickerStyle(.menu)
                     .onChange(of: selectedValue, initial: false) { _, newValue in
@@ -278,7 +292,7 @@ private struct SelectConfigView<ConfigurableObject: Configurable & ObservableObj
                         }
                     }
 
-                    if let description = config.description {
+                    if let description = config.descriptionLabel {
                         Text(description).font(.caption).foregroundStyle(.secondary)
                     }
                 }
@@ -332,9 +346,9 @@ private struct ColorConfigView<ConfigurableObject: Configurable & ObservableObje
                             showErrorAlert = true
                         }
                     }), supportsOpacity: config.supportsOpacity ?? false
-            ) { Text(LocalizedStringKey(config.name)) }
+            ) { config.nameLabel }
 
-            if let description = config.description {
+            if let description = config.descriptionLabel {
                 Text(description).font(.caption).foregroundStyle(.secondary)
             }
         }

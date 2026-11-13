@@ -77,9 +77,11 @@ final class JsPlugin: Plugin, Configurable {
 
     override var availableGenres: [Genre] { _availableGenres }
 
-    override var availableCustomGenres: [String] { _availableCustomGenres }
+    override var availableCustomGenres: [String] {
+        localization?.availableCustomGenres ?? _availableCustomGenres
+    }
 
-    var configs: [Config] { _configs }
+    var configs: [Config] { _configs.localized(with: localization?.configs) }
 
     lazy var _configValues: [String: ConfigValue] = {
         var configValues: [String: ConfigValue] = [:]
@@ -307,8 +309,8 @@ final class JsPlugin: Plugin, Configurable {
         let metadata = JsPluginModel.Metadata(
             id: id, name: _name, version: version, description: _description, authors: _authors,
             repository: _repository, icon: _icon, homePage: _homePage, updatesUrl: updatesUrl,
-            availableGenres: availableGenres, availableCustomGenres: availableCustomGenres,
-            scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
+            availableGenres: availableGenres, availableCustomGenres: _availableCustomGenres,
+            scripts: scriptsDict, configs: _configs, getImageHeaders: _getImageHeaders,
             cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding },
             localizations: _localizations)

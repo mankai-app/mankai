@@ -27,13 +27,19 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
     @MainActor private(set) var username: String
     @MainActor private(set) var password: String
 
-    var title: String { metadata.name ?? metadata.id }
-    var description: String { metadata.description ?? String(localized: Self.descriptionKey) }
+    private var localization: ImageProcessorModel.RemoteLocalization? {
+        metadata.localizations?.localization(for: Bundle.main.preferredLocalizations.first)
+    }
+
+    var title: String { localization?.name ?? metadata.name ?? metadata.id }
+    var description: String {
+        localization?.description ?? metadata.description ?? String(localized: Self.descriptionKey)
+    }
 
     var remoteID: String { metadata.id }
     var version: String? { metadata.version }
-    var authors: [String] { metadata.authors }
-    var repository: String? { metadata.repository }
+    var authors: [String] { localization?.authors ?? metadata.authors }
+    var repository: String? { localization?.repository ?? metadata.repository }
     var authenticationEnabled: Bool { metadata.authenticationEnabled }
 
     @MainActor var configs: [Config] {
@@ -44,7 +50,7 @@ final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked S
             result.append(
                 Config(key: Self.passwordKey, name: "password", type: .password, defaultValue: ""))
         }
-        result.append(contentsOf: metadata.configs)
+        result.append(contentsOf: metadata.configs.localized(with: localization?.configs))
         return result
     }
 

@@ -46,5 +46,14 @@ extension ImageProcessorModel {
         let repository: String?
         @DecodingDefault(false) let authenticationEnabled: Bool
         @DecodingDefault([]) let configs: [Config]
+        let localizations: [String: RemoteLocalization]?
+    }
+
+    struct RemoteLocalization: Codable {
+        var name: String?
+        var description: String?
+        var authors: [String]?
+        var repository: String?
+        var configs: [String: ConfigLocalization]?
     }
 }

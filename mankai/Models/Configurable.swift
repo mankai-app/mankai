@@ -28,6 +28,13 @@ enum ConfigType: String, Codable {
     }
 }
 
+struct ConfigLocalization: Codable {
+    var name: String?
+    var description: String?
+    /// Translated labels keyed by the original option value.
+    var options: [String: String]?
+}
+
 @Codable struct Config {
     var key: String
     var name: String
@@ -39,6 +46,7 @@ enum ConfigType: String, Codable {
     var step: Double?
     var supportsOpacity: Bool?
 
+    @CodingIgnored var localization: ConfigLocalization?
     @CodingKey("defaultValue") private var codedDefaultValue: AnyCodable?
 
     var defaultValue: Any {
@@ -61,6 +69,18 @@ enum ConfigType: String, Codable {
         self.step = step
         self.supportsOpacity = supportsOpacity
         codedDefaultValue = AnyCodable(defaultValue)
+    }
+}
+
+extension Array where Element == Config {
+    func localized(with localizations: [String: ConfigLocalization]?) -> [Config] {
+        guard let localizations else { return self }
+
+        return map { baseConfig in
+            var config = baseConfig
+            config.localization = localizations[config.key]
+            return config
+        }
     }
 }
 

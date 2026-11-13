@@ -59,7 +59,8 @@ class HttpPlugin: Plugin, Configurable {
     override var availableGenres: [Genre] { _availableGenres }
 
     override var availableCustomGenres: [String] {
-        self is EditableHttpPlugin ? [] : _availableCustomGenres
+        guard !(self is EditableHttpPlugin) else { return [] }
+        return localization?.availableCustomGenres ?? _availableCustomGenres
     }
 
     override var cooldown: Cooldown? { _cooldown }
@@ -345,11 +346,13 @@ class HttpPlugin: Plugin, Configurable {
     }
 
     private func makeModel() -> HttpPluginModel {
+        let editorEnabled = self is EditableHttpPlugin
         let metadata = HttpPluginModel.Metadata(
             id: id, name: _name, version: version, description: _description, authors: _authors,
             repository: _repository, icon: _icon, homePage: _homePage,
-            availableGenres: availableGenres, availableCustomGenres: availableCustomGenres,
-            authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
+            availableGenres: availableGenres,
+            availableCustomGenres: editorEnabled ? [] : _availableCustomGenres,
+            authenticationEnabled: authenticationEnabled, editorEnabled: editorEnabled,
             configs: configs, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding },
             localizations: _localizations)

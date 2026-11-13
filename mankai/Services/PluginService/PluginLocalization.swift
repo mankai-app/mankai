@@ -15,6 +15,8 @@ struct PluginLocalization: Codable {
     var repository: String?
     var icon: String?
     var homePage: String?
+    var availableCustomGenres: [String]?
+    var configs: [String: ConfigLocalization]?
 }
 
 extension String {
