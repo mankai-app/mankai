@@ -11,6 +11,8 @@ struct SettingsTab: View {
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
         SettingsDefaults.showDebugScreen
 
+    @State private var showQRCodeScanner = false
+
     var body: some View {
         NavigationStack {
             List {
@@ -73,6 +75,25 @@ struct SettingsTab: View {
                 }
             }
             .navigationTitle("settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showQRCodeScanner = true
+                    } label: {
+                        Label("scanQRCode", systemImage: "qrcode.viewfinder").labelStyle(.iconOnly)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showQRCodeScanner) {
+            NavigationStack {
+                SourceQRCodeScannerModal { showQRCodeScanner = false }
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("close") { showQRCodeScanner = false }
+                        }
+                    }
+            }
         }
     }
 }
