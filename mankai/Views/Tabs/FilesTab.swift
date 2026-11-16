@@ -8,22 +8,22 @@
 import SwiftUI
 
 struct FilesTab: View {
-    private enum Destination: Hashable {
+    enum Destination: Hashable {
         case share(String)
-        case imports(UUID)
+        case folder(shareID: String, entry: Entity, id: UUID = UUID())
         case editShare(String)
     }
 
     @ObservedObject private var browseService = BrowseService.shared
-    @Binding var importsNavigationID: UUID?
+    @Binding var requestedDestination: Destination?
     var onImport: () -> Void
     @State private var path: [Destination] = []
     @State private var showingAddFilesModal = false
     @State private var removalError: String?
     @State private var sharePendingDeletion: BrowsablePlugin?
 
-    init(importsNavigationID: Binding<UUID?>, onImport: @escaping () -> Void) {
-        _importsNavigationID = importsNavigationID
+    init(requestedDestination: Binding<Destination?>, onImport: @escaping () -> Void) {
+        _requestedDestination = requestedDestination
         self.onImport = onImport
     }
 
@@ -109,12 +109,10 @@ struct FilesTab: View {
             .navigationDestination(for: Destination.self) { destination in
                 switch destination { case .share(let shareId):
                     if let share = browseService.getPlugin(shareId) { FilesScreen(share: share) }
-                    case .imports(let navigationID):
-                        FilesScreen(
-                            share: AppDirBrowsablePlugin.shared,
-                            entry: AppDirBrowsablePlugin.shared.importsEntity
-                        )
-                        .id(navigationID)
+                    case .folder(let shareID, let entry, let id):
+                        if let share = browseService.plugins.first(where: { $0.id == shareID }) {
+                            FilesScreen(share: share, entry: entry).id(id)
+                        }
                     case .editShare(let shareId):
                         if let share = browseService.getPlugin(shareId) {
                             ShareInfoScreen(share: share)
@@ -122,10 +120,10 @@ struct FilesTab: View {
                 }
             }
         }
-        .onChange(of: importsNavigationID, initial: true) { _, navigationID in
-            guard let navigationID else { return }
-            path = [.imports(navigationID)]
-            importsNavigationID = nil
+        .onChange(of: requestedDestination, initial: true) { _, destination in
+            guard let destination else { return }
+            path = [destination]
+            requestedDestination = nil
         }
     }
 }

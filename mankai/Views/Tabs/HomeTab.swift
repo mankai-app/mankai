@@ -32,6 +32,7 @@ private struct HomeLibraryState {
 struct HomeTab: View {
     private let pluginService = PluginService.shared
     private let browseService = BrowseService.shared
+    @Environment(\.openFilesDestination) private var openFilesDestination
     @ObservedObject private var mangaLanguageService = MangaLanguageService.shared
     @ObservedObject private var syncService = SyncService.shared
     @ObservedObject private var updateService = UpdateService.shared
@@ -44,6 +45,7 @@ struct HomeTab: View {
     @State private var status: HomeMangaStatus = .all
     @State private var dataSource: HomeDataSource = .collections
     @State private var showingDownloads = false
+    @State private var filesDestinationAfterDownloadsDismiss: FilesTab.Destination?
 
     /// Downloads state
     @State private var isLoadingDownloads = false
@@ -212,12 +214,24 @@ struct HomeTab: View {
             .onReceive(
                 NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             ) { _ in checkInternetAndPrompt() }
-            .sheet(isPresented: $showingDownloads) {
+            .sheet(
+                isPresented: $showingDownloads,
+                onDismiss: {
+                    if let destination = filesDestinationAfterDownloadsDismiss {
+                        filesDestinationAfterDownloadsDismiss = nil
+                        openFilesDestination(destination)
+                    }
+                }
+            ) {
                 DownloadModal { plugin, manga in
                     navigateToDetails = true
                     navigateToPlugin = plugin
                     navigateToManga = manga
 
+                    showingDownloads = false
+                }
+                .environment(\.openFilesDestination) { destination in
+                    filesDestinationAfterDownloadsDismiss = destination
                     showingDownloads = false
                 }
             }

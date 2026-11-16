@@ -16,6 +16,7 @@ struct ExportModal: View {
     var onDownload: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openFilesDestination) private var openFilesDestination
 
     @State private var selectedChapterIds: Set<String> = []
     @State private var selectedExporter: Exporter = .mma
@@ -23,7 +24,10 @@ struct ExportModal: View {
     @State private var exportProgress = 0.0
     @State private var exportURLs: [URL] = []
     @State private var exportTask: Task<Void, Never>?
-    @State private var exportError: String?
+    @State private var saveTask: Task<Void, Never>?
+    @State private var savedURLs: Set<URL> = []
+    @State private var openExportsAfterDismiss = false
+    @State private var errorMessage: String?
     @State private var showingError = false
 
     private var availableGroups: ChapterGroups {
@@ -93,20 +97,32 @@ struct ExportModal: View {
                     }
                 }
             }
-            .alert("failedToExport", isPresented: $showingError) {
+            .alert(
+                exportURLs.isEmpty ? Text("failedToExport") : Text("failedToSaveExport"),
+                isPresented: $showingError
+            ) {
                 Button("ok", role: .cancel) {}
             } message: {
-                if let exportError { Text(exportError) }
+                if let errorMessage { Text(errorMessage) }
             }
         }
         .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
         .interactiveDismissDisabled(isExporting)
         .onDisappear {
-            let task = exportTask
-            task?.cancel()
+            let exporting = exportTask
+            let saving = saveTask
+            let shouldOpenExports = openExportsAfterDismiss
+            openExportsAfterDismiss = false
+            exporting?.cancel()
+            saving?.cancel()
             Task {
-                if let task { await task.value }
+                await exporting?.value
+                await saving?.value
                 Exporter.clearTemporaryFiles()
+                if shouldOpenExports {
+                    let plugin = AppDirBrowsablePlugin.shared
+                    openFilesDestination(.folder(shareID: plugin.id, entry: plugin.exportsEntity))
+                }
             }
         }
     }
@@ -175,9 +191,27 @@ struct ExportModal: View {
                         Label(url.lastPathComponent, systemImage: "doc").font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                }
 
+                Section("actions") {
                     ShareLink(items: exportURLs) {
                         Label("shareExport", systemImage: "square.and.arrow.up")
+                    }
+
+                    if savedURLs.count == exportURLs.count {
+                        Label("savedToExports", systemImage: "checkmark")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button(action: saveExports) {
+                            HStack {
+                                Label("saveToExports", systemImage: "square.and.arrow.down")
+                                if saveTask != nil {
+                                    Spacer()
+                                    ProgressView()
+                                }
+                            }
+                        }
+                        .disabled(saveTask != nil)
                     }
                 }
             }
@@ -206,7 +240,30 @@ struct ExportModal: View {
                 // Each exporter handles cleanup of its unfinished files.
             } catch {
                 Logger.ui.error("Failed to export manga", error: error)
-                exportError = error.localizedDescription
+                errorMessage = error.localizedDescription
+                showingError = true
+            }
+        }
+    }
+
+    private func saveExports() {
+        guard saveTask == nil else { return }
+        saveTask = Task { @MainActor in
+            defer { saveTask = nil }
+            do {
+                for url in exportURLs where !savedURLs.contains(url) {
+                    try Task.checkCancellation()
+                    try await AppDirBrowsablePlugin.shared.saveExport(from: url)
+                    savedURLs.insert(url)
+                }
+                try Task.checkCancellation()
+                openExportsAfterDismiss = true
+                dismiss()
+            } catch is CancellationError {
+                // Files already saved remain in Exports.
+            } catch {
+                Logger.ui.error("Failed to save export", error: error)
+                errorMessage = error.localizedDescription
                 showingError = true
             }
         }

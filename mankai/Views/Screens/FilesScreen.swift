@@ -329,9 +329,7 @@ struct FilesScreen: View {
             .navigationDestination(isPresented: $isDownloadsFolderPresented) {
                 FilesScreen(
                     share: AppDirBrowsablePlugin.shared,
-                    entry: Entity(
-                        path: "dowloads", displayName: String(localized: "downloads"),
-                        name: "dowloads", type: .directory))
+                    entry: AppDirBrowsablePlugin.shared.downloadsEntity)
             }
             .navigationDestination(item: $readerRoute) { route in
                 ReaderScreen(
@@ -763,9 +761,7 @@ struct FilesScreen: View {
                 .disabled(isBusy)
             } else if !isSelecting, let manga = item.manga {
                 NavigationLink(
-                    destination: MangaDetailsScreen(plugin: share, manga: manga.toManga()) {
-                        isDownloadsFolderPresented = true
-                    }
+                    destination: MangaDetailsScreen(plugin: share, manga: manga.toManga())
                 ) { content }
             } else {
                 content

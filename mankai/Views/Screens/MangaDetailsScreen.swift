@@ -26,7 +26,6 @@ private struct MangaDetailsLoadFailureDismissal: View {
 struct MangaDetailsScreen: View {
     @ObservedObject var plugin: Plugin
     let manga: Manga
-    let onShowDownloads: (() -> Void)?
 
     @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
 
@@ -48,7 +47,6 @@ struct MangaDetailsScreen: View {
     @State private var isSelectChaptersModalPresented = false
     @State private var isDownloadFilesModalPresented = false
     @State private var openDownloadsAfterDismiss = false
-    @State private var isDownloadsFolderPresented = false
     @State private var filesToDownload: [ParserFile] = []
     @State private var isPreparingFileDownload = false
     @State private var isExportModalPresented = false
@@ -61,6 +59,7 @@ struct MangaDetailsScreen: View {
     @State private var showSourceSearchScreen = false
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.openFilesDestination) private var openFilesDestination
 
     @State private var progress: ProgressModel? = nil
     @State private var libraryItem: LibraryModel? = nil
@@ -142,10 +141,9 @@ struct MangaDetailsScreen: View {
             || (chapter.locked != true && plugin.supportsRemoteReading)
     }
 
-    init(plugin: Plugin, manga: Manga, onShowDownloads: (() -> Void)? = nil) {
+    init(plugin: Plugin, manga: Manga) {
         self.plugin = plugin
         self.manga = manga
-        self.onShowDownloads = onShowDownloads
     }
 
     private func updateProgress() {
@@ -663,24 +661,14 @@ struct MangaDetailsScreen: View {
         .sheet(
             isPresented: $isDownloadFilesModalPresented,
             onDismiss: {
-                if openDownloadsAfterDismiss {
-                    openDownloadsAfterDismiss = false
+                guard openDownloadsAfterDismiss else { return }
+                openDownloadsAfterDismiss = false
 
-                    if let onShowDownloads {
-                        onShowDownloads()
-                    } else {
-                        isDownloadsFolderPresented = true
-                    }
-                }
+                let appDirectory = AppDirBrowsablePlugin.shared
+                openFilesDestination(
+                    .folder(shareID: appDirectory.id, entry: appDirectory.downloadsEntity))
             }
         ) { DownloadFilesModal(files: filesToDownload) { openDownloadsAfterDismiss = true } }
-        .navigationDestination(isPresented: $isDownloadsFolderPresented) {
-            FilesScreen(
-                share: AppDirBrowsablePlugin.shared,
-                entry: Entity(
-                    path: "dowloads", displayName: String(localized: "downloads"), name: "dowloads",
-                    type: .directory))
-        }
         .sheet(isPresented: $isSelectChaptersModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga {
                 SelectChaptersModal(

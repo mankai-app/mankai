@@ -9,8 +9,8 @@ import Foundation
 import GRDB
 import SwiftUI
 
-struct Entity {
-    enum Kind {
+struct Entity: Hashable {
+    enum Kind: Hashable {
         case book(fileType: String)
         case directory
     }

@@ -9,12 +9,23 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
+private struct OpenFilesDestinationKey: EnvironmentKey {
+    static let defaultValue: @MainActor (FilesTab.Destination) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var openFilesDestination: @MainActor (FilesTab.Destination) -> Void {
+        get { self[OpenFilesDestinationKey.self] }
+        set { self[OpenFilesDestinationKey.self] = newValue }
+    }
+}
+
 struct MainScreen: View {
     private enum Tab: Hashable { case home, library, files, settings }
 
     @State private var selectedTab: Tab = .home
     @State private var showingFileImporter = false
-    @State private var importsNavigationID: UUID?
+    @State private var filesDestination: FilesTab.Destination?
     @State private var sourceImportRequest: SourceImportRequest?
     @State private var lastCheckedPasteboardChangeCount: Int?
 
@@ -28,10 +39,11 @@ struct MainScreen: View {
             HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
             LibraryTab().tag(Tab.library)
                 .tabItem { Label("library", systemImage: "books.vertical.fill") }
-            FilesTab(importsNavigationID: $importsNavigationID) { showingFileImporter = true }
+            FilesTab(requestedDestination: $filesDestination) { showingFileImporter = true }
                 .tag(Tab.files).tabItem { Label("files", systemImage: "folder.fill") }
             SettingsTab().tag(Tab.settings).tabItem { Label("settings", systemImage: "gearshape") }
         }
+        .environment(\.openFilesDestination, openFilesDestination)
         .overlay(alignment: .bottom) { NotificationContainerView() }
         .fileImporter(
             isPresented: $showingFileImporter, allowedContentTypes: supportedContentTypes,
@@ -94,11 +106,18 @@ struct MainScreen: View {
     private func importFiles(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
 
-        do {
-            for url in urls { try AppDirBrowsablePlugin.shared.importFile(from: url) }
-            selectedTab = .files
-            importsNavigationID = UUID()
-        } catch { showImportError(error) }
+        Task { @MainActor in
+            do {
+                let plugin = AppDirBrowsablePlugin.shared
+                for url in urls { try await plugin.importFile(from: url) }
+                openFilesDestination(.folder(shareID: plugin.id, entry: plugin.importsEntity))
+            } catch { showImportError(error) }
+        }
+    }
+
+    private func openFilesDestination(_ destination: FilesTab.Destination) {
+        selectedTab = .files
+        filesDestination = destination
     }
 
     private func showImportError(_ error: Error) {

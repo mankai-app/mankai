@@ -141,9 +141,6 @@ struct DownloadFilesModal: View {
     private func startDownloads() {
         guard downloadTask == nil else { return }
 
-        let directory = AppDirBrowsablePlugin.shared.url.appendingPathComponent(
-            "dowloads", isDirectory: true)
-
         downloadTask = Task { @MainActor in
             defer { downloadTask = nil }
 
@@ -165,55 +162,8 @@ struct DownloadFilesModal: View {
                         }
                     }
 
-                    try Task.checkCancellation()
-
-                    let copyTask = Task.detached(priority: .utility) {
-                        let fileManager = FileManager.default
-
-                        try fileManager.createDirectory(
-                            at: directory, withIntermediateDirectories: true)
-
-                        let originalName = file.fileName as NSString
-                        let fileExtension = originalName.pathExtension
-
-                        let sanitizedName =
-                            fileExtension.isEmpty
-                            ? FileUtilities.sanitizedStem(file.fileName)
-                            : FileUtilities.filename(
-                                for: originalName.deletingPathExtension,
-                                fileExtension: fileExtension)
-
-                        let proposedURL = directory.appendingPathComponent(
-                            sanitizedName, isDirectory: false)
-
-                        let fileName = FileUtilities.uniqueFileName(
-                            for: proposedURL,
-                            existingNames: Set(
-                                try fileManager.contentsOfDirectory(atPath: directory.path)))
-
-                        let destination = directory.appendingPathComponent(
-                            fileName, isDirectory: false)
-
-                        let temporaryURL = directory.appendingPathComponent(
-                            ".\(UUID().uuidString).download")
-
-                        defer { try? fileManager.removeItem(at: temporaryURL) }
-
-                        try Task.checkCancellation()
-                        try fileManager.copyItem(at: source, to: temporaryURL)
-
-                        try Task.checkCancellation()
-                        try fileManager.moveItem(at: temporaryURL, to: destination)
-
-                        return destination
-                    }
-
-                    downloads[index].savedURL = try await withTaskCancellationHandler {
-                        try await copyTask.value
-                    } onCancel: {
-                        copyTask.cancel()
-                    }
-
+                    downloads[index].savedURL = try await AppDirBrowsablePlugin.shared.saveDownload(
+                        from: source, named: file.fileName)
                     downloads[index].status = .completed
                 } catch {
                     if Task.isCancelled || error is CancellationError {
