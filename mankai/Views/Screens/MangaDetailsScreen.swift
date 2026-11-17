@@ -52,7 +52,7 @@ struct MangaDetailsScreen: View {
     @State private var isExportModalPresented = false
     @State private var openDownloadAfterExport = false
 
-    @State private var selectedGenre: SourceGenreFilter? = nil
+    @State private var selectedGenre: SourceGenre? = nil
     @State private var showSourceLibraryScreen = false
 
     @State private var searchQuery: String? = nil
@@ -412,14 +412,11 @@ struct MangaDetailsScreen: View {
             }
 
             if let mangaData, !mangaData.genres.isEmpty || !mangaData.customGenres.isEmpty {
-                let genres =
-                    mangaData.genres.map(SourceGenreFilter.standard)
-                    + mangaData.customGenres.map(SourceGenreFilter.custom)
+                let genres = SourceGenre.options(
+                    builtIn: mangaData.genres, custom: mangaData.customGenres)
                 Section {
                     WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
-                        if plugin.supportsList(
-                            genre: genre.standardGenre, customGenre: genre.customGenre)
-                        {
+                        if plugin.supportsList(genre: genre) {
                             Button(action: {
                                 selectedGenre = genre
                                 showSourceLibraryScreen = true

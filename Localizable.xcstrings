@@ -10092,6 +10092,36 @@
         }
       }
     },
+    "listByCustomSort" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List with Custom Sort"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタム順で一覧表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按自定义顺序列出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依自訂順序列出"
+          }
+        }
+      }
+    },
     "listByGenre" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -10122,6 +10152,36 @@
         }
       }
     },
+    "listByPopularity" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List by Popularity"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人気順で一覧表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按人气列出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依人氣列出"
+          }
+        }
+      }
+    },
     "listByStatus" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -10148,6 +10208,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按狀態篩選列表"
+          }
+        }
+      }
+    },
+    "listByUpdateTime" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List by Last Update"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新順で一覧表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按更新时间列出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依更新時間列出"
           }
         }
       }
@@ -13222,6 +13312,34 @@
         }
       }
     },
+    "popularity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popularity"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人気順"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人气"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人氣"
+          }
+        }
+      }
+    },
     "port" : {
       "localizations" : {
         "en" : {
@@ -15051,6 +15169,36 @@
         }
       }
     },
+    "searchByCustomSort" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search with Custom Sort"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "検索結果をカスタム順で表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按自定义顺序搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依自訂順序顯示搜尋結果"
+          }
+        }
+      }
+    },
     "searchByGenre" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -15081,6 +15229,36 @@
         }
       }
     },
+    "searchByPopularity" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by Popularity"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "検索結果を人気順で表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按人气搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依人氣顯示搜尋結果"
+          }
+        }
+      }
+    },
     "searchByStatus" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -15107,6 +15285,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按狀態篩選搜尋"
+          }
+        }
+      }
+    },
+    "searchByUpdateTime" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by Last Update"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "検索結果を更新順で表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按更新时间搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依更新時間顯示搜尋結果"
           }
         }
       }
@@ -16319,6 +16527,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "發生錯誤"
+          }
+        }
+      }
+    },
+    "sortBy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort By"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "並び替え"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序方式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序方式"
+          }
+        }
+      }
+    },
+    "sortByUpdateTime" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Updated"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新順"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新时间"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新時間"
           }
         }
       }

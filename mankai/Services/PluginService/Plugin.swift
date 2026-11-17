@@ -47,67 +47,183 @@ struct Cooldown: Codable {
     var getImageConcurrency: Int?
 }
 
-/// Features supported by a plugin instance.
+/// Operations and options supported by a plugin instance.
+/// List and search options are opt-in and require `list` or `search`, respectively.
 enum PluginCapability: String, Codable, CaseIterable {
-    /// Requires `isOnline()`.
+    /// Checks source availability with `isOnline()`.
     case onlineCheck
 
-    /// Requires `getSuggestions(_:)`.
+    /// Provides query suggestions with `getSuggestions(_:)`.
     case suggestions
 
-    /// Requires `getList(page:genre:status:)`.
+    // MARK: - List
+
+    /// Lists manga with `getList(page:genre:status:sortBy:)`.
     case list
 
-    /// Requires `list` and genre filtering in `getList(page:genre:status:)`.
+    /// Filters the list by a built-in genre.
     case listByGenre
 
-    /// Opt-in support for the external source custom genre filter.
+    /// Filters the list by a source-defined genre.
     case listByCustomGenre
 
-    /// Requires `list` and status filtering in `getList(page:genre:status:)`.
+    /// Filters the list by publication status.
     case listByStatus
 
-    /// Requires `search(_:page:genre:status:isAuthor:)`.
+    /// Sorts the list by most recent update.
+    case listByUpdateTime
+
+    /// Sorts the list by popularity.
+    case listByPopularity
+
+    /// Sorts the list by a source-defined order.
+    case listByCustomSort
+
+    // MARK: - Search
+
+    /// Searches manga with `search(_:page:genre:status:isAuthor:sortBy:)`.
     case search
 
-    /// Requires `search` and genre filtering in `search(_:page:genre:status:isAuthor:)`.
+    /// Filters search results by a built-in genre.
     case searchByGenre
 
-    /// Opt-in support for the external source custom genre filter.
+    /// Filters search results by a source-defined genre.
     case searchByCustomGenre
 
-    /// Requires `search` and status filtering in `search(_:page:genre:status:isAuthor:)`.
+    /// Filters search results by publication status.
     case searchByStatus
 
-    /// Requires `search` and author searches with `isAuthor == true`.
+    /// Searches by author when `isAuthor` is true.
     case searchByAuthor
 
-    /// Requires `getDetailedManga(_:)`.
+    /// Sorts search results by most recent update.
+    case searchByUpdateTime
+
+    /// Sorts search results by popularity.
+    case searchByPopularity
+
+    /// Sorts search results by a source-defined order.
+    case searchByCustomSort
+
+    // MARK: - Manga and Reading
+
+    /// Retrieves full manga details with `getDetailedManga(_:)`.
     case mangaDetails
 
-    /// Requires `getMangas(_:)`, also supplies the default `getMangaUpdates(_:)` implementation.
+    /// Retrieves manga in batches with `getMangas(_:)` and supplies the default update check.
     case batchMangas
 
-    /// Requires `getMangaUpdates(_:)`, its default implementation requires `batchMangas`.
+    /// Checks for manga updates with `getMangaUpdates(_:)`.
     case mangaUpdates
 
-    /// Requires `getChapter(manga:chapter:)`.
+    /// Retrieves chapter pages with `getChapter(manga:chapter:)`.
     case chapter
 
-    /// Requires `getImage(_:)`.
+    /// Retrieves page image data with `getImage(_:)`.
     case image
 
-    /// Requires `encodeURL()` to return the instance's portable configuration as a URL,
-    /// a stable `syncType` to identify its decoder, and `savePlugin(db:)` for sync transactions.
+    // MARK: - Sync
+
+    /// Exports source configuration with `encodeURL()`.
+    /// Requires a stable `syncType` and transactional saves through `savePlugin(db:)`.
     case urlEncoding
 
-    /// Enables manga and reading progress synchronization, requires no additional plugin methods.
+    /// Enables synchronization of saved manga and reading progress.
     case sync
 
-    static var defaultCapabilities: [PluginCapability] {
-        allCases.filter {
-            $0 != .mangaUpdates && $0 != .urlEncoding && $0 != .listByCustomGenre
-                && $0 != .searchByCustomGenre
+    // MARK: - Defaults
+
+    /// Basic source operations assumed when capability metadata is absent.
+    static let defaultCapabilities: [PluginCapability] = [
+        .onlineCheck, .suggestions, .list, .search, .mangaDetails, .batchMangas, .chapter, .image
+    ]
+}
+
+enum SourceStatusFilter: CaseIterable, Hashable, Sendable {
+    case onGoing
+    case completed
+
+    var mangaStatus: Status {
+        switch self { case .onGoing: .onGoing case .completed: .completed
+        }
+    }
+
+    var rawValue: Int { mangaStatus.rawValue }
+}
+
+enum SourceGenre: Hashable, Sendable {
+    case `default`
+    case standard(Genre)
+    case custom(String)
+
+    static let builtIn: [SourceGenre] = Genre.allCases.map(SourceGenre.standard)
+
+    static func options(builtIn: [Genre], custom: [String]) -> [SourceGenre] {
+        var seen = Set<SourceGenre>()
+        return (builtIn.map(SourceGenre.standard) + custom.map(SourceGenre.custom))
+            .filter { seen.insert($0).inserted }
+    }
+
+    var value: String? {
+        switch self { case .default: nil case .standard(let genre): genre.rawValue case .custom:
+            "custom"
+        }
+    }
+
+    var customValue: String? {
+        if case .custom(let name) = self { return name }
+        return nil
+    }
+
+    var listCapability: PluginCapability {
+        switch self { case .default: .list case .standard: .listByGenre case .custom:
+            .listByCustomGenre
+        }
+    }
+
+    var searchCapability: PluginCapability {
+        switch self { case .default: .search case .standard: .searchByGenre case .custom:
+            .searchByCustomGenre
+        }
+    }
+}
+
+enum SourceSort: Hashable, Sendable {
+    case `default`
+    case updateTime
+    case popularity
+    case custom(String)
+
+    static let builtIn: [SourceSort] = [.updateTime, .popularity]
+
+    static func options(custom: [String]) -> [SourceSort] {
+        var seen = Set<SourceSort>()
+        return (builtIn + custom.map(SourceSort.custom)).filter { seen.insert($0).inserted }
+    }
+
+    var value: String? {
+        switch self { case .default: nil case .updateTime: "updateTime" case .popularity:
+            "popularity"
+            case .custom: "custom"
+        }
+    }
+
+    var customValue: String? {
+        if case .custom(let name) = self { return name }
+        return nil
+    }
+
+    var listCapability: PluginCapability {
+        switch self { case .default: .list case .updateTime: .listByUpdateTime case .popularity:
+            .listByPopularity
+            case .custom: .listByCustomSort
+        }
+    }
+
+    var searchCapability: PluginCapability {
+        switch self { case .default: .search case .updateTime: .searchByUpdateTime case .popularity:
+            .searchByPopularity
+            case .custom: .searchByCustomSort
         }
     }
 }
@@ -198,18 +314,17 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
 
     var homePage: String? { nil }
 
-    var availableGenres: [Genre] { [] }
+    /// Genres advertised by this source. Manga details can provide additional filter values.
+    var availableGenres: [SourceGenre] { [] }
 
-    /// Opaque genre names provided by an external JS or HTTP source.
-    var availableCustomGenres: [String] { [] }
+    /// Built-in and custom sorts before filtering by operation capability.
+    var availableSorts: [SourceSort] { SourceSort.builtIn }
 
     var cooldown: Cooldown? { nil }
 
-    /// Features supported by this plugin instance.
-    ///
-    /// Plugins that do not provide capability metadata support every non-opt-in operation.
-    /// Advertise a capability only when its required methods are implemented and available.
-    /// Filter capabilities also require their base `list` or `search` capability.
+    /// Operations and options supported by this plugin instance.
+    /// Sources without capability metadata use `PluginCapability.defaultCapabilities`.
+    /// Advertise supported list and search options explicitly.
     var capabilities: [PluginCapability] { PluginCapability.defaultCapabilities }
 
     /// Type capabilities exposed by this instance, including through wrappers.
@@ -246,50 +361,38 @@ enum PluginTypeCapability: String, Codable, CaseIterable {
     /// - Throws: An error if the request fails.
     func getSuggestions(_: String) async throws -> [String] { fatalError("Not Implemented") }
 
-    /// Searches for manga based on a query.
+    /// Searches for manga using the requested filters and sort order.
     /// Required by `PluginCapability.search`.
-    /// `searchByGenre`, `searchByStatus`, and `searchByAuthor` require handling the corresponding filters.
+    /// The source applies supported filters and falls back to its default order for other sorts.
     /// - Parameters:
     ///   - query: The search query string.
     ///   - page: The page number for pagination.
-    ///   - genre: The genre to filter by.
-    ///   - status: The status to filter by.
+    ///   - genre: The source genre filter, or `.default` for all genres.
+    ///   - status: An optional publication status filter.
     ///   - isAuthor: Whether to search the author field instead of the title field.
+    ///   - sortBy: The source-supported sort order.
     /// - Returns: A list of `Manga` objects matching the query.
     /// - Throws: An error if the search fails.
-    func search(_: String, page _: UInt, genre _: Genre, status _: Status, isAuthor _: Bool = false)
-        async throws -> [Manga]
-    { fatalError("Not Implemented") }
-
-    /// External source search, with an optional opaque custom genre name.
     func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool = false,
-        customGenre: String?
-    ) async throws -> [Manga] {
-        guard customGenre == nil else { return [] }
-        return try await search(query, page: page, genre: genre, status: status, isAuthor: isAuthor)
-    }
+        _: String, page _: UInt, genre _: SourceGenre = .default,
+        status _: SourceStatusFilter? = nil, isAuthor _: Bool = false,
+        sortBy _: SourceSort = .default
+    ) async throws -> [Manga] { fatalError("Not Implemented") }
 
-    /// Retrieves a list of manga based on optional filters.
+    /// Retrieves a list of manga using the requested filters and sort order.
     /// Required by `PluginCapability.list`.
-    /// `listByGenre` and `listByStatus` require handling the corresponding filters.
+    /// The source applies supported filters and falls back to its default order for other sorts.
     /// - Parameters:
     ///   - page: The page number for pagination.
-    ///   - genre: The genre to filter by.
-    ///   - status: The status to filter by.
+    ///   - genre: The source genre filter, or `.default` for all genres.
+    ///   - status: An optional publication status filter.
+    ///   - sortBy: The source-supported sort order.
     /// - Returns: A list of `Manga` objects.
     /// - Throws: An error if the request fails.
-    func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
-        fatalError("Not Implemented")
-    }
-
-    /// External source list, with an optional opaque custom genre name.
-    func getList(page: UInt, genre: Genre, status: Status, customGenre: String?) async throws
-        -> [Manga]
-    {
-        guard customGenre == nil else { return [] }
-        return try await getList(page: page, genre: genre, status: status)
-    }
+    func getList(
+        page _: UInt, genre _: SourceGenre = .default, status _: SourceStatusFilter? = nil,
+        sortBy _: SourceSort = .default
+    ) async throws -> [Manga] { fatalError("Not Implemented") }
 
     /// Retrieves details for multiple mangas by their IDs.
     /// Required by `PluginCapability.batchMangas` and used by the default `getMangaUpdates(_:)`.
@@ -374,34 +477,52 @@ extension Plugin {
     /// Returns whether the plugin advertises support for a capability.
     func supports(_ capability: PluginCapability) -> Bool { capabilities.contains(capability) }
 
-    /// Returns whether the plugin can service a list request with the supplied filters.
-    /// Filter capabilities augment, rather than replace, the base list capability.
-    func supportsList(genre: Genre = .all, status: Status = .any, customGenre: String? = nil)
-        -> Bool
-    {
-        guard supports(.list) else { return false }
-
-        if genre != .all, !supports(.listByGenre) { return false }
-        if customGenre != nil, !supports(.listByCustomGenre) { return false }
-        if status != .any, !supports(.listByStatus) { return false }
-
-        return true
+    var listGenreOptions: [SourceGenre] {
+        guard supports(.list) else { return [] }
+        return [.default] + availableGenres.filter { supports($0.listCapability) }
     }
 
-    /// Returns whether the plugin can service a search request with the supplied filters.
-    /// Filter capabilities augment, rather than replace, the base search capability.
-    func supportsSearch(
-        isAuthor: Bool = false, genre: Genre = .all, status: Status = .any,
-        customGenre: String? = nil
+    var searchGenreOptions: [SourceGenre] {
+        guard supports(.search) else { return [] }
+        return [.default] + availableGenres.filter { supports($0.searchCapability) }
+    }
+
+    var listSortOptions: [SourceSort] {
+        guard supports(.list) else { return [] }
+        return [.default] + availableSorts.filter { supports($0.listCapability) }
+    }
+
+    var searchSortOptions: [SourceSort] {
+        guard supports(.search) else { return [] }
+        return [.default] + availableSorts.filter { supports($0.searchCapability) }
+    }
+
+    private func supportsSort(_ sort: SourceSort, for capability: PluginCapability) -> Bool {
+        supports(capability) && (sort == .default || availableSorts.contains(sort))
+    }
+
+    /// Returns whether the plugin supports listing with every requested option.
+    func supportsList(
+        genre: SourceGenre = .default, status: SourceStatusFilter? = nil,
+        sortBy: SourceSort = .default
     ) -> Bool {
-        guard supports(.search) else { return false }
+        guard supports(.list), supports(genre.listCapability) else { return false }
+        if status != nil, !supports(.listByStatus) { return false }
+
+        return supportsSort(sortBy, for: sortBy.listCapability)
+    }
+
+    /// Returns whether the plugin supports searching with every requested option.
+    func supportsSearch(
+        isAuthor: Bool = false, genre: SourceGenre = .default, status: SourceStatusFilter? = nil,
+        sortBy: SourceSort = .default
+    ) -> Bool {
+        guard supports(.search), supports(genre.searchCapability) else { return false }
 
         if isAuthor, !supports(.searchByAuthor) { return false }
-        if genre != .all, !supports(.searchByGenre) { return false }
-        if customGenre != nil, !supports(.searchByCustomGenre) { return false }
-        if status != .any, !supports(.searchByStatus) { return false }
+        if status != nil, !supports(.searchByStatus) { return false }
 
-        return true
+        return supportsSort(sortBy, for: sortBy.searchCapability)
     }
 
     /// Whether this plugin can check saved manga for updates.

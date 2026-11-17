@@ -48,6 +48,7 @@ final class JsPlugin: Plugin, Configurable {
     private var _homePage: String?
     private var _availableGenres: [Genre]
     private var _availableCustomGenres: [String]
+    private var _availableCustomSorts: [String]
     private var _configs: [Config]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
@@ -75,10 +76,14 @@ final class JsPlugin: Plugin, Configurable {
 
     override var homePage: String? { localization?.homePage ?? _homePage }
 
-    override var availableGenres: [Genre] { _availableGenres }
+    override var availableGenres: [SourceGenre] {
+        SourceGenre.options(
+            builtIn: _availableGenres,
+            custom: localization?.availableCustomGenres ?? _availableCustomGenres)
+    }
 
-    override var availableCustomGenres: [String] {
-        localization?.availableCustomGenres ?? _availableCustomGenres
+    override var availableSorts: [SourceSort] {
+        SourceSort.options(custom: localization?.availableCustomSorts ?? _availableCustomSorts)
     }
 
     var configs: [Config] { _configs.localized(with: localization?.configs) }
@@ -122,8 +127,9 @@ final class JsPlugin: Plugin, Configurable {
         id: String, name: String? = nil, version: String? = nil, description: String? = nil,
         authors: [String] = [], repository: String? = nil, icon: String? = nil,
         homePage: String? = nil, updatesUrl: String? = nil, availableGenres: [Genre] = [],
-        availableCustomGenres: [String] = [], scripts: [ScriptType: String] = [:],
-        configs: [Config] = [], getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
+        availableCustomGenres: [String] = [], availableCustomSorts: [String] = [],
+        scripts: [ScriptType: String] = [:], configs: [Config] = [],
+        getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.defaultCapabilities,
         localizations: [String: PluginLocalization]? = nil
     ) {
@@ -139,6 +145,7 @@ final class JsPlugin: Plugin, Configurable {
         _updatesUrl = updatesUrl
         _availableGenres = availableGenres
         _availableCustomGenres = availableCustomGenres
+        _availableCustomSorts = availableCustomSorts
         _configs = configs
         _getImageHeaders = getImageHeaders
         _cooldown = cooldown
@@ -200,7 +207,8 @@ final class JsPlugin: Plugin, Configurable {
             description: metadata.description, authors: metadata.authors,
             repository: metadata.repository, icon: metadata.icon, homePage: metadata.homePage,
             updatesUrl: metadata.updatesUrl, availableGenres: metadata.availableGenres,
-            availableCustomGenres: metadata.availableCustomGenres, scripts: scripts,
+            availableCustomGenres: metadata.availableCustomGenres,
+            availableCustomSorts: metadata.availableCustomSorts, scripts: scripts,
             configs: metadata.configs, getImageHeaders: metadata.getImageHeaders,
             cooldown: metadata.cooldown, capabilities: metadata.capabilities,
             localizations: metadata.localizations)
@@ -309,9 +317,9 @@ final class JsPlugin: Plugin, Configurable {
         let metadata = JsPluginModel.Metadata(
             id: id, name: _name, version: version, description: _description, authors: _authors,
             repository: _repository, icon: _icon, homePage: _homePage, updatesUrl: updatesUrl,
-            availableGenres: availableGenres, availableCustomGenres: _availableCustomGenres,
-            scripts: scriptsDict, configs: _configs, getImageHeaders: _getImageHeaders,
-            cooldown: cooldown,
+            availableGenres: _availableGenres, availableCustomGenres: _availableCustomGenres,
+            availableCustomSorts: _availableCustomSorts, scripts: scriptsDict, configs: _configs,
+            getImageHeaders: _getImageHeaders, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding },
             localizations: _localizations)
         return JsPluginModel(
@@ -358,29 +366,26 @@ final class JsPlugin: Plugin, Configurable {
         return suggestions
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
-        try await search(
-            query, page: page, genre: genre, status: status, isAuthor: isAuthor, customGenre: nil)
-    }
-
     override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool,
-        customGenre: String?
+        _ query: String, page: UInt, genre: SourceGenre, status: SourceStatusFilter?,
+        isAuthor: Bool, sortBy: SourceSort
     ) async throws -> [Manga] {
         Logger.jsPlugin.debug(
-            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor) (plugin: \(id))"
+            "Searching for: \(query), page: \(page), genre: \(genre.customValue ?? genre.value ?? "-"), status: \(status?.mangaStatus.localizedName ?? "-"), isAuthor: \(isAuthor) (plugin: \(id))"
         )
 
         if _scripts[.search] == nil { fatalError("Script for search is not defined") }
 
-        guard customGenre == nil || supports(.searchByCustomGenre) else { return [] }
-        let customGenreArgument =
-            supports(.searchByCustomGenre)
-            ? "," + (customGenre.map { JsRuntime.javascriptStringLiteral($0) } ?? "null") : ""
+        let argumentList = javascriptArguments([
+            JsRuntime.javascriptStringLiteral(query), String(page),
+            genre.value.map { JsRuntime.javascriptStringLiteral($0) },
+            status.map { String($0.rawValue) }, String(isAuthor),
+            genre.customValue.map { JsRuntime.javascriptStringLiteral($0) },
+            sortBy.value.map { JsRuntime.javascriptStringLiteral($0) },
+            sortBy.customValue.map { JsRuntime.javascriptStringLiteral($0) }
+        ])
         let script =
-            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue),\(isAuthor)\(customGenreArgument));"
+            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(argumentList));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
@@ -390,24 +395,24 @@ final class JsPlugin: Plugin, Configurable {
         return mangas.compactMap { Manga(from: $0) }
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        try await getList(page: page, genre: genre, status: status, customGenre: nil)
-    }
-
-    override func getList(page: UInt, genre: Genre, status: Status, customGenre: String?)
-        async throws -> [Manga]
-    {
+    override func getList(
+        page: UInt, genre: SourceGenre, status: SourceStatusFilter?, sortBy: SourceSort
+    ) async throws -> [Manga] {
         Logger.jsPlugin.debug(
-            "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
+            "Getting list, page: \(page), genre: \(genre.customValue ?? genre.value ?? "-"), status: \(status?.mangaStatus.localizedName ?? "-") (plugin: \(id))"
+        )
 
         if _scripts[.getList] == nil { fatalError("Script for getList is not defined") }
 
-        guard customGenre == nil || supports(.listByCustomGenre) else { return [] }
-        let customGenreArgument =
-            supports(.listByCustomGenre)
-            ? "," + (customGenre.map { JsRuntime.javascriptStringLiteral($0) } ?? "null") : ""
+        let argumentList = javascriptArguments([
+            String(page), genre.value.map { JsRuntime.javascriptStringLiteral($0) },
+            status.map { String($0.rawValue) },
+            genre.customValue.map { JsRuntime.javascriptStringLiteral($0) },
+            sortBy.value.map { JsRuntime.javascriptStringLiteral($0) },
+            sortBy.customValue.map { JsRuntime.javascriptStringLiteral($0) }
+        ])
         let script =
-            "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue)\(customGenreArgument));"
+            "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(argumentList));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
@@ -415,6 +420,12 @@ final class JsPlugin: Plugin, Configurable {
         }
 
         return mangas.compactMap { Manga(from: $0) }
+    }
+
+    private func javascriptArguments(_ arguments: [String?]) -> String {
+        guard let lastArgument = arguments.lastIndex(where: { $0 != nil }) else { return "" }
+        // Preserve positional slots only when a later argument is present.
+        return arguments[...lastArgument].map { $0 ?? "null" }.joined(separator: ",")
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
@@ -570,6 +581,7 @@ final class JsPlugin: Plugin, Configurable {
                 _homePage = newPlugin._homePage
                 _availableGenres = newPlugin._availableGenres
                 _availableCustomGenres = newPlugin._availableCustomGenres
+                _availableCustomSorts = newPlugin._availableCustomSorts
                 _configs = newPlugin._configs
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities

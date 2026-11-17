@@ -58,13 +58,14 @@ struct SourceInfoScreen: View {
                         LabeledContent("repository") { metadataLink(repository) }
                     }
 
-                    if plugin.availableGenres.isEmpty {
+                    let genres = plugin.availableGenres
+                    if genres.isEmpty {
                         LabeledContent("availableGenres") { Text("noGenresAvailable").italic() }
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("availableGenres")
-                            WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) {
-                                genre in Text(LocalizedStringKey(genre.rawValue)).genreTagStyle()
+                            WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
+                                genre.label.genreTagStyle()
                             }
                         }
                     }

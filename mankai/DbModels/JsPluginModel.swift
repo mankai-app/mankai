@@ -42,6 +42,7 @@ extension JsPluginModel {
         let updatesUrl: String?
         @DecodingDefault([]) let availableGenres: [Genre]
         @DecodingDefault([]) let availableCustomGenres: [String]
+        @DecodingDefault([]) let availableCustomSorts: [String]
         @DecodingDefault([:]) let scripts: [String: String]
         @DecodingDefault([]) let configs: [Config]
         let getImageHeaders: [String: String]?

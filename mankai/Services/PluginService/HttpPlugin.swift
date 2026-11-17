@@ -32,6 +32,7 @@ class HttpPlugin: Plugin, Configurable {
     private var _homePage: String?
     private var _availableGenres: [Genre]
     private var _availableCustomGenres: [String]
+    private var _availableCustomSorts: [String]
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
     private var _localizations: [String: PluginLocalization]?
@@ -56,11 +57,15 @@ class HttpPlugin: Plugin, Configurable {
 
     override var homePage: String? { localization?.homePage ?? _homePage }
 
-    override var availableGenres: [Genre] { _availableGenres }
+    override var availableGenres: [SourceGenre] {
+        let customGenres =
+            self is EditableHttpPlugin
+            ? [] : localization?.availableCustomGenres ?? _availableCustomGenres
+        return SourceGenre.options(builtIn: _availableGenres, custom: customGenres)
+    }
 
-    override var availableCustomGenres: [String] {
-        guard !(self is EditableHttpPlugin) else { return [] }
-        return localization?.availableCustomGenres ?? _availableCustomGenres
+    override var availableSorts: [SourceSort] {
+        SourceSort.options(custom: localization?.availableCustomSorts ?? _availableCustomSorts)
     }
 
     override var cooldown: Cooldown? { _cooldown }
@@ -110,7 +115,7 @@ class HttpPlugin: Plugin, Configurable {
         version: String? = nil, description: String? = nil, authors: [String] = [],
         repository: String? = nil, icon: String? = nil, homePage: String? = nil,
         availableGenres: [Genre] = [], availableCustomGenres: [String] = [],
-        cooldown: Cooldown? = nil,
+        availableCustomSorts: [String] = [], cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.defaultCapabilities,
         localizations: [String: PluginLocalization]? = nil
     ) {
@@ -128,6 +133,7 @@ class HttpPlugin: Plugin, Configurable {
         _homePage = homePage
         _availableGenres = availableGenres
         _availableCustomGenres = availableCustomGenres
+        _availableCustomSorts = availableCustomSorts
         _cooldown = cooldown
         _capabilities = capabilities
         _localizations = localizations
@@ -169,8 +175,8 @@ class HttpPlugin: Plugin, Configurable {
                 name: metadata.name, version: metadata.version, description: metadata.description,
                 authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
                 homePage: metadata.homePage, availableGenres: metadata.availableGenres,
-                cooldown: metadata.cooldown, capabilities: metadata.capabilities,
-                localizations: metadata.localizations)
+                availableCustomSorts: metadata.availableCustomSorts, cooldown: metadata.cooldown,
+                capabilities: metadata.capabilities, localizations: metadata.localizations)
         }
 
         if !metadata.editorEnabled, self is EditableHttpPlugin.Type {
@@ -185,7 +191,8 @@ class HttpPlugin: Plugin, Configurable {
             name: metadata.name, version: metadata.version, description: metadata.description,
             authors: metadata.authors, repository: metadata.repository, icon: metadata.icon,
             homePage: metadata.homePage, availableGenres: metadata.availableGenres,
-            availableCustomGenres: metadata.availableCustomGenres, cooldown: metadata.cooldown,
+            availableCustomGenres: metadata.availableCustomGenres,
+            availableCustomSorts: metadata.availableCustomSorts, cooldown: metadata.cooldown,
             capabilities: metadata.capabilities, localizations: metadata.localizations)
     }
 
@@ -304,6 +311,7 @@ class HttpPlugin: Plugin, Configurable {
             _homePage = metadata.homePage
             _availableGenres = metadata.availableGenres
             _availableCustomGenres = metadata.availableCustomGenres
+            _availableCustomSorts = metadata.availableCustomSorts
             _authenticationEnabled = metadata.authenticationEnabled ?? false
             _capabilities = metadata.capabilities
             _localizations = metadata.localizations
@@ -350,8 +358,9 @@ class HttpPlugin: Plugin, Configurable {
         let metadata = HttpPluginModel.Metadata(
             id: id, name: _name, version: version, description: _description, authors: _authors,
             repository: _repository, icon: _icon, homePage: _homePage,
-            availableGenres: availableGenres,
+            availableGenres: _availableGenres,
             availableCustomGenres: editorEnabled ? [] : _availableCustomGenres,
+            availableCustomSorts: _availableCustomSorts,
             authenticationEnabled: authenticationEnabled, editorEnabled: editorEnabled,
             configs: configs, cooldown: cooldown,
             capabilities: _capabilities.filter { $0 != .sync && $0 != .urlEncoding },
@@ -384,41 +393,31 @@ class HttpPlugin: Plugin, Configurable {
         return try [String].decoded(from: data)
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
-        try await search(
-            query, page: page, genre: genre, status: status, isAuthor: isAuthor, customGenre: nil)
-    }
-
     override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool,
-        customGenre: String?
+        _ query: String, page: UInt, genre: SourceGenre, status: SourceStatusFilter?,
+        isAuthor: Bool, sortBy: SourceSort
     ) async throws -> [Manga] {
         try await setup()
-        guard customGenre == nil || supports(.searchByCustomGenre) else { return [] }
-        var parameters = [
-            "query": query, "page": String(page), "genre": genre.rawValue,
-            "status": String(status.rawValue), "isAuthor": String(isAuthor)
-        ]
-        if let customGenre { parameters["customGenre"] = customGenre }
+        var parameters = ["query": query, "page": String(page), "isAuthor": String(isAuthor)]
+        parameters["genre"] = genre.value
+        parameters["status"] = status.map { String($0.rawValue) }
+        parameters["customGenre"] = genre.customValue
+        parameters["sortBy"] = sortBy.value
+        parameters["customSort"] = sortBy.customValue
         let (data, _) = try await authManager.get(path: "/search", query: parameters)
         return try [Manga].decoded(from: data)
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        try await getList(page: page, genre: genre, status: status, customGenre: nil)
-    }
-
-    override func getList(page: UInt, genre: Genre, status: Status, customGenre: String?)
-        async throws -> [Manga]
-    {
+    override func getList(
+        page: UInt, genre: SourceGenre, status: SourceStatusFilter?, sortBy: SourceSort
+    ) async throws -> [Manga] {
         try await setup()
-        guard customGenre == nil || supports(.listByCustomGenre) else { return [] }
-        var parameters = [
-            "page": String(page), "genre": genre.rawValue, "status": String(status.rawValue)
-        ]
-        if let customGenre { parameters["customGenre"] = customGenre }
+        var parameters = ["page": String(page)]
+        parameters["genre"] = genre.value
+        parameters["status"] = status.map { String($0.rawValue) }
+        parameters["customGenre"] = genre.customValue
+        parameters["sortBy"] = sortBy.value
+        parameters["customSort"] = sortBy.customValue
         let (data, _) = try await authManager.get(path: "/manga", query: parameters)
         return try [Manga].decoded(from: data)
     }
@@ -509,6 +508,7 @@ class HttpPlugin: Plugin, Configurable {
                 _homePage = newPlugin._homePage
                 _availableGenres = newPlugin._availableGenres
                 _availableCustomGenres = newPlugin._availableCustomGenres
+                _availableCustomSorts = newPlugin._availableCustomSorts
                 _cooldown = newPlugin._cooldown
                 _capabilities = newPlugin._capabilities
                 _localizations = newPlugin._localizations

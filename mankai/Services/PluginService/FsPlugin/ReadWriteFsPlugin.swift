@@ -273,6 +273,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
                 if let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: intChapterGroupId) {
                     if var manga = try FsMangaModel.fetchOne(db, key: chapterGroup.mangaId) {
                         manga.latestChapterId = newChapterId
+                        manga.updatedAt = Date()
                         try manga.update(db)
                     }
                 }

@@ -218,16 +218,17 @@ final class SuwayomiPlugin: Plugin, Configurable {
         return mangas.map(\.title).filter { seen.insert($0).inserted }
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        guard genre == .all else { return [] }
+    override func getList(
+        page: UInt, genre _: SourceGenre, status: SourceStatusFilter?, sortBy _: SourceSort
+    ) async throws -> [Manga] {
         return try await session.mangaList(page: page, query: nil, statuses: statuses(for: status))
             .map(manga)
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
-        guard genre == .all else { return [] }
+    override func search(
+        _ query: String, page: UInt, genre _: SourceGenre, status: SourceStatusFilter?,
+        isAuthor: Bool, sortBy _: SourceSort
+    ) async throws -> [Manga] {
         return
             try await session.mangaList(
                 page: page, query: query, statuses: statuses(for: status), isAuthor: isAuthor
@@ -298,14 +299,14 @@ final class SuwayomiPlugin: Plugin, Configurable {
         Chapter(id: String(chapter.id), title: chapter.name)
     }
 
-    private func statuses(for status: Status) -> [String] {
-        switch status { case .any: [] case .onGoing: ["ONGOING", "ON_HIATUS"] case .completed:
+    private func statuses(for status: SourceStatusFilter?) -> [String] {
+        switch status { case nil: [] case .onGoing: ["ONGOING", "ON_HIATUS"] case .completed:
             ["COMPLETED", "PUBLISHING_FINISHED", "CANCELLED"]
         }
     }
 
     private func status(_ value: String?) -> Status? {
-        switch value?.uppercased() { case "ONGOING", "ON_HIATUS": .onGoing
+        switch value?.uppercased() { case "UNKNOWN": .unknown case "ONGOING", "ON_HIATUS": .onGoing
             case "COMPLETED", "PUBLISHING_FINISHED", "CANCELLED": .completed
             default: nil
         }

@@ -9,7 +9,6 @@ import Foundation
 import ReerCodable
 
 enum Genre: String, Codable, CaseIterable {
-    case all
     case action
     case romance
     case yuri
@@ -31,15 +30,15 @@ enum Genre: String, Codable, CaseIterable {
     case mecha
 }
 
-@Codable enum Status: Int {
-    case any = 0
+@Codable enum Status: Int, CaseIterable {
+    case unknown = 0
     case onGoing = 1
     case completed = 2
 
     var localizedName: String {
-        switch self { case .any: return String(localized: "any") case .onGoing:
-            return String(localized: "onGoing")
-            case .completed: return String(localized: "mangaCompleted")
+        switch self { case .unknown: String(localized: "unknown") case .onGoing:
+            String(localized: "onGoing")
+            case .completed: String(localized: "mangaCompleted")
         }
     }
 }

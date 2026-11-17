@@ -7,43 +7,24 @@
 
 import SwiftUI
 
-/// A source filter selects either a predefined genre or an opaque source-provided name.
-enum SourceGenreFilter: Hashable {
-    case standard(Genre)
-    case custom(String)
-
-    var standardGenre: Genre {
-        if case .standard(let genre) = self { return genre }
-        return .all
-    }
-
-    var customGenre: String? {
-        if case .custom(let genre) = self { return genre }
-        return nil
-    }
-
-    var label: Text {
-        switch self { case .standard(let genre): return Text(LocalizedStringKey(genre.rawValue))
-            case .custom(let genre): return Text(verbatim: genre)
-        }
-    }
-
-    var cacheKey: String {
-        switch self { case .standard(let genre): return "standard:" + genre.rawValue
-            case .custom(let genre): return "custom:" + genre
-        }
-    }
-}
-
 struct SourceLibraryScreen: View {
+    private struct ListKey: Hashable {
+        let genre: SourceGenre
+        let status: SourceStatusFilter?
+        let sortBy: SourceSort
+    }
+
     let plugin: Plugin
 
-    @State var selectedGenre: SourceGenreFilter = .standard(.all)
-    @State private var selectedStatus: Status = .any
+    @ObservedObject private var pluginService = PluginService.shared
+
+    @State private var selectedGenre: SourceGenre
+    @State private var selectedStatus: SourceStatusFilter?
+    @State private var selectedSort: SourceSort = .default
 
     @State private var isLoading: Bool = false
     @State private var listLoadID = UUID()
-    @State private var mangasList: [String: [UInt: [Manga]]] = [:]
+    @State private var mangasList: [ListKey: [UInt: [Manga]]] = [:]
     @State private var showErrorAlert: Bool = false
     @State private var errorMessage: String = ""
 
@@ -54,44 +35,36 @@ struct SourceLibraryScreen: View {
     @State private var readerRoute: ReaderRoute?
     @State private var isUpdateMangaModalPresented = false
 
-    private var supportsGenreFilter: Bool {
-        plugin.supports(.list) && plugin.supports(.listByGenre)
-    }
-
-    private var supportsCustomGenreFilter: Bool {
-        plugin.supports(.list) && plugin.supports(.listByCustomGenre)
-    }
-
     private var supportsStatusFilter: Bool {
         plugin.supports(.list) && plugin.supports(.listByStatus)
     }
 
     private var hasActiveFilters: Bool {
-        selectedGenre != .standard(.all) || selectedStatus != .any
+        selectedGenre != .default || selectedStatus != nil || selectedSort != .default
     }
 
-    init(plugin: Plugin, selectedGenre: SourceGenreFilter = .standard(.all)) {
+    private var genreOptions: [SourceGenre] { plugin.listGenreOptions }
+
+    private var sortOptions: [SourceSort] { plugin.listSortOptions }
+
+    private var listKey: ListKey {
+        ListKey(genre: selectedGenre, status: selectedStatus, sortBy: selectedSort)
+    }
+
+    init(plugin: Plugin, selectedGenre: SourceGenre = .default) {
         self.plugin = plugin
-        let normalizedGenre =
-            plugin.supportsList(
-                genre: selectedGenre.standardGenre, customGenre: selectedGenre.customGenre)
-            ? selectedGenre : .standard(.all)
+        let normalizedGenre = plugin.supportsList(genre: selectedGenre) ? selectedGenre : .default
         _selectedGenre = State(initialValue: normalizedGenre)
     }
 
     private var allMangas: [Manga] {
-        let key = "\(selectedGenre.cacheKey)_\(selectedStatus.rawValue)"
-
-        guard let mangas = mangasList[key] else { return [] }
+        guard let mangas = mangasList[listKey] else { return [] }
 
         let sortedKeys = mangas.keys.sorted()
         return sortedKeys.flatMap { mangas[$0] ?? [] }
     }
 
-    private var hasLoadedCurrentFilter: Bool {
-        let key = "\(selectedGenre.cacheKey)_\(selectedStatus.rawValue)"
-        return mangasList[key] != nil
-    }
+    private var hasLoadedCurrentFilter: Bool { mangasList[listKey] != nil }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -117,10 +90,7 @@ struct SourceLibraryScreen: View {
                         description: Text("noEntitiesDescription"))
                 }
             }
-            .onChange(of: selectedGenre, initial: false) { _, _ in
-                proxy.scrollTo("mangasList", anchor: .top)
-            }
-            .onChange(of: selectedStatus, initial: false) { _, _ in
+            .onChange(of: listKey, initial: false) { _, _ in
                 proxy.scrollTo("mangasList", anchor: .top)
             }
         }
@@ -147,7 +117,8 @@ struct SourceLibraryScreen: View {
         .onDisappear { searchTask?.cancel() }
         .navigationDestination(isPresented: $navigateToSearch) {
             SourceSearchScreen(
-                plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus)
+                plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus,
+                sortBy: selectedSort)
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) {
             if let editablePlugin = plugin as? any Editable {
@@ -163,7 +134,9 @@ struct SourceLibraryScreen: View {
                 }
             }
 
-            if supportsGenreFilter || supportsCustomGenreFilter || supportsStatusFilter {
+            if hasActiveFilters || genreOptions.count > 1 || supportsStatusFilter
+                || sortOptions.count > 1
+            {
                 ToolbarItem(placement: .topBarTrailing) {
                     FilterButton(hasActiveFilters: hasActiveFilters, menu: filterMenuContent)
                 }
@@ -173,6 +146,9 @@ struct SourceLibraryScreen: View {
             title: Text(plugin.name ?? plugin.id), subtitle: Text("library")
         )
         .onAppear { loadList() }.onReceive(plugin.objectWillChange) { reloadList() }
+        .onChange(of: plugin.supportsList(genre: selectedGenre, sortBy: selectedSort)) {
+            _, supported in if !supported { reloadList() }
+        }
         .alert("failedToLoadList", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
@@ -184,19 +160,20 @@ struct SourceLibraryScreen: View {
         listLoadID = UUID()
         mangasList = [:]
         isLoading = false
+        if !plugin.supportsList(genre: selectedGenre) { selectedGenre = .default }
+        if !plugin.supportsList(sortBy: selectedSort) { selectedSort = .default }
         loadList()
     }
 
     private func loadList() {
         if isLoading
             || !plugin.supportsList(
-                genre: selectedGenre.standardGenre, status: selectedStatus,
-                customGenre: selectedGenre.customGenre)
+                genre: selectedGenre, status: selectedStatus, sortBy: selectedSort)
         {
             return
         }
 
-        let key = "\(selectedGenre.cacheKey)_\(selectedStatus.rawValue)"
+        let key = listKey
 
         let maxPage = mangasList[key]?.keys.max() ?? 0
 
@@ -206,15 +183,12 @@ struct SourceLibraryScreen: View {
         let page = maxPage + 1
 
         let loadID = listLoadID
-        let genre = selectedGenre
-        let status = selectedStatus
 
         isLoading = true
         Task {
             do {
                 let result = try await plugin.getList(
-                    page: page, genre: genre.standardGenre, status: status,
-                    customGenre: genre.customGenre)
+                    page: page, genre: key.genre, status: key.status, sortBy: key.sortBy)
                 guard loadID == listLoadID else { return }
 
                 if mangasList[key] == nil { mangasList[key] = [:] }
@@ -233,27 +207,33 @@ struct SourceLibraryScreen: View {
 
     private var filterMenuContent: some View {
         SourceFilterMenuContent(
-            plugin: plugin, supportsGenreFilter: supportsGenreFilter,
-            supportsCustomGenreFilter: supportsCustomGenreFilter,
-            supportsStatusFilter: supportsStatusFilter,
+            genreOptions: genreOptions, supportsStatusFilter: supportsStatusFilter,
+            sortOptions: sortOptions,
             genre: Binding(
-                get: { selectedGenre }, set: { setFilters(genre: $0, status: selectedStatus) }),
+                get: { selectedGenre },
+                set: { setFilters(genre: $0, status: selectedStatus, sortBy: selectedSort) }),
             status: Binding(
-                get: { selectedStatus }, set: { setFilters(genre: selectedGenre, status: $0) }),
-            onReset: { setFilters(genre: .standard(.all), status: .any) })
+                get: { selectedStatus },
+                set: { setFilters(genre: selectedGenre, status: $0, sortBy: selectedSort) }),
+            sortBy: Binding(
+                get: { selectedSort },
+                set: { setFilters(genre: selectedGenre, status: selectedStatus, sortBy: $0) }),
+            onReset: { setFilters(genre: .default, status: nil, sortBy: .default) })
     }
 
-    private func setFilters(genre: SourceGenreFilter, status: Status) {
-        let normalizedGenre =
-            plugin.supportsList(genre: genre.standardGenre, customGenre: genre.customGenre)
-            ? genre : .standard(.all)
-        let normalizedStatus = supportsStatusFilter ? status : .any
+    private func setFilters(genre: SourceGenre, status: SourceStatusFilter?, sortBy: SourceSort) {
+        let normalizedGenre = plugin.supportsList(genre: genre) ? genre : .default
+        let normalizedStatus = plugin.supportsList(status: status) ? status : nil
+        let normalizedSort = plugin.supportsList(sortBy: sortBy) ? sortBy : .default
 
-        if selectedGenre != normalizedGenre || selectedStatus != normalizedStatus {
+        if selectedGenre != normalizedGenre || selectedStatus != normalizedStatus
+            || selectedSort != normalizedSort
+        {
             listLoadID = UUID()
             isLoading = false
             selectedGenre = normalizedGenre
             selectedStatus = normalizedStatus
+            selectedSort = normalizedSort
         }
 
         loadList()

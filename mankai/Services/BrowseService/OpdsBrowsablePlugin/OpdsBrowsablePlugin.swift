@@ -101,7 +101,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         _shouldSync = false
     }
 
-    override var availableGenres: [Genre] { Genre.allCases }
+    override var availableGenres: [SourceGenre] { SourceGenre.builtIn }
 
     override var capabilities: [PluginCapability] {
         [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image] + (_shouldSync ? [.sync] : [])

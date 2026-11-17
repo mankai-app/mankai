@@ -13,8 +13,9 @@ struct SourceSearchScreen: View {
     let isAuthorSearch: Bool
     let pluginService = PluginService.shared
 
-    @State var selectedGenre: SourceGenreFilter
-    @State private var selectedStatus: Status
+    @State private var selectedGenre: SourceGenre
+    @State private var selectedStatus: SourceStatusFilter?
+    @State private var selectedSort: SourceSort
 
     @State var isLoading: Bool = false
     @State var mangas: [UInt: [Manga]] = [:]
@@ -23,21 +24,17 @@ struct SourceSearchScreen: View {
     @State private var searchTask: Task<Void, Never>?
     @State private var readerRoute: ReaderRoute?
 
-    private var supportsGenreFilter: Bool {
-        plugin.supports(.search) && plugin.supports(.searchByGenre)
-    }
-
-    private var supportsCustomGenreFilter: Bool {
-        plugin.supports(.search) && plugin.supports(.searchByCustomGenre)
-    }
-
     private var supportsStatusFilter: Bool {
         plugin.supports(.search) && plugin.supports(.searchByStatus)
     }
 
     private var hasActiveFilters: Bool {
-        selectedGenre != .standard(.all) || selectedStatus != .any
+        selectedGenre != .default || selectedStatus != nil || selectedSort != .default
     }
+
+    private var genreOptions: [SourceGenre] { plugin.searchGenreOptions }
+
+    private var sortOptions: [SourceSort] { plugin.searchSortOptions }
 
     private var allMangas: [Manga] {
         let sortedKeys = mangas.keys.sorted()
@@ -45,31 +42,36 @@ struct SourceSearchScreen: View {
     }
 
     init(
-        plugin: Plugin, query: String, isAuthorSearch: Bool = false,
-        genre: SourceGenreFilter = .standard(.all), status: Status = .any
+        plugin: Plugin, query: String, isAuthorSearch: Bool = false, genre: SourceGenre = .default,
+        status: SourceStatusFilter? = nil, sortBy: SourceSort = .default
     ) {
         self.plugin = plugin
         self.query = query
         self.isAuthorSearch = isAuthorSearch
-        let normalizedGenre =
-            plugin.supportsSearch(genre: genre.standardGenre, customGenre: genre.customGenre)
-            ? genre : .standard(.all)
-        let normalizedStatus =
-            plugin.supports(.search) && plugin.supports(.searchByStatus) ? status : .any
+        let normalizedGenre = plugin.supportsSearch(genre: genre) ? genre : .default
+        let normalizedStatus = plugin.supportsSearch(status: status) ? status : nil
+        let normalizedSort = plugin.supportsSearch(sortBy: sortBy) ? sortBy : .default
         _selectedGenre = State(initialValue: normalizedGenre)
         _selectedStatus = State(initialValue: normalizedStatus)
+        _selectedSort = State(initialValue: normalizedSort)
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack {
-                MangasListView(mangas: allMangas, plugin: plugin, onRead: { readerRoute = $0 })
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack {
+                    MangasListView(mangas: allMangas, plugin: plugin, onRead: { readerRoute = $0 })
+                        .id("mangasList")
 
-                if isLoading { ProgressView().frame(maxWidth: .infinity).padding() }
+                    if isLoading { ProgressView().frame(maxWidth: .infinity).padding() }
 
-                Color.clear.frame(height: 1).onAppear { search() }
+                    Color.clear.frame(height: 1).onAppear { search() }
+                }
+                .padding()
             }
-            .padding()
+            .onChange(of: selectedSort, initial: false) { _, _ in
+                proxy.scrollTo("mangasList", anchor: .top)
+            }
         }
         .overlay {
             if allMangas.isEmpty && isLoading {
@@ -90,13 +92,18 @@ struct SourceSearchScreen: View {
                 initialPage: route.initialPage)
         }
         .toolbar {
-            if supportsGenreFilter || supportsCustomGenreFilter || supportsStatusFilter {
+            if hasActiveFilters || genreOptions.count > 1 || supportsStatusFilter
+                || sortOptions.count > 1
+            {
                 ToolbarItem(placement: .topBarTrailing) {
                     FilterButton(hasActiveFilters: hasActiveFilters, menu: filterMenuContent)
                 }
             }
         }
         .onAppear { search() }.onReceive(pluginService.objectWillChange) { search() }
+        .onChange(of: plugin.supportsSearch(genre: selectedGenre, sortBy: selectedSort)) {
+            _, supported in if !supported { search() }
+        }
         .onDisappear { searchTask?.cancel() }
         .alert("failedToSearchManga", isPresented: $showErrorAlert) {
             Button("ok") { errorMessage = "" }
@@ -107,36 +114,50 @@ struct SourceSearchScreen: View {
 
     private var filterMenuContent: some View {
         SourceFilterMenuContent(
-            plugin: plugin, supportsGenreFilter: supportsGenreFilter,
-            supportsCustomGenreFilter: supportsCustomGenreFilter,
-            supportsStatusFilter: supportsStatusFilter,
+            genreOptions: genreOptions, supportsStatusFilter: supportsStatusFilter,
+            sortOptions: sortOptions,
             genre: Binding(
-                get: { selectedGenre }, set: { setFilters(genre: $0, status: selectedStatus) }),
+                get: { selectedGenre },
+                set: { setFilters(genre: $0, status: selectedStatus, sortBy: selectedSort) }),
             status: Binding(
-                get: { selectedStatus }, set: { setFilters(genre: selectedGenre, status: $0) }),
-            onReset: { setFilters(genre: .standard(.all), status: .any) })
+                get: { selectedStatus },
+                set: { setFilters(genre: selectedGenre, status: $0, sortBy: selectedSort) }),
+            sortBy: Binding(
+                get: { selectedSort },
+                set: { setFilters(genre: selectedGenre, status: selectedStatus, sortBy: $0) }),
+            onReset: { setFilters(genre: .default, status: nil, sortBy: .default) })
     }
 
-    private func setFilters(genre: SourceGenreFilter, status: Status) {
-        let normalizedGenre =
-            plugin.supportsSearch(genre: genre.standardGenre, customGenre: genre.customGenre)
-            ? genre : .standard(.all)
-        let normalizedStatus = supportsStatusFilter ? status : .any
-        guard selectedGenre != normalizedGenre || selectedStatus != normalizedStatus else { return }
+    private func setFilters(genre: SourceGenre, status: SourceStatusFilter?, sortBy: SourceSort) {
+        let normalizedGenre = plugin.supportsSearch(genre: genre) ? genre : .default
+        let normalizedStatus = plugin.supportsSearch(status: status) ? status : nil
+        let normalizedSort = plugin.supportsSearch(sortBy: sortBy) ? sortBy : .default
+        guard
+            selectedGenre != normalizedGenre || selectedStatus != normalizedStatus
+                || selectedSort != normalizedSort
+        else { return }
 
         searchTask?.cancel()
         selectedGenre = normalizedGenre
         selectedStatus = normalizedStatus
+        selectedSort = normalizedSort
         mangas = [:]
         isLoading = false
         search()
     }
 
     private func search() {
+        if selectedGenre != .default || selectedSort != .default,
+            !plugin.supportsSearch(genre: selectedGenre, sortBy: selectedSort)
+        {
+            setFilters(genre: selectedGenre, status: selectedStatus, sortBy: selectedSort)
+            return
+        }
+
         if isLoading
             || !plugin.supportsSearch(
-                isAuthor: isAuthorSearch, genre: selectedGenre.standardGenre,
-                status: selectedStatus, customGenre: selectedGenre.customGenre)
+                isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus,
+                sortBy: selectedSort)
         {
             return
         }
@@ -149,19 +170,20 @@ struct SourceSearchScreen: View {
         let page = maxPage + 1
         let requestGenre = selectedGenre
         let requestStatus = selectedStatus
+        let requestSort = selectedSort
 
         isLoading = true
         searchTask = Task {
             do {
                 let result = try await plugin.search(
-                    query, page: page, genre: requestGenre.standardGenre, status: requestStatus,
-                    isAuthor: isAuthorSearch, customGenre: requestGenre.customGenre)
+                    query, page: page, genre: requestGenre, status: requestStatus,
+                    isAuthor: isAuthorSearch, sortBy: requestSort)
 
                 guard !Task.isCancelled, requestGenre == selectedGenre,
-                    requestStatus == selectedStatus,
+                    requestStatus == selectedStatus, requestSort == selectedSort,
                     plugin.supportsSearch(
-                        isAuthor: isAuthorSearch, genre: selectedGenre.standardGenre,
-                        status: selectedStatus, customGenre: selectedGenre.customGenre)
+                        isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus,
+                        sortBy: selectedSort)
                 else { return }
 
                 mangas[page] = result
@@ -170,7 +192,7 @@ struct SourceSearchScreen: View {
                 // Ignore requests cancelled by a filter change or view dismissal.
             } catch {
                 guard !Task.isCancelled, requestGenre == selectedGenre,
-                    requestStatus == selectedStatus
+                    requestStatus == selectedStatus, requestSort == selectedSort
                 else { return }
 
                 errorMessage = error.localizedDescription

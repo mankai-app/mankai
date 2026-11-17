@@ -24,7 +24,8 @@ struct DebugGetList: View {
         }
         .task {
             guard plugin.supportsList() else { return }
-            mangas = try! await plugin.getList(page: 1, genre: .all, status: .any)
+            mangas = try! await plugin.getList(
+                page: 1, genre: .default, status: nil, sortBy: .default)
             Logger.jsPlugin.debug("mangas: \(mangas ?? [])")
         }
         .navigationTitle(Text(verbatim: "getList"))

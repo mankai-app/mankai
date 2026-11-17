@@ -41,6 +41,7 @@ extension HttpPluginModel {
         let homePage: String?
         @DecodingDefault([]) let availableGenres: [Genre]
         @DecodingDefault([]) let availableCustomGenres: [String]
+        @DecodingDefault([]) let availableCustomSorts: [String]
         let authenticationEnabled: Bool?
         @DecodingDefault(false) let editorEnabled: Bool
         @DecodingDefault([]) let configs: [Config]

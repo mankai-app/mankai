@@ -217,21 +217,21 @@ final class KavitaPlugin: Plugin, Configurable {
         return series.map(title).filter { seen.insert($0).inserted }
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        // Kavita genre tags are arbitrary, only advertise status filtering.
-        guard genre == .all else { return [] }
+    override func getList(
+        page: UInt, genre _: SourceGenre, status: SourceStatusFilter?, sortBy _: SourceSort
+    ) async throws -> [Manga] {
         let series = try await session.seriesList(
             page: page, query: nil, statuses: statuses(for: status))
-        return try series.map { try manga($0, status: status == .any ? nil : status) }
+        return try series.map { try manga($0, status: status?.mangaStatus) }
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
-        guard genre == .all, !isAuthor else { return [] }
+    override func search(
+        _ query: String, page: UInt, genre _: SourceGenre, status: SourceStatusFilter?,
+        isAuthor _: Bool, sortBy _: SourceSort
+    ) async throws -> [Manga] {
         let series = try await session.seriesList(
             page: page, query: query, statuses: statuses(for: status))
-        return try series.map { try manga($0, status: status == .any ? nil : status) }
+        return try series.map { try manga($0, status: status?.mangaStatus) }
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
@@ -396,8 +396,8 @@ final class KavitaPlugin: Plugin, Configurable {
         return groups
     }
 
-    private func statuses(for status: Status) -> [Int] {
-        switch status { case .any: [] case .onGoing: [0, 1] case .completed: [2, 3, 4]
+    private func statuses(for status: SourceStatusFilter?) -> [Int] {
+        switch status { case nil: [] case .onGoing: [0, 1] case .completed: [2, 3, 4]
         }
     }
 

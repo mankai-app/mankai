@@ -157,14 +157,19 @@ class ReadFsPlugin: Plugin {
     override var id: String { _id }
 
     override var capabilities: [PluginCapability] {
-        _shouldSync ? super.capabilities : super.capabilities.filter { $0 != .sync }
+        let capabilities: [PluginCapability] = [
+            .onlineCheck, .suggestions, .list, .listByGenre, .listByStatus, .listByUpdateTime,
+            .search, .searchByGenre, .searchByStatus, .searchByAuthor, .searchByUpdateTime,
+            .mangaDetails, .batchMangas, .chapter, .image
+        ]
+        return capabilities + (_shouldSync ? [.sync] : [])
     }
 
     override var tags: [String] { [String(localized: "fs")] }
 
     override var name: String? { dirName }
 
-    override var availableGenres: [Genre] { Genre.allCases }
+    override var availableGenres: [SourceGenre] { SourceGenre.builtIn }
 
     override class var typeCapabilities: [PluginTypeCapability] { [] }
 
@@ -290,11 +295,12 @@ class ReadFsPlugin: Plugin {
         }
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
+    override func search(
+        _ query: String, page: UInt, genre: SourceGenre, status: SourceStatusFilter?,
+        isAuthor: Bool, sortBy: SourceSort
+    ) async throws -> [Manga] {
         Logger.fsPlugin.debug(
-            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor)"
+            "Searching for: \(query), page: \(page), genre: \(genre.value ?? "-"), status: \(status?.mangaStatus.localizedName ?? "-"), isAuthor: \(isAuthor)"
         )
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for search")
@@ -312,15 +318,15 @@ class ReadFsPlugin: Plugin {
                 : "LOWER(title) LIKE ?"
             var query = FsMangaModel.filter(sql: searchFilter, arguments: [searchQuery])
 
-            // Filter by genre if not "all"
-            if genre != .all {
+            if let genreValue = genre.value {
                 query = query.filter(
                     sql: "EXISTS (SELECT 1 FROM json_each(genres) WHERE value = ?)",
-                    arguments: [genre.rawValue])
+                    arguments: [genreValue])
             }
 
-            // Filter by status if not "any"
-            if status != .any { query = query.filter(Column("status") == Int(status.rawValue)) }
+            if let status { query = query.filter(Column("status") == status.rawValue) }
+
+            if sortBy == .updateTime { query = query.order(Column("updatedAt").desc, Column("id")) }
 
             let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
@@ -329,8 +335,12 @@ class ReadFsPlugin: Plugin {
         }
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        Logger.fsPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
+    override func getList(
+        page: UInt, genre: SourceGenre, status: SourceStatusFilter?, sortBy: SourceSort
+    ) async throws -> [Manga] {
+        Logger.fsPlugin.debug(
+            "Getting list, page: \(page), genre: \(genre.value ?? "-"), status: \(status?.mangaStatus.localizedName ?? "-")"
+        )
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for list")
             throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
@@ -342,15 +352,15 @@ class ReadFsPlugin: Plugin {
 
             var query = FsMangaModel.all()
 
-            // Filter by genre if not "all"
-            if genre != .all {
+            if let genreValue = genre.value {
                 query = query.filter(
                     sql: "EXISTS (SELECT 1 FROM json_each(genres) WHERE value = ?)",
-                    arguments: [genre.rawValue])
+                    arguments: [genreValue])
             }
 
-            // Filter by status if not "any"
-            if status != .any { query = query.filter(Column("status") == Int(status.rawValue)) }
+            if let status { query = query.filter(Column("status") == status.rawValue) }
+
+            if sortBy == .updateTime { query = query.order(Column("updatedAt").desc, Column("id")) }
 
             let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 

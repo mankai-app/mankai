@@ -25,7 +25,7 @@ struct DebugSearch: View {
         .task {
             guard plugin.supportsSearch() else { return }
             mangas = try! await plugin.search(
-                "mankai", page: 1, genre: .all, status: .any, isAuthor: false)
+                "mankai", page: 1, genre: .default, status: nil, isAuthor: false, sortBy: .default)
             Logger.jsPlugin.debug("mangas: \(mangas as Any)")
         }
         .navigationTitle("search")

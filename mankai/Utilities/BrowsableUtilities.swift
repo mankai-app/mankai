@@ -116,7 +116,7 @@ enum BrowsableMangaUtilities {
             let normalizedValue = normalizedGenreName(value)
             guard
                 let genre = Genre.allCases.first(where: {
-                    $0 != .all && normalizedGenreName($0.rawValue) == normalizedValue
+                    normalizedGenreName($0.rawValue) == normalizedValue
                 }), seen.insert(genre).inserted
             else { continue }
             result.append(genre)

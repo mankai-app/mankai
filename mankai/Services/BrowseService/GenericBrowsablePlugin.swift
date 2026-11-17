@@ -141,7 +141,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     override class var defaultColor: Color { .blue }
 
-    override var availableGenres: [Genre] { Genre.allCases }
+    override var availableGenres: [SourceGenre] { SourceGenre.builtIn }
 
     override var capabilities: [PluginCapability] {
         [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image] + (_shouldSync ? [.sync] : [])

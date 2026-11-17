@@ -222,9 +222,9 @@ class CooldownWrapper: Plugin {
 
     override var homePage: String? { plugin.homePage }
 
-    override var availableGenres: [Genre] { plugin.availableGenres }
+    override var availableGenres: [SourceGenre] { plugin.availableGenres }
 
-    override var availableCustomGenres: [String] { plugin.availableCustomGenres }
+    override var availableSorts: [SourceSort] { plugin.availableSorts }
 
     var configs: [Config] { configurablePlugin.configs }
 
@@ -291,35 +291,22 @@ class CooldownWrapper: Plugin {
         return try await plugin.getSuggestions(query)
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
-        try await search(
-            query, page: page, genre: genre, status: status, isAuthor: isAuthor, customGenre: nil)
-    }
-
     override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool,
-        customGenre: String?
+        _ query: String, page: UInt, genre: SourceGenre, status: SourceStatusFilter?,
+        isAuthor: Bool, sortBy: SourceSort
     ) async throws -> [Manga] {
         try await wait(
             milliseconds: configuredCooldown.default, using: pluginScheduler, before: "search")
         return try await plugin.search(
-            query, page: page, genre: genre, status: status, isAuthor: isAuthor,
-            customGenre: customGenre)
+            query, page: page, genre: genre, status: status, isAuthor: isAuthor, sortBy: sortBy)
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        try await getList(page: page, genre: genre, status: status, customGenre: nil)
-    }
-
-    override func getList(page: UInt, genre: Genre, status: Status, customGenre: String?)
-        async throws -> [Manga]
-    {
+    override func getList(
+        page: UInt, genre: SourceGenre, status: SourceStatusFilter?, sortBy: SourceSort
+    ) async throws -> [Manga] {
         try await wait(
             milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getList")
-        return try await plugin.getList(
-            page: page, genre: genre, status: status, customGenre: customGenre)
+        return try await plugin.getList(page: page, genre: genre, status: status, sortBy: sortBy)
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {

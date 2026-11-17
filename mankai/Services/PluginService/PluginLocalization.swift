@@ -16,6 +16,7 @@ struct PluginLocalization: Codable {
     var icon: String?
     var homePage: String?
     var availableCustomGenres: [String]?
+    var availableCustomSorts: [String]?
     var configs: [String: ConfigLocalization]?
 }
 

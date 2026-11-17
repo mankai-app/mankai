@@ -7,39 +7,55 @@
 
 import SwiftUI
 
+extension SourceGenre {
+    var label: Text {
+        switch self { case .default: Text("all") case .standard(let genre):
+            Text(LocalizedStringKey(genre.rawValue))
+            case .custom(let name): Text(verbatim: name)
+        }
+    }
+}
+
+extension SourceSort {
+    fileprivate var label: Text {
+        switch self { case .default: Text("default") case .updateTime: Text("sortByUpdateTime")
+            case .popularity: Text("popularity")
+            case .custom(let name): Text(verbatim: name)
+        }
+    }
+}
+
 struct SourceFilterMenuContent: View {
-    let plugin: Plugin
-    let supportsGenreFilter: Bool
-    let supportsCustomGenreFilter: Bool
+    let genreOptions: [SourceGenre]
     let supportsStatusFilter: Bool
-    @Binding var genre: SourceGenreFilter
-    @Binding var status: Status
+    let sortOptions: [SourceSort]
+    @Binding var genre: SourceGenre
+    @Binding var status: SourceStatusFilter?
+    @Binding var sortBy: SourceSort
     let onReset: () -> Void
 
     var body: some View {
-        if supportsGenreFilter || supportsCustomGenreFilter {
+        if genreOptions.count > 1 || genre != .default {
             Picker("genre", selection: $genre) {
-                Text("all").tag(SourceGenreFilter.standard(.all))
-                if supportsGenreFilter {
-                    ForEach(plugin.availableGenres.filter { $0 != .all }, id: \.self) { genre in
-                        SourceGenreFilter.standard(genre).label
-                            .tag(SourceGenreFilter.standard(genre))
-                    }
-                }
-                if supportsCustomGenreFilter {
-                    ForEach(plugin.availableCustomGenres, id: \.self) { genre in
-                        SourceGenreFilter.custom(genre).label.tag(SourceGenreFilter.custom(genre))
-                    }
-                }
+                ForEach(genreOptions, id: \.self) { option in option.label.tag(option) }
+                if !genreOptions.contains(genre) { genre.label.tag(genre) }
             }
             .pickerStyle(.menu)
         }
 
         if supportsStatusFilter {
             Picker("status", selection: $status) {
-                Text(Status.any.localizedName).tag(Status.any)
-                Text(Status.onGoing.localizedName).tag(Status.onGoing)
-                Text(Status.completed.localizedName).tag(Status.completed)
+                Text("any").tag(nil as SourceStatusFilter?)
+                ForEach(SourceStatusFilter.allCases, id: \.self) { status in
+                    Text(status.mangaStatus.localizedName).tag(status as SourceStatusFilter?)
+                }
+            }
+            .pickerStyle(.menu)
+        }
+
+        if sortOptions.count > 1 {
+            Picker("sortBy", selection: $sortBy) {
+                ForEach(sortOptions, id: \.self) { option in option.label.tag(option) }
             }
             .pickerStyle(.menu)
         }

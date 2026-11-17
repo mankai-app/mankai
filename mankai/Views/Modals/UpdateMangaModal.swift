@@ -287,8 +287,9 @@ struct UpdateMangaContent: View {
                 TextField("description", text: description, axis: .vertical).lineLimit(3...6)
 
                 Picker("status", selection: status) {
-                    Text("onGoing").tag(Status.onGoing)
-                    Text("mangaCompleted").tag(Status.completed)
+                    ForEach(Status.allCases, id: \.self) { status in
+                        Text(status.localizedName).tag(status)
+                    }
                 }
             }
 
@@ -346,11 +347,8 @@ struct UpdateMangaContent: View {
                 }
 
                 Menu {
-                    ForEach(
-                        Genre.allCases.filter { genre in
-                            genre != .all && !manga.genres.contains(genre)
-                        }, id: \.self
-                    ) { genre in
+                    ForEach(Genre.allCases.filter { !manga.genres.contains($0) }, id: \.self) {
+                        genre in
                         Button(action: { manga.genres.append(genre) }) {
                             Text(LocalizedStringKey(genre.rawValue))
                         }
@@ -361,7 +359,7 @@ struct UpdateMangaContent: View {
                         Spacer()
                     }
                 }
-                .disabled(manga.genres.count >= Genre.allCases.count - 1)
+                .disabled(manga.genres.count >= Genre.allCases.count)
             }
             .confirmationDialog(
                 "remove", isPresented: $showingRemoveGenresConfirmation, titleVisibility: .visible

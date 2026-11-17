@@ -172,7 +172,7 @@ private struct SourceListMangasRowListView: View {
 
         Task {
             do {
-                mangas = try await plugin.getList(page: 1, genre: .all, status: .any)
+                mangas = try await plugin.getList(page: 1)
 
             } catch {
                 errorMessage = error.localizedDescription

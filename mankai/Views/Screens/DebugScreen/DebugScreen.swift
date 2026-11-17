@@ -38,12 +38,11 @@ struct DebugScreen: View {
                 }
 
                 Section("availableGenres") {
-                    if plugin.availableGenres.isEmpty {
+                    let genres = plugin.availableGenres
+                    if genres.isEmpty {
                         Text("noGenresAvailable").foregroundColor(.secondary).italic()
                     } else {
-                        ForEach(plugin.availableGenres, id: \.self) { genre in
-                            Text(LocalizedStringKey(genre.rawValue))
-                        }
+                        ForEach(genres, id: \.self) { genre in genre.label }
                     }
                 }
 

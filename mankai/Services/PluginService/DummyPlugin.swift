@@ -31,12 +31,13 @@ final class DummyPlugin: Plugin {
     }
 
     override func search(
-        _: String, page _: UInt, genre _: Genre, status _: Status, isAuthor _: Bool
+        _: String, page _: UInt, genre _: SourceGenre, status _: SourceStatusFilter?,
+        isAuthor _: Bool, sortBy _: SourceSort
     ) async throws -> [Manga] { throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError() }
 
-    override func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
-        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
-    }
+    override func getList(
+        page _: UInt, genre _: SourceGenre, status _: SourceStatusFilter?, sortBy _: SourceSort
+    ) async throws -> [Manga] { throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError() }
 
     override func getMangas(_: [String]) async throws -> [Manga] {
         throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()

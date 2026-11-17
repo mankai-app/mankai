@@ -218,19 +218,17 @@ final class KomgaPlugin: Plugin, Configurable {
         return series.map(title).filter { seen.insert($0).inserted }
     }
 
-    override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        // Genre names in Komga are arbitrary, only advertise status filtering.
-        guard genre == .all else { return [] }
-
+    override func getList(
+        page: UInt, genre _: SourceGenre, status: SourceStatusFilter?, sortBy _: SourceSort
+    ) async throws -> [Manga] {
         return try await session.seriesList(page: page, query: nil, statuses: statuses(for: status))
             .map { manga($0) }
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
-        async throws -> [Manga]
-    {
-        guard genre == .all else { return [] }
-
+    override func search(
+        _ query: String, page: UInt, genre _: SourceGenre, status: SourceStatusFilter?,
+        isAuthor: Bool, sortBy _: SourceSort
+    ) async throws -> [Manga] {
         return
             try await session.seriesList(
                 page: page, query: query, statuses: statuses(for: status), isAuthor: isAuthor
@@ -338,12 +336,9 @@ final class KomgaPlugin: Plugin, Configurable {
             title: book.metadata.title?.isEmpty == false ? book.metadata.title : book.name)
     }
 
-    private func statuses(for status: Status) -> [String] {
-        switch status { case .any: []
-
-            case .onGoing: ["ONGOING", "HIATUS"]
-
-            case .completed: ["ENDED", "ABANDONED"]
+    private func statuses(for status: SourceStatusFilter?) -> [String] {
+        switch status { case nil: [] case .onGoing: ["ONGOING", "HIATUS"] case .completed:
+            ["ENDED", "ABANDONED"]
         }
     }
 

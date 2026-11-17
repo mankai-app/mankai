@@ -70,8 +70,7 @@ struct SourceSearchMangasRowListView: View {
         }
 
         Task {
-            do { mangas = try await plugin.search(query, page: 1, genre: .all, status: .any) } catch
-            {
+            do { mangas = try await plugin.search(query, page: 1) } catch {
                 errorMessage = error.localizedDescription
                 showErrorAlert = true
             }
