@@ -58,10 +58,9 @@ class HttpPlugin: Plugin, Configurable {
     override var homePage: String? { localization?.homePage ?? _homePage }
 
     override var availableGenres: [SourceGenre] {
-        let customGenres =
-            self is EditableHttpPlugin
-            ? [] : localization?.availableCustomGenres ?? _availableCustomGenres
-        return SourceGenre.options(builtIn: _availableGenres, custom: customGenres)
+        return SourceGenre.options(
+            builtIn: _availableGenres,
+            custom: localization?.availableCustomGenres ?? _availableCustomGenres)
     }
 
     override var availableSorts: [SourceSort] {
@@ -320,6 +319,8 @@ class HttpPlugin: Plugin, Configurable {
             isMetaUpdated = true
         }
 
+        if authManager.serverUrl != baseUrl { authManager.serverUrl = baseUrl }
+
         guard authenticationEnabled else { return }
 
         let username = _configValues["username"]?.value as? String
@@ -329,8 +330,6 @@ class HttpPlugin: Plugin, Configurable {
             Logger.httpPlugin.error("Username or password not set")
             throw MankaiErrorCode.pluginHttpInvalidCredentials.makeError()
         }
-
-        if authManager.serverUrl != baseUrl { authManager.serverUrl = baseUrl }
 
         if authManager.username != username || !authManager.isPasswordSame(password: password) {
             try await authManager.login(username: username, password: password)

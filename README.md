@@ -27,7 +27,11 @@ Built with SwiftUI and UIKit, Mankai brings local books, network libraries, and 
 
 <p align="center">
   <a href="https://mankai.app/screenshots/">
-    <img src="assets/preview.png" alt="Mankai on iPad and iPhone" width="800" />
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/preview-dark.webp" />
+      <source media="(prefers-color-scheme: light)" srcset="assets/preview-light.webp" />
+      <img src="assets/preview-light.webp" alt="Mankai on iPad and iPhone" width="800" />
+    </picture>
   </a>
 </p>
 
