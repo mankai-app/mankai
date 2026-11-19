@@ -27,6 +27,9 @@ struct AppearanceSettingsScreen: View {
                             HStack(spacing: 16) {
                                 Image(icon.previewAssetName).resizable()
                                     .aspectRatio(contentMode: .fit).frame(width: 72, height: 72)
+                                    #if DEBUG
+                                        .hueRotation(icon == .sakura ? .degrees(230) : .zero)
+                                    #endif
                                     .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
 
                                 VStack(alignment: .leading, spacing: 4) {

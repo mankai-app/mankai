@@ -3555,6 +3555,8 @@
       }
     },
     "developer" : {
+      "comment" : "Used in debug build.",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16131,34 +16133,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "閱讀時，在已連接的外接顯示器上顯示目前漫畫的封面。"
-          }
-        }
-      }
-    },
-    "showDebugScreen" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show Debug Screen"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "デバッグ画面を表示"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示调试界面"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示除錯畫面"
           }
         }
       }

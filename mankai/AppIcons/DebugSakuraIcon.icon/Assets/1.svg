@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Back petal -->
+    <path id="back-petal" d="
+        M 256 256
+        C 215 228, 188 183, 188 128
+        C 188 90, 217 42, 256 42
+        C 295 42, 324 90, 324 128
+        C 324 183, 297 228, 256 256
+        Z
+      ">
+    </path>
+  </defs>
+  <!-- BACK PETALS -->
+  <g fill="#88B7EC">
+    <use href="#back-petal" transform="rotate(45 256 256)">
+    </use>
+    <use href="#back-petal" transform="rotate(135 256 256)">
+    </use>
+    <use href="#back-petal" transform="rotate(225 256 256)">
+    </use>
+    <use href="#back-petal" transform="rotate(315 256 256)">
+    </use>
+  </g>
+</svg>

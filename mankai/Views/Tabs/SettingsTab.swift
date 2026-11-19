@@ -8,9 +8,6 @@
 import SwiftUI
 
 struct SettingsTab: View {
-    @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
-        SettingsDefaults.showDebugScreen
-
     @State private var showQRCodeScanner = false
 
     var body: some View {
@@ -65,14 +62,14 @@ struct SettingsTab: View {
                     }
                 }
 
-                if showDebugScreen {
+                #if DEBUG
                     Section("developer") {
                         NavigationLink(destination: DebugScreen()) {
                             Label("debug", systemImage: "curlybraces")
                                 .labelStyle(ColorfulIconLabelStyle(color: .yellow))
                         }
                     }
-                }
+                #endif
             }
             .navigationTitle("settings")
             .toolbar {

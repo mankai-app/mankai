@@ -41,8 +41,6 @@ struct GeneralSettingsScreen: View {
         Int = SettingsDefaults.inMemoryCacheItemCount
     @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue:
         Int = SettingsDefaults.diskCacheSizeLimit.rawValue
-    @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
-        SettingsDefaults.showDebugScreen
     @AppStorage(SettingsKey.checkClipboard.rawValue) private var checkClipboard: Bool =
         SettingsDefaults.checkClipboard
     @ObservedObject private var updateService = UpdateService.shared
@@ -179,8 +177,6 @@ struct GeneralSettingsScreen: View {
 
                 NavigationLink("thirdPartyLicenses") { ThirdPartyLicensesScreen() }
             }
-
-            Section("developer") { Toggle("showDebugScreen", isOn: $showDebugScreen) }
         }
         .navigationTitle("general").navigationBarTitleDisplayMode(.inline)
         .onAppear {
