@@ -30,6 +30,8 @@ extension ImageProcessorModel {
         var threshold: Double?
         var color: String?
         var intensity: Double?
+        var blackPoint: Double?
+        var whitePoint: Double?
         var serverURL: String?
         var metadata: RemoteMetadata?
         var configValues: [ConfigValue]?

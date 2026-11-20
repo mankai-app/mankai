@@ -30,6 +30,10 @@ struct ImageProcessorInstance: Identifiable {
                 processor = try DownsampleImageProcessor.fromDataModel(model)
             case MonochromeToneImageProcessor.type:
                 processor = try MonochromeToneImageProcessor.fromDataModel(model)
+            case ScanCleanupImageProcessor.type:
+                processor = try ScanCleanupImageProcessor.fromDataModel(model)
+            case PaperTintImageProcessor.type:
+                processor = try PaperTintImageProcessor.fromDataModel(model)
             case RemoteImageProcessor.type:
                 processor = try RemoteImageProcessor.fromDataModel(model)
             default: throw MankaiErrorCode.imageProcessingUnknownProcessorType.makeError()

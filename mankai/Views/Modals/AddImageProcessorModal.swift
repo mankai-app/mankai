@@ -44,6 +44,26 @@ struct AddImageProcessorModal: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+
+                    Button {
+                        if service.add(ScanCleanupImageProcessor.defaultProcessor) { dismiss() }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(ScanCleanupImageProcessor.titleKey)
+                            Text(ScanCleanupImageProcessor.descriptionKey).font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Button {
+                        if service.add(PaperTintImageProcessor.defaultProcessor) { dismiss() }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(PaperTintImageProcessor.titleKey)
+                            Text(PaperTintImageProcessor.descriptionKey).font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
 
