@@ -75,6 +75,8 @@ struct ImageProcessorSettingsScreen: View {
                 } footer: {
                     Text("imageProcessorOrderHint")
                 }
+
+                Section("imageProcessorPreview") { ImageProcessingPreview(service: service) }
             }
         }
         .navigationTitle("imageProcessing").navigationBarTitleDisplayMode(.inline)

@@ -5,10 +5,12 @@
 //  Created by Travis XU on 3/9/2026.
 //
 
+import Combine
 import CoreImage
 import Foundation
 
-protocol ImageProcessor: Sendable {
+protocol ImageProcessor: ObservableObject, Sendable
+where ObjectWillChangePublisher == ObservableObjectPublisher {
     static var type: String { get }
     static var titleKey: LocalizedStringResource { get }
     static var descriptionKey: LocalizedStringResource { get }

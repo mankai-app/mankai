@@ -12,5 +12,12 @@
     "license": "The MIT License (MIT)\n\nCopyright (c) 2015 Isuru Nanayakkara\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "location": "",
     "name": "Reach.swift"
+  },
+  {
+    "identity": "tram-station-preview-artwork",
+    "kind": "custom",
+    "license": "The Tram Station by Dédouze (Andry Rasoahaingo).\n\nThe artwork is licensed under Creative Commons Attribution-ShareAlike 3.0 Unported.\nhttps://creativecommons.org/licenses/by-sa/3.0/\n\nhttps://download.blender.org/archive/gallery/blender-splash-screens/blender-2-82/\n\nMankai rendered the Blender scene at a higher resolution, cropped the image, and resized it for its image processing preview. The bundled images are distributed under the same license.",
+    "location": "https://download.blender.org/archive/gallery/blender-splash-screens/blender-2-82/",
+    "name": "The Tram Station"
   }
 ]

@@ -13,6 +13,7 @@ enum SettingsDefaults {
     static let checkClipboard: Bool = false
     static let filesViewMode: FilesViewMode = .list
     static let accentColor: AppAccentColor = .sakura
+    static let imageProcessorPreviewImage: ImageProcessorPreviewImage = .greatWave
 
     // Cache Settings
     static let inMemoryCacheItemCount: Int = 100

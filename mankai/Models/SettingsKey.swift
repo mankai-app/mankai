@@ -14,6 +14,7 @@ enum SettingsKey: String {
     case filesViewMode
     case accentColor
     case mangaLanguages
+    case imageProcessorPreviewImage
 
     /// Cache Settings
     case inMemoryCacheItemCount
@@ -47,6 +48,12 @@ enum SettingsKey: String {
 enum FilesViewMode: String {
     case grid
     case list
+}
+
+enum ImageProcessorPreviewImage: String {
+    case greatWave
+    case mangaBackground
+    case tramStation
 }
 
 enum ReaderType: Int {

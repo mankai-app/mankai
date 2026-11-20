@@ -30,7 +30,6 @@ struct AppearanceSettingsScreen: View {
                                     #if DEBUG
                                         .hueRotation(icon == .sakura ? .degrees(230) : .zero)
                                     #endif
-                                    .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(icon.localizedName)

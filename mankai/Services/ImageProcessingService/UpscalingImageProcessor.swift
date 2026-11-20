@@ -9,7 +9,7 @@ import Combine
 import CoreImage
 import Foundation
 
-final class UpscalingImageProcessor: ImageProcessor, ObservableObject, @unchecked Sendable {
+final class UpscalingImageProcessor: ImageProcessor, @unchecked Sendable {
     static let type = "upscale"
     static let titleKey: LocalizedStringResource = "imageUpscaling"
     static let descriptionKey: LocalizedStringResource = "imageUpscalingDescription"
@@ -17,6 +17,7 @@ final class UpscalingImageProcessor: ImageProcessor, ObservableObject, @unchecke
         Self(instanceID: UUID().uuidString, context: 16, threshold: Sensitivity.balanced.threshold)
     }
 
+    let objectWillChange = ObservableObjectPublisher()
     let isFast = false
     @MainActor private(set) var instanceID: String
     @MainActor private(set) var context: Int

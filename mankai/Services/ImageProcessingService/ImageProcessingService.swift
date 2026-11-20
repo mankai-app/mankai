@@ -41,18 +41,38 @@ struct ImageProcessorInstance: Identifiable {
     }
 }
 
-/// Owns the ordered reader image pipeline and its persisted processor settings.
+/// Runs an ordered image pipeline. The shared service persists reader settings.
 @MainActor final class ImageProcessingService: ObservableObject {
     static let shared = ImageProcessingService()
 
     @Published private(set) var processors: [ImageProcessorInstance] = []
     @Published var errorMessage: String?
+
+    /// Emits when the processor list or an enabled processor's settings change.
+    private(set) lazy var previewChanges: AnyPublisher<Void, Never> =
+        $processors.map { processors in
+            Publishers.MergeMany(
+                processors.filter(\.isEnabled).map { $0.processor.objectWillChange }
+            )
+            .prepend(())
+        }
+        .switchToLatest().dropFirst().eraseToAnyPublisher()
+
+    private let persistsProcessors: Bool
+    private var database: DatabasePool? { persistsProcessors ? DbService.shared.appDb : nil }
     nonisolated private static let renderingContext = CIContext(options: [
         .cacheIntermediates: false
     ])
 
+    /// Creates an in-memory pipeline from the supplied processor instances.
+    init(processors: [ImageProcessorInstance]) {
+        persistsProcessors = false
+        self.processors = processors.sorted { ($0.order, $0.id) < ($1.order, $1.id) }
+    }
+
     private init() {
-        guard let dbPool = DbService.shared.appDb else {
+        persistsProcessors = true
+        guard let dbPool = database else {
             report(.imageProcessingDatabaseNotAvailable, context: "Loading image processors")
             return
         }
@@ -83,7 +103,8 @@ struct ImageProcessorInstance: Identifiable {
 
     @discardableResult func add(_ processor: any ImageProcessor) -> Bool {
         let type = Swift.type(of: processor).type
-        guard let dbPool = DbService.shared.appDb else {
+        let dbPool = database
+        guard !persistsProcessors || dbPool != nil else {
             report(.imageProcessingDatabaseNotAvailable, context: "Adding image processor \(type)")
             return false
         }
@@ -91,7 +112,7 @@ struct ImageProcessorInstance: Identifiable {
             let order = (processors.map(\.order).max() ?? -1) + 1
             let model = processor.makeModel(id: UUID().uuidString, order: order, isEnabled: true)
             let instance = try ImageProcessorInstance(model: model)
-            try dbPool.write { db in try model.insert(db) }
+            try dbPool?.write { db in try model.insert(db) }
             processors.append(instance)
             Logger.imageProcessingService.info("Added image processor \(type)")
             return true
@@ -122,14 +143,15 @@ struct ImageProcessorInstance: Identifiable {
     }
 
     func remove(ids: [String]) {
-        guard let dbPool = DbService.shared.appDb else {
+        let dbPool = database
+        guard !persistsProcessors || dbPool != nil else {
             report(.imageProcessingDatabaseNotAvailable, context: "Removing image processors")
             return
         }
         do {
-            try dbPool.write { db in
-                for id in ids { _ = try ImageProcessorModel.deleteOne(db, key: id) }
-            }
+            try dbPool?
+                .write { db in for id in ids { _ = try ImageProcessorModel.deleteOne(db, key: id) }
+                }
             processors.removeAll { ids.contains($0.id) }
             Logger.imageProcessingService.info("Removed \(ids.count) image processors")
         } catch {
@@ -153,13 +175,14 @@ struct ImageProcessorInstance: Identifiable {
                 return instance
             }
         do {
-            guard let dbPool = DbService.shared.appDb else {
+            let dbPool = database
+            guard !persistsProcessors || dbPool != nil else {
                 report(
                     .imageProcessingDatabaseNotAvailable, context: "Changing image processor order")
                 return
             }
             let models = reordered.map { $0.makeModel() }
-            try dbPool.write { db in for model in models { try model.update(db) } }
+            try dbPool?.write { db in for model in models { try model.update(db) } }
             processors = reordered
             Logger.imageProcessingService.info("Changed image processor order")
         } catch {
@@ -190,10 +213,8 @@ struct ImageProcessorInstance: Identifiable {
             return (image, nil)
         }
 
-        let pointSize = UIApplication.windowBounds.size
-        let task = Task.detached(priority: .utility) {
-            await Self.process(data: data, with: pipeline, pointSize: pointSize)
-        }
+        let task = Self.processingTask(
+            data: data, with: pipeline, pointSize: UIApplication.windowBounds.size)
 
         if pipeline.allSatisfy(\.isFast) {
             if let final = await task.value { return (final, nil) }
@@ -218,6 +239,29 @@ struct ImageProcessorInstance: Identifiable {
             return nil
         }
         return (source, task)
+    }
+
+    /// Returns the final image and cancels processing when its caller is cancelled.
+    func render(data: Data, pointSize: CGSize) async -> UIImage? {
+        guard !Task.isCancelled else { return nil }
+
+        let pipeline = processors.filter(\.isEnabled).map(\.processor)
+        guard !pipeline.isEmpty else { return UIImage(data: data) }
+
+        let task = Self.processingTask(data: data, with: pipeline, pointSize: pointSize)
+        return await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    nonisolated private static func processingTask(
+        data: Data, with pipeline: [any ImageProcessor], pointSize: CGSize
+    ) -> Task<UIImage?, Never> {
+        Task.detached(priority: .utility) {
+            await process(data: data, with: pipeline, pointSize: pointSize)
+        }
     }
 
     nonisolated private static func process(
@@ -255,14 +299,15 @@ struct ImageProcessorInstance: Identifiable {
 
     private func save(_ instance: ImageProcessorInstance) {
         do {
-            guard let dbPool = DbService.shared.appDb else {
+            let dbPool = database
+            guard !persistsProcessors || dbPool != nil else {
                 report(
                     .imageProcessingDatabaseNotAvailable,
                     context: "Saving image processor \(instance.type)")
                 return
             }
             let model = instance.makeModel()
-            try dbPool.write { db in try model.update(db) }
+            try dbPool?.write { db in try model.update(db) }
             if let index = processors.firstIndex(where: { $0.id == instance.id }) {
                 processors[index] = instance
             }

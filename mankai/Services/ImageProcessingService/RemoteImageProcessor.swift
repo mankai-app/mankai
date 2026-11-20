@@ -10,13 +10,14 @@ import CoreImage
 import Foundation
 import ReerCodable
 
-final class RemoteImageProcessor: ImageProcessor, ObservableObject, @unchecked Sendable {
+final class RemoteImageProcessor: ImageProcessor, @unchecked Sendable {
     static let type = "remote"
     static let titleKey: LocalizedStringResource = "remoteImageProcessor"
     static let descriptionKey: LocalizedStringResource = "remoteImageProcessorDescription"
     private static let usernameKey = "mankai.authentication.username"
     private static let passwordKey = "mankai.authentication.password"
 
+    let objectWillChange = ObservableObjectPublisher()
     let isFast = false
 
     let instanceID: String

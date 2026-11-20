@@ -47,6 +47,8 @@ struct ImageProcessorConfigurationScreen: View {
                     Section("configs") { configView(for: configurable) }
                 }
 
+                ProcessorPreviewSection(instance: model).id(ObjectIdentifier(model.processor))
+
                 Section("actions") {
                     if let configurable = model.processor as? any Configurable,
                         !configurable.configs.isEmpty
@@ -103,4 +105,18 @@ struct ImageProcessorConfigurationScreen: View {
     private func configView<ConfigurableObject: Configurable & ObservableObject>(
         for configurable: ConfigurableObject
     ) -> AnyView { AnyView(ConfigView(configurable: configurable)) }
+}
+
+private struct ProcessorPreviewSection: View {
+    @StateObject private var service: ImageProcessingService
+
+    init(instance: ImageProcessorInstance) {
+        var previewInstance = instance
+        previewInstance.isEnabled = true
+        _service = StateObject(wrappedValue: ImageProcessingService(processors: [previewInstance]))
+    }
+
+    var body: some View {
+        Section("imageProcessorPreview") { ImageProcessingPreview(service: service) }
+    }
 }

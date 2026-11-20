@@ -10,7 +10,7 @@ import CoreImage
 import Foundation
 import SwiftUI
 
-final class MonochromeToneImageProcessor: ImageProcessor, ObservableObject, @unchecked Sendable {
+final class MonochromeToneImageProcessor: ImageProcessor, @unchecked Sendable {
     static let type = "tint"
     static let titleKey: LocalizedStringResource = "monochromeTone"
     static let descriptionKey: LocalizedStringResource = "monochromeToneDescription"
@@ -28,6 +28,7 @@ final class MonochromeToneImageProcessor: ImageProcessor, ObservableObject, @unc
         Self(instanceID: UUID().uuidString, colorOverride: nil, strength: defaultStrength)
     }
 
+    let objectWillChange = ObservableObjectPublisher()
     let isFast = true
     @MainActor private(set) var instanceID: String
     @MainActor private var colorOverride: String?

@@ -9,7 +9,7 @@ import Combine
 import CoreImage
 import Foundation
 
-final class DownsampleImageProcessor: ImageProcessor, ObservableObject, @unchecked Sendable {
+final class DownsampleImageProcessor: ImageProcessor, @unchecked Sendable {
     static let type = "downsample"
     static let titleKey: LocalizedStringResource = "downsampleImages"
     static let descriptionKey: LocalizedStringResource = "downsampleImagesDescription"
@@ -17,6 +17,7 @@ final class DownsampleImageProcessor: ImageProcessor, ObservableObject, @uncheck
         Self(instanceID: UUID().uuidString, aggressiveness: MemorySavings.balanced.aggressiveness)
     }
 
+    let objectWillChange = ObservableObjectPublisher()
     let isFast = true
     @MainActor private(set) var instanceID: String
     @MainActor private(set) var aggressiveness: Double
