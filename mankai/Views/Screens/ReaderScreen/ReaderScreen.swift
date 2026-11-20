@@ -459,17 +459,6 @@ struct ReaderScreen: View {
             ? continuousTapNavigationAcrossChapters : pagedTapNavigationAcrossChapters
     }
 
-    private var followReadingDirectionSelection: Binding<Bool> {
-        Binding(
-            get: { pagedTapBehavior == .followReadingDirection },
-            set: { isEnabled in
-                pagedTapBehaviorRawValue =
-                    isEnabled
-                    ? TapBehavior.followReadingDirection.rawValue
-                    : TapBehavior.previousNext.rawValue
-            })
-    }
-
     private var navigationOrientationSelection: Binding<NavigationOrientation> {
         Binding(
             get: { pagedNavigationOrientation },
@@ -696,16 +685,6 @@ struct ReaderScreen: View {
 
                 Toggle(isOn: tapNavigationSelection) {
                     Label("tapNavigation", systemImage: "hand.tap")
-                }
-
-                if readerType == .paged, pagedTapNavigation,
-                    navigationOrientationSelection.wrappedValue == .horizontal
-                {
-                    Toggle(isOn: followReadingDirectionSelection) {
-                        Label(
-                            TapBehavior.followReadingDirection.localizedName,
-                            systemImage: "arrow.left.arrow.right")
-                    }
                 }
             }
 
