@@ -62,21 +62,21 @@ actor SmbSession: BrowsableSession {
         let configuration = try SmbConnectionConfiguration(
             host: host, port: port, share: "IPC$", username: username, password: password)
 
-        return
-            try SMB.listShares(server: configuration.server, credentials: configuration.credentials)
-            .filter { !$0.name.isEmpty }
+        let shares = try await SMB.listShares(
+            server: configuration.server, credentials: configuration.credentials)
+        return shares.filter { !$0.name.isEmpty }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    func disconnect() {
+    func disconnect() async {
         connectionTask?.cancel()
         connectionTask = nil
-        invalidateConnection()
+        await invalidateConnection()
     }
 
     func list(path: String) async throws -> [BrowsableSessionEntry] {
         try await withConnectedConnection { connection in
-            try connection.listDirectory(at: path)
+            try await connection.listDirectory(at: path)
                 .map { entry in
                     let isDirectory = entry.stat.type == .directory
                     return BrowsableSessionEntry(
@@ -86,13 +86,14 @@ actor SmbSession: BrowsableSession {
     }
 
     func download(path: String) async throws -> Data {
-        try await withConnectedConnection { connection in try connection.loadFile(at: path) }
+        try await withConnectedConnection { connection in try await connection.loadFile(at: path) }
     }
 
     func download(path: String, to localURL: URL, progress: ParserFileProgress? = nil) async throws
     {
         try await withConnectedConnection { connection in
-            try connection.downloadFile(remote: path, local: localURL) { completed, total, _, _ in
+            try await connection.downloadFile(remote: path, local: localURL) {
+                completed, total, _, _ in
                 let fraction = total > 0 ? min(1, max(0, Double(completed) / Double(total))) : nil
                 progress?(fraction)
                 if let fraction {
@@ -105,53 +106,57 @@ actor SmbSession: BrowsableSession {
     }
 
     func upload(data: Data, path: String) async throws {
-        try await withConnectedConnection { connection in try connection.dumpToFile(data, to: path)
+        try await withConnectedConnection { connection in
+            try await connection.dumpToFile(data, to: path)
         }
     }
 
     func isOnline() async -> Bool {
         do {
-            _ = try await withConnectedConnection { connection in try connection.echo() }
+            _ = try await withConnectedConnection { connection in try await connection.echo() }
             return true
         } catch { return false }
     }
 
-    func withConnectedConnection<T>(_ operation: (SMB.Connection) throws -> T) async throws -> T {
-        if connection?.isConnected != true {
-            if let connectionTask {
-                connection = try await connectionTask.value
-            } else {
-                let configuration = configuration
-                let task = Task {
-                    try SMB.connect(
-                        server: configuration.server, credentials: configuration.credentials,
-                        share: configuration.share)
-                }
-                connectionTask = task
-
-                do {
-                    connection = try await task.value
-                    connectionTask = nil
-                } catch {
-                    connectionTask = nil
-                    throw error
-                }
-            }
-        }
-
-        guard let connection else {
-            throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
-        }
-
-        do { return try operation(connection) } catch {
-            invalidateConnection()
+    private func withConnectedConnection<T: Sendable>(
+        _ operation: @Sendable (SMB.Connection) async throws -> T
+    ) async throws -> T {
+        let connection = try await connectedConnection()
+        do { return try await operation(connection) } catch {
+            if self.connection === connection { await invalidateConnection() }
             throw error
         }
     }
 
-    private func invalidateConnection() {
-        try? connection?.disconnect()
-        connection = nil
+    private func connectedConnection() async throws -> SMB.Connection {
+        if let connection, connection.isConnected { return connection }
+
+        let task: Task<SMB.Connection, Error>
+        if let connectionTask {
+            task = connectionTask
+        } else {
+            let configuration = configuration
+            task = Task {
+                try await SMB.connect(
+                    server: configuration.server, credentials: configuration.credentials,
+                    share: configuration.share)
+            }
+            connectionTask = task
+        }
+
+        let result = await task.result
+        if connectionTask == task {
+            connectionTask = nil
+            connection = try? result.get()
+        }
+        guard !task.isCancelled else { throw CancellationError() }
+        return try result.get()
+    }
+
+    private func invalidateConnection() async {
+        let connection = self.connection
+        self.connection = nil
+        try? await connection?.disconnect()
     }
 }
 
