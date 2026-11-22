@@ -106,11 +106,10 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         try await setup()
 
         let base64Images = images.map { $0.base64EncodedString() }
-        let body: [String: Any] = ["images": base64Images]
-        let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
-        _ = try await authManager.post(path: "/edit/chapter/\(chapterId)/images", body: jsonData)
-
-        objectWillChange.send()
+        try await authManager.postSplittingOn413(
+            path: "/edit/chapter/\(chapterId)/images", items: base64Images,
+            encode: { try JSONSerialization.data(withJSONObject: ["images": $0]) }
+        ) { _ in objectWillChange.send() }
     }
 
     func deleteImages(ids: [String]) async throws {

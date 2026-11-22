@@ -67,13 +67,13 @@ class MutationSyncEngine: SyncEngine {
 
     func syncMutations(
         cursorKey: String, send: (SyncRequest) async throws -> Data,
-        isInvalidCursor: (Error) -> Bool
+        isInvalidCursor: (Error) -> Bool, isContentTooLarge: (Error) -> Bool = { _ in false }
     ) async throws {
         let defaults = UserDefaults.standard
         var cursor = defaults.string(forKey: cursorKey)
 
         Logger.syncEngine.debug("Starting mutation sync (bootstrap: \(cursor == nil))")
-        let uploadBatchLimit = 500
+        var uploadBatchLimit = 500
         var mutations = try await SyncService.shared.uploadMutations(
             bootstrap: cursor == nil, limit: uploadBatchLimit)
         var recoveredCursor = false
@@ -87,6 +87,12 @@ class MutationSyncEngine: SyncEngine {
             )
             let data: Data
             do { data = try await send(SyncRequest(cursor: cursor, mutations: mutations)) } catch {
+                if mutations.count > 1, isContentTooLarge(error) {
+                    uploadBatchLimit = mutations.count / 2
+                    // The unsent mutations stay queued for later requests.
+                    mutations = Array(mutations.prefix(uploadBatchLimit))
+                    continue
+                }
                 guard isInvalidCursor(error), cursor != nil, !recoveredCursor else { throw error }
 
                 Logger.syncEngine.warning("Sync cursor rejected, retrying with bootstrap")

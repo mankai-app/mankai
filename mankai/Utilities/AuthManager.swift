@@ -241,6 +241,32 @@ import Foundation
         Data, HTTPURLResponse
     ) { return try await request(method: "POST", path: path, query: query, body: body) }
 
+    nonisolated static func isContentTooLarge(_ error: Error) -> Bool {
+        (error as NSError).userInfo[MankaiErrorUserInfoKey.httpStatusCode] as? Int == 413
+    }
+
+    func postSplittingOn413<Item>(
+        path: String, items: [Item], encode: ([Item]) throws -> Data,
+        onResponse: (Data) throws -> Void
+    ) async throws {
+        try Task.checkCancellation()
+        let data: Data
+        do {
+            let body = try encode(items)
+            (data, _) = try await post(path: path, body: body)
+        } catch  where items.count > 1 && Self.isContentTooLarge(error) {
+            let midpoint = items.count / 2
+            try await postSplittingOn413(
+                path: path, items: Array(items[..<midpoint]), encode: encode, onResponse: onResponse
+            )
+            try await postSplittingOn413(
+                path: path, items: Array(items[midpoint...]), encode: encode, onResponse: onResponse
+            )
+            return
+        }
+        try onResponse(data)
+    }
+
     func patch(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
         Data, HTTPURLResponse
     ) { return try await request(method: "PATCH", path: path, query: query, body: body) }

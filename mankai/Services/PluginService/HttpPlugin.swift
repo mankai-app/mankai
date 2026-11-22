@@ -422,19 +422,23 @@ class HttpPlugin: Plugin, Configurable {
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
-        try await setup()
-        let body = try ids.encodedData()
-        let (data, _) = try await authManager.post(path: "/manga", body: body)
-        return try [Manga].decoded(from: data)
+        try await getMangaBatch(path: "/manga", items: ids)
     }
 
     override func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
         guard supports(.mangaUpdates) else { return try await super.getMangaUpdates(mangas) }
 
+        return try await getMangaBatch(path: "/manga/updates", items: mangas)
+    }
+
+    private func getMangaBatch<Item: Encodable>(path: String, items: [Item]) async throws -> [Manga]
+    {
         try await setup()
-        let body = try mangas.encodedData()
-        let (data, _) = try await authManager.post(path: "/manga/updates", body: body)
-        return try [Manga].decoded(from: data)
+        var mangas: [Manga] = []
+        try await authManager.postSplittingOn413(
+            path: path, items: items, encode: { try $0.encodedData() }
+        ) { data in mangas += try [Manga].decoded(from: data) }
+        return mangas
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {

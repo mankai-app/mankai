@@ -116,6 +116,8 @@ struct UpdateChapterModal: View {
                 showError(
                     title: String(localized: "failedToAddImages"),
                     message: error.localizedDescription)
+
+                loadUrls()
             }
         }
     }

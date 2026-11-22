@@ -69,6 +69,6 @@ final class HttpEngine: MutationSyncEngine {
             },
             isInvalidCursor: { error in
                 (error as NSError).userInfo[MankaiErrorUserInfoKey.httpStatusCode] as? Int == 400
-            })
+            }, isContentTooLarge: AuthManager.isContentTooLarge)
     }
 }
