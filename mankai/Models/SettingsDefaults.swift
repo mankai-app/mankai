@@ -10,6 +10,7 @@ import UIKit
 
 enum SettingsDefaults {
     static let hideBuiltInPlugins: Bool = false
+    static let showDebugScreen: Bool = false
     static let checkClipboard: Bool = false
     static let filesViewMode: FilesViewMode = .list
     static let accentColor: AppAccentColor = .sakura

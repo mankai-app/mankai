@@ -10,6 +10,7 @@ import Foundation
 enum SettingsKey: String {
     case isDuo
     case hideBuiltInPlugins
+    case showDebugScreen
     case checkClipboard
     case filesViewMode
     case accentColor
