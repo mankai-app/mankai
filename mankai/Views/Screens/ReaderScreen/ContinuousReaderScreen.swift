@@ -96,6 +96,7 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         }
 
         applyPendingNavigationCommand()
+        updateBackgroundColor()
         isResizing = false
     }
 
@@ -192,8 +193,11 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         guard !isResizing else { return }
 
         updateCurrentPageFromScroll()
+        updateBackgroundColor()
         updateOverscrollViews()
     }
+
+    func scrollViewDidZoom(_: UIScrollView) { updateBackgroundColor() }
 
     func scrollViewWillBeginDragging(_: UIScrollView) { animatedNavigationGeneration = nil }
 
@@ -296,6 +300,23 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
 
         currentPage = page
         actions.pageDidChange(page)
+    }
+
+    private func updateBackgroundColor() {
+        guard configuration.matchImageBackground, !imageViews.isEmpty else {
+            view.backgroundColor = .systemBackground
+            return
+        }
+
+        let viewport = view.convert(view.bounds, to: containerView)
+        let visibleImages = imageViews.compactMap { url, imageView -> ReaderImageState? in
+            guard imageView is UIImageView, !viewport.intersection(imageView.frame).isEmpty else {
+                return nil
+            }
+            return renderState.images[url]
+        }
+        let color = readerBackgroundColor(for: visibleImages)
+        if view.backgroundColor != color { view.backgroundColor = color }
     }
 
     private func setupUI() {

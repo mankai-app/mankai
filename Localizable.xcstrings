@@ -11090,6 +11090,62 @@
         }
       }
     },
+    "matchImageBackground" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match Image Background"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像に背景色を合わせる"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匹配图片背景色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配合圖片背景色"
+          }
+        }
+      }
+    },
+    "matchImageBackgroundDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the most common color along a page’s edges for the reader background. Blend the colors when two pages are visible."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ページの端で最も多い色を背景色に使います。2ページを同時に表示する場合は、両方の色を混ぜます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将页面边缘最常见的颜色用作阅读器背景。同时显示两页时，混合两页的颜色。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以頁面邊緣最常見的顏色作為閱讀器背景。同時顯示兩頁時，會混合兩頁的顏色。"
+          }
+        }
+      }
+    },
     "mature" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
@@ -14970,25 +15026,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatically use the manga's official reading direction when available. This will override your default reading settings."
+            "value" : "Follow the manga’s reading direction when specified. Use continuous scrolling for vertical manga."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "漫画に公式の閲覧方向が指定されている場合は、自動的に使用します。デフォルトの閲覧設定より優先されます。"
+            "value" : "漫画に閲覧方向が指定されている場合は、その方向に従います。縦読みの漫画は連続スクロールで表示します。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "如果漫画指定了阅读方向，则自动使用该方向，并覆盖默认的阅读设置。"
+            "value" : "漫画指定了阅读方向时，按该方向显示。纵向阅读的漫画使用连续滚动模式。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "若漫畫有指定閱讀方向，將自動採用該方向，並覆蓋你的預設設定。"
+            "value" : "漫畫有指定閱讀方向時，依照該方向顯示。直向閱讀的漫畫會以連續捲動模式開啟。"
           }
         }
       }

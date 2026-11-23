@@ -22,6 +22,7 @@ import UIKit
 
     @Published private(set) var image: UIImage
     @Published private(set) var isProcessingFinished = false
+    private(set) var backgroundColor: SIMD3<Double>?
 
     private var processingTask: Task<UIImage?, Never>?
     private var slideTask: Task<(left: CIImage, right: CIImage)?, Never>?
@@ -34,11 +35,18 @@ import UIKit
         guard let prepared = await ImageProcessingService.shared.load(data: data) else {
             return nil
         }
-        return AppImage(image: prepared.image, data: data, processingTask: prepared.processingTask)
+        let backgroundColor = await detectBackgroundColor(in: prepared.image)
+        return AppImage(
+            image: prepared.image, backgroundColor: backgroundColor, data: data,
+            processingTask: prepared.processingTask)
     }
 
-    private init(image: UIImage, data: Data, processingTask: Task<UIImage?, Never>?) {
+    private init(
+        image: UIImage, backgroundColor: SIMD3<Double>?, data: Data,
+        processingTask: Task<UIImage?, Never>?
+    ) {
         self.image = image
+        self.backgroundColor = backgroundColor
         self.processingTask = processingTask
         isProcessingFinished = processingTask == nil
 
@@ -53,10 +61,15 @@ import UIKit
         if let processingTask {
             Task { @MainActor [weak self] in
                 let processedImage = await processingTask.value
-                guard !processingTask.isCancelled, let self else { return }
+                guard !processingTask.isCancelled else { return }
 
-                if let processedImage { self.image = processedImage }
-                isProcessingFinished = true
+                if let processedImage {
+                    let color = await Self.detectBackgroundColor(in: processedImage)
+                    guard !processingTask.isCancelled, let self else { return }
+                    self.backgroundColor = color
+                    self.image = processedImage
+                }
+                self?.isProcessingFinished = true
             }
         }
     }
@@ -91,6 +104,74 @@ import UIKit
     isolated deinit {
         processingTask?.cancel()
         slideTask?.cancel()
+    }
+
+    private static func detectBackgroundColor(in image: UIImage) async -> SIMD3<Double>? {
+        guard let cgImage = image.cgImage else { return nil }
+        return
+            await Task.detached { () -> SIMD3<Double>? in
+                let length = 16
+                guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+                    let context = CGContext(
+                        data: nil, width: length, height: length, bitsPerComponent: 8,
+                        bytesPerRow: length * 4, space: colorSpace,
+                        bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue
+                            | CGImageAlphaInfo.premultipliedLast.rawValue), let data = context.data
+                else { return nil }
+
+                let width = CGFloat(cgImage.width)
+                let height = CGFloat(cgImage.height)
+                let size = CGFloat(length)
+                let strips: [(source: CGRect, destination: CGRect)] = [
+                    (
+                        CGRect(x: 0, y: 0, width: width, height: 1),
+                        CGRect(x: 0, y: 0, width: size, height: 1)
+                    ),
+                    (
+                        CGRect(x: 0, y: height - 1, width: width, height: 1),
+                        CGRect(x: 0, y: size - 1, width: size, height: 1)
+                    ),
+                    (
+                        CGRect(x: 0, y: 0, width: 1, height: height),
+                        CGRect(x: 0, y: 0, width: 1, height: size)
+                    ),
+                    (
+                        CGRect(x: width - 1, y: 0, width: 1, height: height),
+                        CGRect(x: size - 1, y: 0, width: 1, height: size)
+                    )
+                ]
+
+                context.clear(CGRect(x: 0, y: 0, width: size, height: size))
+                context.interpolationQuality = .none
+                context.setBlendMode(.copy)
+                for strip in strips {
+                    if let edge = cgImage.cropping(to: strip.source) {
+                        context.draw(edge, in: strip.destination)
+                    }
+                }
+
+                let pixels = data.bindMemory(to: UInt8.self, capacity: length * length * 4)
+                var colorCounts: [SIMD3<Double>: Int] = [:]
+                var mostCommonColor: SIMD3<Double>?
+                var highestCount = 0
+                for index in 0..<(length * length) {
+                    let offset = index * 4
+                    let alpha = Double(pixels[offset + 3])
+                    guard alpha >= 128 else { continue }
+
+                    let color = SIMD3(
+                        Double(pixels[offset]) / alpha, Double(pixels[offset + 1]) / alpha,
+                        Double(pixels[offset + 2]) / alpha)
+                    let count = colorCounts[color, default: 0] + 1
+                    colorCounts[color] = count
+                    if count > highestCount {
+                        highestCount = count
+                        mostCommonColor = color
+                    }
+                }
+                return mostCommonColor
+            }
+            .value
     }
 
     nonisolated private static func makeSlides(from image: CIImage) -> (

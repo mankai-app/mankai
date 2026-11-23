@@ -189,6 +189,8 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
         let chapterChanged = renderState.chapterID != state.chapterID
         let contentChanged = renderState.revision != state.revision
         let groupsChanged = renderState.groups != state.groups
+        let backgroundChanged =
+            self.configuration.matchImageBackground != configuration.matchImageBackground
         let contentInsetsChanged =
             self.configuration.contentSafeAreaInsets != configuration.contentSafeAreaInsets
         let presentationChanged =
@@ -210,7 +212,9 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
 
         if presentationChanged || groupsChanged { recreatePageViewController() }
 
-        if chapterChanged || contentChanged || presentationChanged || groupsChanged {
+        if chapterChanged || contentChanged || presentationChanged || groupsChanged
+            || backgroundChanged
+        {
             applyCurrentState(
                 updateVisibleGroup: chapterChanged || presentationChanged || groupsChanged)
         }
@@ -267,7 +271,9 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
                 page.urls == renderState.groups[page.pageIndex].urls
             else { continue }
 
-            page.apply(images: images(for: renderState.groups[page.pageIndex]))
+            page.apply(
+                images: images(for: renderState.groups[page.pageIndex]),
+                matchImageBackground: configuration.matchImageBackground)
         }
 
         if updateVisibleGroup, !isShowingGroup(currentGroup) {
@@ -570,6 +576,7 @@ final class PagedReaderViewController: UIViewController, UIPageViewControllerDat
         let page = PageContentViewController(
             pageIndex: groupIndex, urls: group.urls, images: images(for: group),
             readingDirection: configuration.readingDirection, viewport: pageViewport,
+            matchImageBackground: configuration.matchImageBackground,
             spreadPageIndex: spreadPageIndex)
         contentPages.add(page)
         return page
@@ -749,6 +756,7 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     private let spreadPageIndex: Int?
     private var viewport: ReaderPageViewport
     private var images: [String: ReaderImageState]
+    private var matchImageBackground: Bool
     private let readingDirection: ReadingDirection
 
     private let contentStackView = UIStackView()
@@ -777,13 +785,14 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     init(
         pageIndex: Int, urls: [String], images: [String: ReaderImageState],
         readingDirection: ReadingDirection, viewport: ReaderPageViewport,
-        spreadPageIndex: Int? = nil
+        matchImageBackground: Bool, spreadPageIndex: Int? = nil
     ) {
         self.pageIndex = pageIndex
         self.urls = urls
         self.images = images
         self.readingDirection = readingDirection
         self.viewport = viewport
+        self.matchImageBackground = matchImageBackground
         self.spreadPageIndex = spreadPageIndex
         super.init(nibName: nil, bundle: nil)
     }
@@ -803,8 +812,9 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
         updateLayout()
     }
 
-    func apply(images: [String: ReaderImageState]) {
+    func apply(images: [String: ReaderImageState], matchImageBackground: Bool) {
         self.images = images
+        self.matchImageBackground = matchImageBackground
         guard isViewLoaded else { return }
         updateContent()
     }
@@ -816,7 +826,6 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     }
 
     private func setupUI() {
-        view.backgroundColor = .systemBackground
         view.clipsToBounds = true
 
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
@@ -850,6 +859,9 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     }
 
     private func updateLayout() {
+        view.backgroundColor =
+            matchImageBackground
+            ? readerBackgroundColor(for: urls.compactMap { images[$0] }) : .systemBackground
         guard !urls.isEmpty else { return }
         contentStackView.isHidden = spreadPageIndex == 1 && urls.count == 1 && !spansSpread
         var ratios: [String: CGFloat] = [:]

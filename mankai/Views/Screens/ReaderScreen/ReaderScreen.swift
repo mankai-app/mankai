@@ -265,6 +265,8 @@ struct ReaderScreen: View {
         SettingsDefaults.readerType.rawValue
     @AppStorage(SettingsKey.fullscreenDisplay.rawValue) private var fullscreenDisplay: Bool =
         SettingsDefaults.fullscreenDisplay
+    @AppStorage(SettingsKey.matchImageBackground.rawValue) private var matchImageBackground =
+        SettingsDefaults.matchImageBackground
     @AppStorage(SettingsKey.isDuo.rawValue) private var isDuo = false
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
@@ -495,7 +497,7 @@ struct ReaderScreen: View {
     private var renderConfiguration: ReaderRenderConfiguration {
         ReaderRenderConfiguration(
             contentSafeAreaInsets: contentSafeAreaInsets, readingDirection: readingDirection,
-            defaultGroupSize: defaultGroupSize,
+            defaultGroupSize: defaultGroupSize, matchImageBackground: matchImageBackground,
 
             tapNavigation: readerType == .continuous ? continuousTapNavigation : pagedTapNavigation,
 

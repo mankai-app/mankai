@@ -24,6 +24,7 @@ enum SettingsKey: String {
     // Shared Reader Settings
     case readerType
     case fullscreenDisplay
+    case matchImageBackground
     case imageLayout
     case respectMangaReadingDirection
     case smartGrouping

@@ -15,6 +15,8 @@ struct ReaderSettingsScreen: View {
         SettingsDefaults.readerType.rawValue
     @AppStorage(SettingsKey.fullscreenDisplay.rawValue) private var fullscreenDisplay: Bool =
         SettingsDefaults.fullscreenDisplay
+    @AppStorage(SettingsKey.matchImageBackground.rawValue) private var matchImageBackground =
+        SettingsDefaults.matchImageBackground
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
@@ -58,6 +60,12 @@ struct ReaderSettingsScreen: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle("fullscreenDisplay", isOn: $fullscreenDisplay)
                     Text("fullscreenDisplayDescription").font(.caption).foregroundColor(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("matchImageBackground", isOn: $matchImageBackground)
+                    Text("matchImageBackgroundDescription").font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
 

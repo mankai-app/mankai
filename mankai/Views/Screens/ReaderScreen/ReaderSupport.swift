@@ -56,6 +56,20 @@ enum ReaderImageState {
     case failed
 }
 
+@MainActor func readerBackgroundColor(for images: [ReaderImageState]) -> UIColor {
+    var total = SIMD3<Double>.zero
+    var count = 0
+    for state in images {
+        guard case .success(let image) = state, let color = image.backgroundColor else { continue }
+        total += color
+        count += 1
+    }
+
+    guard count > 0 else { return .systemBackground }
+    let average = total / Double(count)
+    return UIColor(red: average.x, green: average.y, blue: average.z, alpha: 1)
+}
+
 struct ReaderGroup: Identifiable, Hashable {
     var id: [String] { urls }
 
@@ -267,6 +281,7 @@ struct ReaderRenderConfiguration: Equatable {
     let contentSafeAreaInsets: UIEdgeInsets
     let readingDirection: ReadingDirection
     let defaultGroupSize: Int
+    let matchImageBackground: Bool
 
     /// Dependent
     let tapNavigation: Bool

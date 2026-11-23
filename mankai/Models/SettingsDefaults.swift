@@ -22,6 +22,7 @@ enum SettingsDefaults {
 
     // Shared Reader Settings
     static let fullscreenDisplay: Bool = true
+    static let matchImageBackground: Bool = true
     static let imageLayout: ImageLayout = .auto
     static let respectMangaReadingDirection: Bool = true
     static let smartGrouping: Bool = false
