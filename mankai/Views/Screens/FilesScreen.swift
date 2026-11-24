@@ -8,146 +8,6 @@
 import SwiftUI
 import UIKit
 
-private struct FilesTabBarController: UIViewControllerRepresentable {
-    let isHidden: Bool
-
-    func makeUIViewController(context: Context) -> Controller { Controller() }
-
-    func updateUIViewController(_ controller: Controller, context: Context) {
-        controller.setTabBarHidden(isHidden)
-    }
-
-    static func dismantleUIViewController(_ controller: Controller, coordinator: ()) {
-        controller.restoreTabBar(animated: false)
-    }
-
-    final class Controller: UIViewController {
-        private var shouldHideTabBar = false
-        private var isVisible = false
-        private var isApplyingVisibility = false
-        private var visibilityUpdateScheduled = false
-        private var animatesVisibilityUpdate = false
-        private weak var controlledTabBarController: UITabBarController?
-        private var wasTabBarHidden = false
-
-        private final class AttachmentView: UIView {
-            var onWindowChanged: ((Bool) -> Void)?
-
-            override func didMoveToWindow() {
-                super.didMoveToWindow()
-                onWindowChanged?(window != nil)
-            }
-        }
-
-        override func loadView() {
-            let attachmentView = AttachmentView()
-            attachmentView.backgroundColor = .clear
-            attachmentView.isUserInteractionEnabled = false
-            attachmentView.onWindowChanged = { [weak self] isAttached in
-                guard let self else { return }
-                if isAttached {
-                    self.isVisible = true
-                    self.scheduleVisibilityUpdate()
-                } else {
-                    self.restoreTabBar(animated: false)
-                }
-            }
-            view = attachmentView
-        }
-
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            isVisible = true
-            scheduleVisibilityUpdate(animated: animated)
-        }
-
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            isVisible = true
-            scheduleVisibilityUpdate()
-        }
-
-        override func viewDidLayoutSubviews() {
-            super.viewDidLayoutSubviews()
-            scheduleVisibilityUpdate()
-        }
-
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-            restoreTabBar(animated: animated)
-        }
-
-        func setTabBarHidden(_ isHidden: Bool) {
-            guard shouldHideTabBar != isHidden else { return }
-            shouldHideTabBar = isHidden
-            if #available(iOS 26.0, *) {
-                scheduleVisibilityUpdate(animated: true)
-            } else {
-                scheduleVisibilityUpdate()
-            }
-        }
-
-        private func scheduleVisibilityUpdate(animated: Bool = false) {
-            guard isVisible else { return }
-            animatesVisibilityUpdate = animatesVisibilityUpdate || animated
-            guard !visibilityUpdateScheduled else { return }
-            visibilityUpdateScheduled = true
-
-            // Changing tab-bar layout during a SwiftUI update can reenter its attribute graph.
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                let animated = self.animatesVisibilityUpdate
-                self.animatesVisibilityUpdate = false
-                self.visibilityUpdateScheduled = false
-                if self.isVisible { self.applyVisibility(animated: animated) }
-            }
-        }
-
-        private func applyVisibility(animated: Bool) {
-            guard isVisible, !isApplyingVisibility else { return }
-            isApplyingVisibility = true
-            defer { isApplyingVisibility = false }
-
-            guard let tabBarController else { return }
-
-            if controlledTabBarController == nil {
-                // Capture the browsing state before selection adds the bottom toolbar.
-                controlledTabBarController = tabBarController
-                if #available(iOS 18.0, *) {
-                    wasTabBarHidden = tabBarController.isTabBarHidden
-                } else {
-                    wasTabBarHidden = tabBarController.tabBar.isHidden
-                }
-            }
-            setHidden(shouldHideTabBar || wasTabBarHidden, on: tabBarController, animated: animated)
-        }
-
-        func restoreTabBar(animated: Bool) {
-            isVisible = false
-            animatesVisibilityUpdate = false
-            guard let tabBarController = controlledTabBarController else { return }
-            controlledTabBarController = nil
-            setHidden(wasTabBarHidden, on: tabBarController, animated: animated)
-        }
-
-        private func setHidden(
-            _ isHidden: Bool, on tabBarController: UITabBarController, animated: Bool
-        ) {
-            if #available(iOS 18.0, *) {
-                if tabBarController.isTabBarHidden != isHidden {
-                    tabBarController.setTabBarHidden(isHidden, animated: animated)
-                }
-            }
-            if #unavailable(iOS 26.0) {
-                // Keep the tab bar view in sync with the controller on older SwiftUI versions.
-                if tabBarController.tabBar.isHidden != isHidden {
-                    tabBarController.tabBar.isHidden = isHidden
-                }
-            }
-        }
-    }
-}
-
 struct FilesScreen: View {
     private enum FileAction {
         case download, delete, bookmark, removeBookmark, removeRecords
@@ -255,6 +115,7 @@ struct FilesScreen: View {
     let entry: Entity?
     let color: Color?
 
+    @Environment(\.setTabBarHidden) private var setTabBarHidden
     @ObservedObject private var libraryService = LibraryService.shared
 
     @AppStorage(SettingsKey.filesViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
@@ -267,6 +128,7 @@ struct FilesScreen: View {
     @State private var readerRoute: ReaderRoute?
 
     @State private var editMode: EditMode = .inactive
+    @State private var tabBarRequestID = UUID()
     @State private var selectedPaths: Set<String> = []
     @State private var pendingBatchAction: PendingBatchAction?
     @State private var activeFileAction: FileAction?
@@ -288,13 +150,15 @@ struct FilesScreen: View {
                 refreshId = UUID()
             }
             .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(isSelecting)
-            .overlay {
-                FilesTabBarController(isHidden: isSelecting).frame(width: 0, height: 0)
-                    .allowsHitTesting(false)
+            .navigationBarBackButtonHidden(isSelecting).toolbar { fileToolbar }
+            .environment(\.editMode, $editMode)
+            .onAppear { setTabBarHidden(isSelecting, tabBarRequestID) }
+            .onDisappear { setTabBarHidden(false, tabBarRequestID) }
+            .onChange(of: editMode) { oldMode, mode in
+                if !mode.isEditing { selectedPaths.removeAll() }
+                guard oldMode.isEditing != mode.isEditing else { return }
+                setTabBarHidden(mode.isEditing, tabBarRequestID)
             }
-            .toolbar { fileToolbar }.environment(\.editMode, $editMode)
-            .onChange(of: editMode) { _, mode in if !mode.isEditing { selectedPaths.removeAll() } }
             .confirmationDialog(
                 pendingBatchAction?.action.title ?? "actions",
                 isPresented: .init(

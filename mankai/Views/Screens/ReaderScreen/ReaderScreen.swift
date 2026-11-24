@@ -144,14 +144,12 @@ private enum ReaderImageLoadResult: Sendable {
 private struct ReaderSystemBarsModifier: ViewModifier {
     let fullscreenDisplay: Bool
     let isChromeVisible: Bool
-    let isTabBarHidden: Bool
     let isDuo: Bool
 
     @ViewBuilder func body(content: Content) -> some View {
         let hideSystemBars = fullscreenDisplay && !isChromeVisible
         let readerContent =
             content.toolbar(isChromeVisible ? .automatic : .hidden, for: .navigationBar)
-            .toolbar(isTabBarHidden ? .hidden : .automatic, for: .tabBar)
             .persistentSystemOverlays(hideSystemBars ? .hidden : .automatic)
 
         if #available(iOS 27.1, *), isDuo && fullscreenDisplay {
@@ -251,6 +249,7 @@ private struct ReaderWindowInsets: UIViewRepresentable {
 
 struct ReaderScreen: View {
     @Environment(\.layoutDirection) private var layoutDirection
+    @Environment(\.setTabBarHidden) private var setTabBarHidden
 
     let plugin: Plugin
     private let sourceManga: DetailedManga
@@ -321,7 +320,7 @@ struct ReaderScreen: View {
     @State private var viewportSize: CGSize = .zero
     @State private var windowSafeAreaInsets: UIEdgeInsets = .zero
     @State private var isChromeVisible = true
-    @State private var isTabBarHidden = false
+    @State private var tabBarRequestID = UUID()
     @State private var isShowingChapters = false
     @State private var isShowingReaderSettings = false
     @State private var saveScheduled = false
@@ -586,8 +585,8 @@ struct ReaderScreen: View {
         )
         .modifier(
             ReaderSystemBarsModifier(
-                fullscreenDisplay: fullscreenDisplay, isChromeVisible: isChromeVisible,
-                isTabBarHidden: isTabBarHidden, isDuo: isDuo)
+                fullscreenDisplay: fullscreenDisplay, isChromeVisible: isChromeVisible, isDuo: isDuo
+            )
         )
         .sheet(isPresented: $isShowingChapters) {
             ChaptersModal(
@@ -623,9 +622,9 @@ struct ReaderScreen: View {
             }
             regroup(keepCurrentPageVisible: true)
         }
-        .onAppear { withAnimation { isTabBarHidden = true } }
+        .onAppear { setTabBarHidden(true, tabBarRequestID) }
         .onDisappear {
-            isTabBarHidden = false
+            setTabBarHidden(false, tabBarRequestID)
             isChromeVisible = true
             finishReading()
         }

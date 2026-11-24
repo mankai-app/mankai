@@ -13,7 +13,16 @@ private struct OpenFilesDestinationKey: EnvironmentKey {
     static let defaultValue: @MainActor (FilesTab.Destination) -> Void = { _ in }
 }
 
+private struct SetTabBarHiddenKey: EnvironmentKey {
+    static let defaultValue: @MainActor (Bool, UUID) -> Void = { _, _ in }
+}
+
 extension EnvironmentValues {
+    var setTabBarHidden: @MainActor (Bool, UUID) -> Void {
+        get { self[SetTabBarHiddenKey.self] }
+        set { self[SetTabBarHiddenKey.self] = newValue }
+    }
+
     var openFilesDestination: @MainActor (FilesTab.Destination) -> Void {
         get { self[OpenFilesDestinationKey.self] }
         set { self[OpenFilesDestinationKey.self] = newValue }
@@ -24,6 +33,7 @@ struct MainScreen: View {
     private enum Tab: Hashable { case home, library, files, settings }
 
     @State private var selectedTab: Tab = .home
+    @State private var tabBarHideRequests: Set<UUID> = []
     @State private var showingFileImporter = false
     @State private var filesDestination: FilesTab.Destination?
     @State private var sourceImportRequest: SourceImportRequest?
@@ -36,14 +46,19 @@ struct MainScreen: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
-            LibraryTab().tag(Tab.library)
-                .tabItem { Label("library", systemImage: "books.vertical.fill") }
-            FilesTab(requestedDestination: $filesDestination) { showingFileImporter = true }
-                .tag(Tab.files).tabItem { Label("files", systemImage: "folder.fill") }
-            SettingsTab().tag(Tab.settings).tabItem { Label("settings", systemImage: "gearshape") }
+            Group {
+                HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
+                LibraryTab().tag(Tab.library)
+                    .tabItem { Label("library", systemImage: "books.vertical.fill") }
+                FilesTab(requestedDestination: $filesDestination) { showingFileImporter = true }
+                    .tag(Tab.files).tabItem { Label("files", systemImage: "folder.fill") }
+                SettingsTab().tag(Tab.settings)
+                    .tabItem { Label("settings", systemImage: "gearshape") }
+            }
+            .toolbar(tabBarHideRequests.isEmpty ? .automatic : .hidden, for: .tabBar)
         }
         .environment(\.openFilesDestination, openFilesDestination)
+        .environment(\.setTabBarHidden, setTabBarHidden)
         .overlay(alignment: .bottom) { NotificationContainerView() }
         .fileImporter(
             isPresented: $showingFileImporter, allowedContentTypes: supportedContentTypes,
@@ -112,6 +127,18 @@ struct MainScreen: View {
                 for url in urls { try await plugin.importFile(from: url) }
                 openFilesDestination(.folder(shareID: plugin.id, entry: plugin.importsEntity))
             } catch { showImportError(error) }
+        }
+    }
+
+    private func setTabBarHidden(_ isHidden: Bool, for requestID: UUID) {
+        guard isHidden != tabBarHideRequests.contains(requestID) else { return }
+
+        withAnimation {
+            if isHidden {
+                tabBarHideRequests.insert(requestID)
+            } else {
+                tabBarHideRequests.remove(requestID)
+            }
         }
     }
 
