@@ -13,11 +13,11 @@
 		E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E427B8733007F9E2003649A2 /* ZIPFoundation */; };
 		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
 		E435942E3074B91000D2CB2C /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E435942D3074B91000D2CB2C /* Supabase */; };
+		E435F44E30B73A4D00DA79C4 /* SwiftSMB in Frameworks */ = {isa = PBXBuildFile; productRef = E435F44D30B73A4D00DA79C4 /* SwiftSMB */; };
 		E4643183301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643182301F5A40003786FA /* UnrarKit */; };
 		E4643185301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643184301F5A40003786FA /* UnrarKit */; };
 		E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */ = {isa = PBXBuildFile; productRef = E46452933020E344003786FA /* SwiftPackageListUI */; };
 		E46452A13020F123003786FA /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = E46452A03020F123003786FA /* LICENSE */; };
-		E46469DD302264CA003786FA /* SwiftSMB in Frameworks */ = {isa = PBXBuildFile; productRef = E46469DC302264CA003786FA /* SwiftSMB */; };
 		E464751330239A9C003786FA /* ReerCodable in Frameworks */ = {isa = PBXBuildFile; productRef = E464751230239A9C003786FA /* ReerCodable */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4957CDC304191BB001BC491 /* NFSKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4957CDB304191BB001BC491 /* NFSKit */; };
@@ -106,7 +106,6 @@
 			files = (
 				E4ED56643033720700F0499C /* SWXMLHash in Frameworks */,
 				E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */,
-				E46469DD302264CA003786FA /* SwiftSMB in Frameworks */,
 				E4643183301F5A40003786FA /* UnrarKit in Frameworks */,
 				E4957CDC304191BB001BC491 /* NFSKit in Frameworks */,
 				E464751330239A9C003786FA /* ReerCodable in Frameworks */,
@@ -116,6 +115,7 @@
 				E49598D930458D7B001BC491 /* Citadel in Frameworks */,
 				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
 				E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */,
+				E435F44E30B73A4D00DA79C4 /* SwiftSMB in Frameworks */,
 				E435942E3074B91000D2CB2C /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -193,13 +193,13 @@
 				E4CAEFFB3006797500208FB4 /* ZIPFoundation */,
 				E4643182301F5A40003786FA /* UnrarKit */,
 				E46452933020E344003786FA /* SwiftPackageListUI */,
-				E46469DC302264CA003786FA /* SwiftSMB */,
 				E464751230239A9C003786FA /* ReerCodable */,
 				E4ED565E303371BB00F0499C /* WebDAV */,
 				E4ED56633033720700F0499C /* SWXMLHash */,
 				E4957CDB304191BB001BC491 /* NFSKit */,
 				E49598D830458D7B001BC491 /* Citadel */,
 				E435942D3074B91000D2CB2C /* Supabase */,
+				E435F44D30B73A4D00DA79C4 /* SwiftSMB */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -267,13 +267,13 @@
 				E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */,
 				E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */,
-				E46469DB302264CA003786FA /* XCRemoteSwiftPackageReference "SwiftSMB" */,
 				E464751130239A9C003786FA /* XCRemoteSwiftPackageReference "ReerCodable" */,
 				E4ED565D303371BB00F0499C /* XCRemoteSwiftPackageReference "WebDAV-Swift" */,
 				E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */,
 				E4957CDA304191BB001BC491 /* XCRemoteSwiftPackageReference "NFSKit" */,
 				E49598D730458D7B001BC491 /* XCRemoteSwiftPackageReference "Citadel" */,
 				E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E435F44C30B73A4D00DA79C4 /* XCRemoteSwiftPackageReference "SwiftSMB" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -471,7 +471,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 201;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -513,7 +513,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 201;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -551,7 +551,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 201;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -584,7 +584,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 201;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -670,6 +670,14 @@
 				minimumVersion = 2.55.0;
 			};
 		};
+		E435F44C30B73A4D00DA79C4 /* XCRemoteSwiftPackageReference "SwiftSMB" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RuiNelson/SwiftSMB";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 5.3.0;
+			};
+		};
 		E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/xiaotianhu/UnrarKit";
@@ -684,14 +692,6 @@
 			requirement = {
 				kind = upToNextMinorVersion;
 				minimumVersion = 4.10.0;
-			};
-		};
-		E46469DB302264CA003786FA /* XCRemoteSwiftPackageReference "SwiftSMB" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RuiNelson/SwiftSMB";
-			requirement = {
-				kind = revision;
-				revision = 4d1fdad1e4d3a5307d7ce9e6297756f6ec76ea60;
 			};
 		};
 		E464751130239A9C003786FA /* XCRemoteSwiftPackageReference "ReerCodable" */ = {
@@ -773,6 +773,11 @@
 			package = E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
 		};
+		E435F44D30B73A4D00DA79C4 /* SwiftSMB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E435F44C30B73A4D00DA79C4 /* XCRemoteSwiftPackageReference "SwiftSMB" */;
+			productName = SwiftSMB;
+		};
 		E4643182301F5A40003786FA /* UnrarKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */;
@@ -792,11 +797,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */;
 			productName = "plugin:SwiftPackageListPlugin";
-		};
-		E46469DC302264CA003786FA /* SwiftSMB */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E46469DB302264CA003786FA /* XCRemoteSwiftPackageReference "SwiftSMB" */;
-			productName = SwiftSMB;
 		};
 		E464751230239A9C003786FA /* ReerCodable */ = {
 			isa = XCSwiftPackageProductDependency;
