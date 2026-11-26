@@ -14,6 +14,8 @@
 		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
 		E435942E3074B91000D2CB2C /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E435942D3074B91000D2CB2C /* Supabase */; };
 		E435F44E30B73A4D00DA79C4 /* SwiftSMB in Frameworks */ = {isa = PBXBuildFile; productRef = E435F44D30B73A4D00DA79C4 /* SwiftSMB */; };
+		E435F62330B81F8100DA79C4 /* curl.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E435F62230B81F8100DA79C4 /* curl.xcframework */; };
+		E435F62530B81F8100DA79C4 /* cacert.pem in Resources */ = {isa = PBXBuildFile; fileRef = E435F62430B81F8100DA79C4 /* cacert.pem */; };
 		E4643183301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643182301F5A40003786FA /* UnrarKit */; };
 		E4643185301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643184301F5A40003786FA /* UnrarKit */; };
 		E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */ = {isa = PBXBuildFile; productRef = E46452933020E344003786FA /* SwiftPackageListUI */; };
@@ -21,7 +23,6 @@
 		E464751330239A9C003786FA /* ReerCodable in Frameworks */ = {isa = PBXBuildFile; productRef = E464751230239A9C003786FA /* ReerCodable */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4957CDC304191BB001BC491 /* NFSKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4957CDB304191BB001BC491 /* NFSKit */; };
-		E49598D930458D7B001BC491 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = E49598D830458D7B001BC491 /* Citadel */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
 		E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E4CAEFFB3006797500208FB4 /* ZIPFoundation */; };
 		E4ED565F303371BB00F0499C /* WebDAV in Frameworks */ = {isa = PBXBuildFile; productRef = E4ED565E303371BB00F0499C /* WebDAV */; };
@@ -58,6 +59,8 @@
 		E40C6B342E05A95700AF2FC9 /* mankai.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mankai.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = mankaiThumbnail.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookThumbnailing.framework; path = System/Library/Frameworks/QuickLookThumbnailing.framework; sourceTree = SDKROOT; };
+		E435F62230B81F8100DA79C4 /* curl.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = curl.xcframework; path = Frameworks/curl.xcframework; sourceTree = "<group>"; };
+		E435F62430B81F8100DA79C4 /* cacert.pem */ = {isa = PBXFileReference; lastKnownFileType = text; name = cacert.pem; path = "Frameworks/curl.xcframework/ios-arm64/curl.framework/Resources/cacert.pem"; sourceTree = "<group>"; };
 		E46452A03020F123003786FA /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -112,11 +115,11 @@
 				E4ED565F303371BB00F0499C /* WebDAV in Frameworks */,
 				E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */,
 				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
-				E49598D930458D7B001BC491 /* Citadel in Frameworks */,
 				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
 				E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */,
 				E435F44E30B73A4D00DA79C4 /* SwiftSMB in Frameworks */,
 				E435942E3074B91000D2CB2C /* Supabase in Frameworks */,
+				E435F62330B81F8100DA79C4 /* curl.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +162,8 @@
 		E4958E132F2FB386004F2F4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E435F62230B81F8100DA79C4 /* curl.xcframework */,
+				E435F62430B81F8100DA79C4 /* cacert.pem */,
 				E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */,
 			);
 			name = Frameworks;
@@ -197,7 +202,6 @@
 				E4ED565E303371BB00F0499C /* WebDAV */,
 				E4ED56633033720700F0499C /* SWXMLHash */,
 				E4957CDB304191BB001BC491 /* NFSKit */,
-				E49598D830458D7B001BC491 /* Citadel */,
 				E435942D3074B91000D2CB2C /* Supabase */,
 				E435F44D30B73A4D00DA79C4 /* SwiftSMB */,
 			);
@@ -271,7 +275,6 @@
 				E4ED565D303371BB00F0499C /* XCRemoteSwiftPackageReference "WebDAV-Swift" */,
 				E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */,
 				E4957CDA304191BB001BC491 /* XCRemoteSwiftPackageReference "NFSKit" */,
-				E49598D730458D7B001BC491 /* XCRemoteSwiftPackageReference "Citadel" */,
 				E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E435F44C30B73A4D00DA79C4 /* XCRemoteSwiftPackageReference "SwiftSMB" */,
 			);
@@ -292,6 +295,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E46452A13020F123003786FA /* LICENSE in Resources */,
+				E435F62530B81F8100DA79C4 /* cacert.pem in Resources */,
 				E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */,
 				E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */,
 			);
@@ -471,7 +475,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 201;
+				CURRENT_PROJECT_VERSION = 202;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -491,7 +495,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.9.15;
+				MARKETING_VERSION = 0.9.16;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -500,6 +508,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = mankai/Services/BrowseService/FtpBrowsablePlugin/FtpCurl.h;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -513,7 +522,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 201;
+				CURRENT_PROJECT_VERSION = 202;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -533,7 +542,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.9.15;
+				MARKETING_VERSION = 0.9.16;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lz",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -542,6 +555,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = mankai/Services/BrowseService/FtpBrowsablePlugin/FtpCurl.h;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -551,7 +565,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 201;
+				CURRENT_PROJECT_VERSION = 202;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -563,7 +577,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.9.15;
+				MARKETING_VERSION = 0.9.16;
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.thumbnail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -584,7 +598,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 201;
+				CURRENT_PROJECT_VERSION = 202;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -596,7 +610,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.9.15;
+				MARKETING_VERSION = 0.9.16;
 				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.thumbnail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -710,14 +724,6 @@
 				revision = ec63d055b9ee08d609d3c6cb32f42c07edc7bdf7;
 			};
 		};
-		E49598D730458D7B001BC491 /* XCRemoteSwiftPackageReference "Citadel" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/orlandos-nl/Citadel";
-			requirement = {
-				kind = upToNextMinorVersion;
-				minimumVersion = 0.12.1;
-			};
-		};
 		E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/dkk/WrappingHStack";
@@ -807,11 +813,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4957CDA304191BB001BC491 /* XCRemoteSwiftPackageReference "NFSKit" */;
 			productName = NFSKit;
-		};
-		E49598D830458D7B001BC491 /* Citadel */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E49598D730458D7B001BC491 /* XCRemoteSwiftPackageReference "Citadel" */;
-			productName = Citadel;
 		};
 		E4C616462E0DA05400AC484A /* WrappingHStack */ = {
 			isa = XCSwiftPackageProductDependency;

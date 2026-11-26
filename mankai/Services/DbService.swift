@@ -69,7 +69,7 @@ import GRDB
                 try FsPluginModel.createTable(db)
                 try FsBrowsablePluginModel.createTable(db)
                 try SmbBrowsablePluginModel.createTable(db)
-                try SftpBrowsablePluginModel.createTable(db)
+                try FtpBrowsablePluginModel.createTable(db)
                 try NfsBrowsablePluginModel.createTable(db)
                 try WebDavBrowsablePluginModel.createTable(db)
                 try OpdsBrowsablePluginModel.createTable(db)

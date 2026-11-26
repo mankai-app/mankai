@@ -16,7 +16,7 @@ struct AddFilesModal: View {
     enum ShareType: String, CaseIterable, Identifiable {
         case filesystem
         case smb
-        case sftp
+        case ftp
         case nfs
         case webdav
         case opds
@@ -26,7 +26,7 @@ struct AddFilesModal: View {
         var localizedName: String {
             switch self { case .filesystem: String(localized: "fs") case .smb:
                 String(localized: "smb")
-                case .sftp: String(localized: "sftp")
+                case .ftp: String(localized: "ftp")
                 case .nfs: String(localized: "nfs")
                 case .webdav: String(localized: "webdav")
                 case .opds: String(localized: "opds")
@@ -36,7 +36,7 @@ struct AddFilesModal: View {
         var pluginType: Plugin.Type {
             switch self { case .filesystem: FsBrowsablePlugin.self case .smb:
                 SmbBrowsablePlugin.self
-                case .sftp: SftpBrowsablePlugin.self
+                case .ftp: FtpBrowsablePlugin.self
                 case .nfs: NfsBrowsablePlugin.self
                 case .webdav: WebDavBrowsablePlugin.self
                 case .opds: OpdsBrowsablePlugin.self
@@ -59,11 +59,12 @@ struct AddFilesModal: View {
     @State private var selectedShare: SMB.Share?
     @State private var showingShareSelection = false
 
-    // SFTP state
-    @State private var sftpHost = ""
-    @State private var sftpPort = "22"
-    @State private var sftpUsername = ""
-    @State private var sftpPassword = ""
+    // FTP state
+    @State private var ftpHost = ""
+    @State private var ftpProtocol: FtpTransferProtocol = .ftp
+    @State private var ftpPort = ""
+    @State private var ftpUsername = ""
+    @State private var ftpPassword = ""
 
     // NFS state
     @State private var nfsHost = ""
@@ -96,10 +97,10 @@ struct AddFilesModal: View {
         switch type { case .filesystem: return selectedFolder != nil case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            case .sftp:
-                return !sftpHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    && !sftpPort.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    && !sftpUsername.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .ftp:
+                return !ftpHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    && (ftpProtocol != .sftp
+                        || !ftpUsername.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             case .nfs: return !nfsHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             case .webdav:
                 return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -114,7 +115,7 @@ struct AddFilesModal: View {
                 Section("localShares") { shareTypeLink(.filesystem) }
 
                 Section("remoteShares") {
-                    ForEach([ShareType.smb, .sftp, .nfs, .webdav]) { type in shareTypeLink(type) }
+                    ForEach([ShareType.smb, .ftp, .nfs, .webdav]) { type in shareTypeLink(type) }
                 }
 
                 Section("catalogs") { shareTypeLink(.opds) }
@@ -169,7 +170,7 @@ struct AddFilesModal: View {
             }
 
             switch type { case .filesystem: filesystemConfiguration case .smb: smbConfiguration
-                case .sftp: sftpConfiguration
+                case .ftp: ftpConfiguration
                 case .nfs: nfsConfiguration
                 case .webdav: webDavConfiguration
                 case .opds: opdsConfiguration
@@ -232,22 +233,36 @@ struct AddFilesModal: View {
         }
     }
 
-    private var sftpConfiguration: some View {
+    private var ftpConfiguration: some View {
         Section {
-            TextField("host", text: $sftpHost).textInputAutocapitalization(.never)
+            Picker("fileTransferProtocol", selection: $ftpProtocol) {
+                ForEach(FtpTransferProtocol.allCases, id: \.self) { mode in
+                    switch mode { case .ftp: Text("ftp").tag(mode) case .sftp:
+                        Text(verbatim: "SFTP").tag(mode)
+                        case .ftpsExplicit: Text("ftpsExplicit").tag(mode)
+                        case .ftps: Text("ftpsImplicit").tag(mode)
+                    }
+                }
+            }
+            .disabled(isProcessing)
+
+            TextField("host", text: $ftpHost).textInputAutocapitalization(.never)
                 .autocorrectionDisabled().disabled(isProcessing)
 
-            TextField("port", text: $sftpPort).keyboardType(.numberPad).disabled(isProcessing)
+            TextField(
+                "port", text: $ftpPort, prompt: Text(verbatim: String(ftpProtocol.defaultPort))
+            )
+            .keyboardType(.numberPad).disabled(isProcessing)
 
-            TextField("username", text: $sftpUsername).textInputAutocapitalization(.never)
+            TextField("username", text: $ftpUsername).textInputAutocapitalization(.never)
                 .autocorrectionDisabled().textContentType(.username).disabled(isProcessing)
 
-            SecureField("password", text: $sftpPassword).textContentType(.password)
+            SecureField("password", text: $ftpPassword).textContentType(.password)
                 .disabled(isProcessing)
         } header: {
-            Text("sftpSettings")
+            Text("ftpSettings")
         } footer: {
-            Text("sftpSettingsFooter")
+            Text("ftpSettingsFooter")
         }
     }
 
@@ -392,9 +407,9 @@ struct AddFilesModal: View {
                     if isLoadingShares || isAdding { ProgressView() } else { Text("selectShare") }
                 }
                 .disabled(!canContinue(type))
-            case .sftp:
+            case .ftp:
                 Button {
-                    addSftpShare()
+                    addFtpShare()
                 } label: {
                     if isAdding { ProgressView() } else { Text("add") }
                 }
@@ -525,9 +540,9 @@ struct AddFilesModal: View {
         }
     }
 
-    private func addSftpShare() {
-        guard let portValue = parsedSftpPort else {
-            presentError(MankaiErrorCode.browseSftpInvalidConnectionConfiguration.makeError())
+    private func addFtpShare() {
+        guard let portValue = parsedFtpPort else {
+            presentError(MankaiErrorCode.browseFtpInvalidConnectionConfiguration.makeError())
             return
         }
 
@@ -536,10 +551,11 @@ struct AddFilesModal: View {
             defer { isAdding = false }
 
             do {
-                let configuration = try SftpConnectionConfiguration(
-                    host: sftpHost, port: portValue, username: sftpUsername, password: sftpPassword)
-                let session = SftpSession(configuration: configuration)
-                let share = try await SftpBrowsablePlugin(session: session, name: name)
+                let configuration = try FtpConnectionConfiguration(
+                    transferProtocol: ftpProtocol, host: ftpHost, port: portValue,
+                    username: ftpUsername, password: ftpPassword)
+                let session = FtpSession(configuration: configuration)
+                let share = try await FtpBrowsablePlugin(session: session, name: name)
                 addShare(share)
             } catch { presentError(error) }
         }
@@ -582,10 +598,10 @@ struct AddFilesModal: View {
         return portValue
     }
 
-    private var parsedSftpPort: Int? {
-        guard let portValue = Int(sftpPort.trimmingCharacters(in: .whitespacesAndNewlines)),
-            (1...65535).contains(portValue)
-        else { return nil }
+    private var parsedFtpPort: Int? {
+        let port = ftpPort.trimmingCharacters(in: .whitespacesAndNewlines)
+        if port.isEmpty { return ftpProtocol.defaultPort }
+        guard let portValue = Int(port), URL.isValidPort(portValue) else { return nil }
         return portValue
     }
 

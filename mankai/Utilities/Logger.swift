@@ -42,7 +42,7 @@ enum LogCategory: String {
     case fsBrowsablePlugin = "FsBrowsablePlugin"
     case appDirBrowsablePlugin = "AppDirBrowsablePlugin"
     case smbBrowsablePlugin = "SmbBrowsablePlugin"
-    case sftpBrowsablePlugin = "SftpBrowsablePlugin"
+    case ftpBrowsablePlugin = "FtpBrowsablePlugin"
     case nfsBrowsablePlugin = "NfsBrowsablePlugin"
     case webDavBrowsablePlugin = "WebDavBrowsablePlugin"
     case opdsBrowsablePlugin = "OpdsBrowsablePlugin"
@@ -211,7 +211,7 @@ extension Logger {
     static let fsBrowsablePlugin = Logger(category: .fsBrowsablePlugin)
     static let appDirBrowsablePlugin = Logger(category: .appDirBrowsablePlugin)
     static let smbBrowsablePlugin = Logger(category: .smbBrowsablePlugin)
-    static let sftpBrowsablePlugin = Logger(category: .sftpBrowsablePlugin)
+    static let ftpBrowsablePlugin = Logger(category: .ftpBrowsablePlugin)
     static let nfsBrowsablePlugin = Logger(category: .nfsBrowsablePlugin)
     static let webDavBrowsablePlugin = Logger(category: .webDavBrowsablePlugin)
     static let opdsBrowsablePlugin = Logger(category: .opdsBrowsablePlugin)

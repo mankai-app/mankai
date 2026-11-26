@@ -16,7 +16,7 @@ enum MankaiErrorDomain: String {
     case browseArchive = "app.mankai.browse.archive"
     case browseFilesystem = "app.mankai.browse.filesystem"
     case browseSmb = "app.mankai.browse.smb"
-    case browseSftp = "app.mankai.browse.sftp"
+    case browseFtp = "app.mankai.browse.ftp"
     case browseNfs = "app.mankai.browse.nfs"
     case browseWebDav = "app.mankai.browse.webdav"
     case browseOpds = "app.mankai.browse.opds"
@@ -49,7 +49,7 @@ enum MankaiErrorDomain: String {
             case .browseArchive: return 30
             case .browseFilesystem: return 31
             case .browseSmb: return 34
-            case .browseSftp: return 38
+            case .browseFtp: return 38
             case .browseNfs: return 37
             case .browseWebDav: return 35
             case .browseOpds: return 36
@@ -144,8 +144,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseFilesystemUnableToOpenFileForHashing
     case browseSmbInvalidConnectionConfiguration
     case browseSmbInvalidPlugin
-    case browseSftpInvalidConnectionConfiguration
-    case browseSftpInvalidPlugin
+    case browseFtpInvalidConnectionConfiguration
+    case browseFtpInvalidPlugin
     case browseNfsInvalidConnectionConfiguration
     case browseNfsInvalidPlugin
     case browseWebDavInvalidConnectionConfiguration
@@ -332,10 +332,9 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .browseSmbInvalidConnectionConfiguration: .init(
             domain: .browseSmb, code: 1, messageKey: "invalidSmbConnectionConfiguration"),
         .browseSmbInvalidPlugin: .init(domain: .browseSmb, code: 2, messageKey: "invalidSmbShare"),
-        .browseSftpInvalidConnectionConfiguration: .init(
-            domain: .browseSftp, code: 1, messageKey: "invalidSftpConnectionConfiguration"),
-        .browseSftpInvalidPlugin: .init(
-            domain: .browseSftp, code: 2, messageKey: "invalidSftpShare"),
+        .browseFtpInvalidConnectionConfiguration: .init(
+            domain: .browseFtp, code: 1, messageKey: "invalidFtpConnectionConfiguration"),
+        .browseFtpInvalidPlugin: .init(domain: .browseFtp, code: 2, messageKey: "invalidFtpShare"),
         .browseNfsInvalidConnectionConfiguration: .init(
             domain: .browseNfs, code: 1, messageKey: "invalidNfsConnectionConfiguration"),
         .browseNfsInvalidPlugin: .init(domain: .browseNfs, code: 2, messageKey: "invalidNfsShare"),

@@ -86,7 +86,7 @@ enum BrowsePluginAddConflictResolution {
     /// Each type loads its saved instances, including the built-in folder.
     private static let pluginTypes: [Plugin.Type] = [
         AppDirBrowsablePlugin.self, FsBrowsablePlugin.self, SmbBrowsablePlugin.self,
-        SftpBrowsablePlugin.self, NfsBrowsablePlugin.self, WebDavBrowsablePlugin.self,
+        FtpBrowsablePlugin.self, NfsBrowsablePlugin.self, WebDavBrowsablePlugin.self,
         OpdsBrowsablePlugin.self
     ]
 

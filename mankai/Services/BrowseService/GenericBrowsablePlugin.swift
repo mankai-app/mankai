@@ -35,6 +35,7 @@ protocol BrowsableSession: Sendable {
     init(configuration: Config)
     func disconnect() async
     func list(path: String) async throws -> [BrowsableSessionEntry]
+    func fileIfExists(path: String) async throws -> Data?
     func download(path: String) async throws -> Data
     func download(path: String, to localURL: URL, progress: ParserFileProgress?) async throws
     func upload(data: Data, path: String) async throws
