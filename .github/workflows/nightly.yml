@@ -139,7 +139,9 @@ jobs:
               -f sha="$BUILD_COMMIT" -F force=true --silent
           fi
 
+          release_notes=$(printf 'Built from commit [`%s`](%s/commit/%s).' \
+            "$BUILD_COMMIT" "$repository_url" "$BUILD_COMMIT")
           gh release create nightly releases/mankai.ipa releases/mankai.dmg \
             releases/altstore-nightly.json releases/altstore-stable.json \
             --verify-tag --prerelease --latest=false \
-            --title "Nightly Build ($release_date)" --notes "Built from commit $BUILD_COMMIT."
+            --title "Nightly Build @ ${release_date//-/}" --notes "$release_notes"

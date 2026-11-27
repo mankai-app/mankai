@@ -24,8 +24,11 @@ def generate_source(ipa_path, channel, release_date, download_url, icon_url):
     with ipa_path.open("rb") as ipa_file:
         checksum = hashlib.file_digest(ipa_file, "sha256").hexdigest()
 
+    release_type = "Nightly builds" if channel == "nightly" else "Stable releases"
     return {
-        "name": f"Mankai {channel.capitalize()}",
+        "name": f"Mankai ({channel.capitalize()})",
+        "description": f"{release_type} of Mankai, an extensible manga reader and library manager for iOS and iPadOS.",
+        "iconURL": icon_url,
         "website": "https://mankai.app",
         "apps": [
             {
