@@ -36,7 +36,7 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     private var animatedNavigationGeneration: Int?
     private var isNavigationCommandApplicationScheduled = false
     private var lastReportedViewportSize = CGSize.zero
-    private var imageViews: [String: UIView] = [:]
+    private var imageViews: [String: (background: UIView, content: UIView)] = [:]
     private var imageSubscriptions: [String: AnyCancellable] = [:]
 
     private var isResizing = false
@@ -96,7 +96,6 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         }
 
         applyPendingNavigationCommand()
-        updateBackgroundColor()
         isResizing = false
     }
 
@@ -167,7 +166,7 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         let activeURLs = Set(renderState.urls)
         let staleURLs = imageViews.keys.filter { !activeURLs.contains($0) }
         for url in staleURLs {
-            imageViews[url]?.removeFromSuperview()
+            imageViews[url]?.background.removeFromSuperview()
             imageViews[url] = nil
             imageSubscriptions[url] = nil
         }
@@ -179,7 +178,7 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     private func resetForChapter() {
         scrollView.setZoomScale(scrollView.minimumZoomScale, animated: false)
         scrollView.setContentOffset(.zero, animated: false)
-        imageViews.values.forEach { $0.removeFromSuperview() }
+        imageViews.values.forEach { $0.background.removeFromSuperview() }
         imageViews.removeAll()
         imageSubscriptions.removeAll()
         groups.removeAll()
@@ -193,11 +192,8 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         guard !isResizing else { return }
 
         updateCurrentPageFromScroll()
-        updateBackgroundColor()
         updateOverscrollViews()
     }
-
-    func scrollViewDidZoom(_: UIScrollView) { updateBackgroundColor() }
 
     func scrollViewWillBeginDragging(_: UIScrollView) { animatedNavigationGeneration = nil }
 
@@ -300,23 +296,6 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
 
         currentPage = page
         actions.pageDidChange(page)
-    }
-
-    private func updateBackgroundColor() {
-        guard configuration.matchImageBackground, !imageViews.isEmpty else {
-            view.backgroundColor = .systemBackground
-            return
-        }
-
-        let viewport = view.convert(view.bounds, to: containerView)
-        let visibleImages = imageViews.compactMap { url, imageView -> ReaderImageState? in
-            guard imageView is UIImageView, !viewport.intersection(imageView.frame).isEmpty else {
-                return nil
-            }
-            return renderState.images[url]
-        }
-        let color = readerBackgroundColor(for: visibleImages)
-        if view.backgroundColor != color { view.backgroundColor = color }
     }
 
     private func setupUI() {
@@ -427,19 +406,28 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         }
     }
 
-    private func reconcileImageView(url: String, frame: CGRect) {
+    private func reconcileImageView(url: String, imageFrame: CGRect, backgroundFrame: CGRect) {
         let state = renderState.images[url] ?? .loading
-        if let existingView = imageViews[url], view(existingView, matches: state) {
-            existingView.frame = frame
-            return
+        let page: (background: UIView, content: UIView)
+
+        if let existingView = imageViews[url], view(existingView.content, matches: state) {
+            page = existingView
+        } else {
+            imageViews[url]?.background.removeFromSuperview()
+            imageSubscriptions[url] = nil
+            let background = UIView()
+            let content = view(for: state, url: url)
+            background.addSubview(content)
+            containerView.addSubview(background)
+            page = (background, content)
+            imageViews[url] = page
         }
 
-        imageViews[url]?.removeFromSuperview()
-        imageSubscriptions[url] = nil
-        let newView = view(for: state, url: url)
-        newView.frame = frame
-        imageViews[url] = newView
-        containerView.addSubview(newView)
+        page.background.frame = backgroundFrame
+        page.background.backgroundColor =
+            configuration.matchImageBackground ? readerBackgroundColor(for: state) : nil
+        page.content.frame = imageFrame.offsetBy(
+            dx: -backgroundFrame.minX, dy: -backgroundFrame.minY)
     }
 
     private func view(_ view: UIView, matches state: ReaderImageState) -> Bool {
@@ -451,13 +439,14 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
     }
 
     private func calculateFrames(ratios: [String: CGFloat], mode: CGFloat) -> (
-        [String: CGRect], CGFloat
+        [String: (image: CGRect, background: CGRect)], CGFloat
     ) {
-        let width = view.bounds.inset(by: configuration.contentSafeAreaInsets).width
+        let insets = configuration.contentSafeAreaInsets
+        let width = view.bounds.inset(by: insets).width
         guard width > 0 else { return ([:], 0) }
 
         let isRightToLeft = configuration.readingDirection == .rightToLeft
-        var frames: [String: CGRect] = [:]
+        var frames: [String: (image: CGRect, background: CGRect)] = [:]
         var currentY: CGFloat = 0
 
         for index in groups.indices {
@@ -475,10 +464,17 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
             var currentX: CGFloat = 0
 
             let orderedURLs = isRightToLeft ? Array(groupURLs.reversed()) : groupURLs
-            for url in orderedURLs {
+            for (pageIndex, url) in orderedURLs.enumerated() {
                 let imageWidth = rowHeight * ratios[url, default: mode]
                 let x = isSinglePortrait && isRightToLeft ? width - imageWidth : currentX
-                frames[url] = CGRect(x: x, y: currentY, width: imageWidth, height: rowHeight)
+                let imageFrame = CGRect(x: x, y: currentY, width: imageWidth, height: rowHeight)
+                let backgroundMinX = pageIndex == 0 ? -insets.left : imageFrame.minX
+                let backgroundMaxX =
+                    pageIndex == orderedURLs.count - 1 ? width + insets.right : imageFrame.maxX
+                let backgroundFrame = CGRect(
+                    x: backgroundMinX, y: currentY, width: backgroundMaxX - backgroundMinX,
+                    height: rowHeight)
+                frames[url] = (imageFrame, backgroundFrame)
                 currentX += imageWidth
             }
 
@@ -509,7 +505,10 @@ final class ContinuousReaderViewController: UIViewController, UIScrollViewDelega
         let mode = roundedRatioCounts.filter { $0.value == maximumRatioCount }.keys.min() ?? 1
         let (frames, finalY) = calculateFrames(ratios: ratios, mode: mode)
 
-        for url in renderState.urls { reconcileImageView(url: url, frame: frames[url] ?? .zero) }
+        for url in renderState.urls {
+            let (imageFrame, backgroundFrame) = frames[url] ?? (.zero, .zero)
+            reconcileImageView(url: url, imageFrame: imageFrame, backgroundFrame: backgroundFrame)
+        }
 
         startY = configuration.contentSafeAreaInsets.top
         containerLeadingConstraint.constant = configuration.contentSafeAreaInsets.left

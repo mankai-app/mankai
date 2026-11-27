@@ -11291,25 +11291,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Use the most common color along a page’s edges for the reader background. Blend the colors when two pages are visible."
+            "value" : "Use each page’s most common edge color for its background. In continuous mode, the color extends into the side margins."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ページの端で最も多い色を背景色に使います。2ページを同時に表示する場合は、両方の色を混ぜます。"
+            "value" : "ページごとに、端で最も多い色を背景色に使います。連続表示では、その色が左右の余白まで広がります。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将页面边缘最常见的颜色用作阅读器背景。同时显示两页时，混合两页的颜色。"
+            "value" : "使用每页边缘最常见的颜色作为该页的背景色。在连续阅读模式下，背景色会延伸至左右两侧的留白。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "以頁面邊緣最常見的顏色作為閱讀器背景。同時顯示兩頁時，會混合兩頁的顏色。"
+            "value" : "以每頁邊緣最常見的顏色作為該頁的背景色。在連續閱讀模式下，背景色會延伸至左右兩側的留白。"
           }
         }
       }

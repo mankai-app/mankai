@@ -56,18 +56,9 @@ enum ReaderImageState {
     case failed
 }
 
-@MainActor func readerBackgroundColor(for images: [ReaderImageState]) -> UIColor {
-    var total = SIMD3<Double>.zero
-    var count = 0
-    for state in images {
-        guard case .success(let image) = state, let color = image.backgroundColor else { continue }
-        total += color
-        count += 1
-    }
-
-    guard count > 0 else { return .systemBackground }
-    let average = total / Double(count)
-    return UIColor(red: average.x, green: average.y, blue: average.z, alpha: 1)
+@MainActor func readerBackgroundColor(for state: ReaderImageState?) -> UIColor? {
+    guard case .success(let image) = state, let color = image.backgroundColor else { return nil }
+    return UIColor(red: color.x, green: color.y, blue: color.z, alpha: 1)
 }
 
 struct ReaderGroup: Identifiable, Hashable {

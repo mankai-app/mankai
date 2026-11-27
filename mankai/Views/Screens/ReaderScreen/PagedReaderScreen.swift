@@ -760,6 +760,7 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     private let readingDirection: ReadingDirection
 
     private let contentStackView = UIStackView()
+    private var firstPageBackground: UIView?
     private var contentCenterXConstraint: NSLayoutConstraint!
     private var contentCenterYConstraint: NSLayoutConstraint!
     private var contentHeightConstraint: NSLayoutConstraint!
@@ -771,8 +772,8 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     }
 
     private var displayedURLs: [String] {
-        guard let spreadPageIndex, urls.count == 2 else { return urls }
-        return [urls[spreadPageIndex]]
+        if let spreadPageIndex, urls.count == 2 { return [urls[spreadPageIndex]] }
+        return readingDirection == .rightToLeft ? Array(urls.reversed()) : urls
     }
 
     private var spansSpread: Bool {
@@ -843,13 +844,27 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
             contentCenterXConstraint, contentCenterYConstraint, contentHeightConstraint
         ])
 
-        let orderedURLs =
-            readingDirection == .rightToLeft ? Array(displayedURLs.reversed()) : displayedURLs
-        for url in orderedURLs {
+        for url in displayedURLs {
             let imageView = PageImageView()
             imageView.onImageChange = { [weak self] in self?.updateLayout() }
             imageViews[url] = imageView
             contentStackView.addArrangedSubview(imageView)
+        }
+
+        if contentStackView.arrangedSubviews.count == 2,
+            let firstPage = contentStackView.arrangedSubviews.first
+        {
+            let background = UIView()
+            background.translatesAutoresizingMaskIntoConstraints = false
+            background.isUserInteractionEnabled = false
+            view.insertSubview(background, belowSubview: contentStackView)
+            NSLayoutConstraint.activate([
+                background.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                background.trailingAnchor.constraint(equalTo: firstPage.trailingAnchor),
+                background.topAnchor.constraint(equalTo: view.topAnchor),
+                background.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+            firstPageBackground = background
         }
     }
 
@@ -859,11 +874,9 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
     }
 
     private func updateLayout() {
-        view.backgroundColor =
-            matchImageBackground
-            ? readerBackgroundColor(for: urls.compactMap { images[$0] }) : .systemBackground
-        guard !urls.isEmpty else { return }
         contentStackView.isHidden = spreadPageIndex == 1 && urls.count == 1 && !spansSpread
+        updateBackgroundColors()
+        guard !urls.isEmpty else { return }
         var ratios: [String: CGFloat] = [:]
         var totalRatio: CGFloat = 0
 
@@ -933,6 +946,22 @@ private final class PageContentViewController: UIViewController, ReaderPagePosit
 
         for (url, imageView) in imageViews {
             imageView.widthConstraint.constant = imageHeight * ratios[url, default: 1]
+        }
+    }
+
+    private func updateBackgroundColors() {
+        guard matchImageBackground, !contentStackView.isHidden else {
+            view.backgroundColor = .systemBackground
+            firstPageBackground?.backgroundColor = nil
+            return
+        }
+
+        let urls = displayedURLs
+        view.backgroundColor =
+            readerBackgroundColor(for: urls.last.flatMap { images[$0] }) ?? .systemBackground
+        if let firstPageBackground {
+            firstPageBackground.backgroundColor =
+                readerBackgroundColor(for: urls.first.flatMap { images[$0] }) ?? .systemBackground
         }
     }
 }
