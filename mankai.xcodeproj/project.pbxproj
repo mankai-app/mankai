@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */ = {isa = PBXBuildFile; productRef = E4033BA22F1BC53D00A7B886 /* OpenCC */; };
 		E427B77D3007F96E003649A2 /* QuickLookThumbnailing.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */; };
 		E427B7843007F96E003649A2 /* mankaiThumbnail.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E427B8733007F9E2003649A2 /* ZIPFoundation */; };
 		E435050A30B883E800DA79C4 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E435050930B883E800DA79C4 /* GRDB */; };
 		E43513D130B9C75500DA79C4 /* Unrar in Frameworks */ = {isa = PBXBuildFile; productRef = E43513D030B9C75500DA79C4 /* Unrar */; };
 		E43513D430B9C77100DA79C4 /* Unrar in Frameworks */ = {isa = PBXBuildFile; productRef = E43513D330B9C77100DA79C4 /* Unrar */; };
+		E43515B130B9CF1C00DA79C4 /* OpenCC in Frameworks */ = {isa = PBXBuildFile; productRef = E43515B030B9CF1C00DA79C4 /* OpenCC */; };
 		E435942E3074B91000D2CB2C /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E435942D3074B91000D2CB2C /* Supabase */; };
 		E435F44E30B73A4D00DA79C4 /* SwiftSMB in Frameworks */ = {isa = PBXBuildFile; productRef = E435F44D30B73A4D00DA79C4 /* SwiftSMB */; };
 		E435F62330B81F8100DA79C4 /* curl.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = E435F62230B81F8100DA79C4 /* curl.xcframework */; };
@@ -109,13 +109,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E43515B130B9CF1C00DA79C4 /* OpenCC in Frameworks */,
 				E4ED56643033720700F0499C /* SWXMLHash in Frameworks */,
 				E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */,
 				E4957CDC304191BB001BC491 /* NFSKit in Frameworks */,
 				E464751330239A9C003786FA /* ReerCodable in Frameworks */,
 				E4ED565F303371BB00F0499C /* WebDAV in Frameworks */,
 				E435050A30B883E800DA79C4 /* GRDB in Frameworks */,
-				E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */,
 				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
 				E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */,
 				E435FD9E30B83A4600DA79C4 /* CoreFoundation.framework in Frameworks */,
@@ -198,7 +198,6 @@
 			name = mankai;
 			packageProductDependencies = (
 				E4C616462E0DA05400AC484A /* WrappingHStack */,
-				E4033BA22F1BC53D00A7B886 /* OpenCC */,
 				E4CAEFFB3006797500208FB4 /* ZIPFoundation */,
 				E46452933020E344003786FA /* SwiftPackageListUI */,
 				E464751230239A9C003786FA /* ReerCodable */,
@@ -209,6 +208,7 @@
 				E435F44D30B73A4D00DA79C4 /* SwiftSMB */,
 				E435050930B883E800DA79C4 /* GRDB */,
 				E43513D030B9C75500DA79C4 /* Unrar */,
+				E43515B030B9CF1C00DA79C4 /* OpenCC */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -271,7 +271,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */,
-				E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */,
 				E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */,
 				E464751130239A9C003786FA /* XCRemoteSwiftPackageReference "ReerCodable" */,
@@ -282,6 +281,7 @@
 				E435F44C30B73A4D00DA79C4 /* XCRemoteSwiftPackageReference "SwiftSMB" */,
 				E435050830B883E800DA79C4 /* XCRemoteSwiftPackageReference "GRDB" */,
 				E43513CF30B9C75500DA79C4 /* XCRemoteSwiftPackageReference "Unrar" */,
+				E43515AF30B9CF1C00DA79C4 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -479,7 +479,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 207;
+				CURRENT_PROJECT_VERSION = 208;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -526,7 +526,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = SakuraColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 207;
+				CURRENT_PROJECT_VERSION = 208;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
@@ -569,7 +569,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 207;
+				CURRENT_PROJECT_VERSION = 208;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -602,7 +602,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 207;
+				CURRENT_PROJECT_VERSION = 208;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -664,14 +664,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ddddxxx/SwiftyOpenCC.git";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
 		E435050830B883E800DA79C4 /* XCRemoteSwiftPackageReference "GRDB" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
@@ -686,6 +678,14 @@
 			requirement = {
 				kind = upToNextMinorVersion;
 				minimumVersion = 0.5.4;
+			};
+		};
+		E43515AF30B9CF1C00DA79C4 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nohackjustnoobb/SwiftyOpenCC";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 1.4.2;
 			};
 		};
 		E435942C3074B91000D2CB2C /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
@@ -763,11 +763,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		E4033BA22F1BC53D00A7B886 /* OpenCC */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */;
-			productName = OpenCC;
-		};
 		E427B8733007F9E2003649A2 /* ZIPFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
@@ -787,6 +782,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E43513CF30B9C75500DA79C4 /* XCRemoteSwiftPackageReference "Unrar" */;
 			productName = Unrar;
+		};
+		E43515B030B9CF1C00DA79C4 /* OpenCC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E43515AF30B9CF1C00DA79C4 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */;
+			productName = OpenCC;
 		};
 		E435942D3074B91000D2CB2C /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
