@@ -6,18 +6,27 @@
 //
 
 import Foundation
-import UnrarKit
+import Unrar
 
 final class CbrParser: Parser {
-    /// Couples each UnrarKit archive to its filenames and the lock that serializes reads.
+    /// Stores each archive's entries and the lock that serializes reads.
     nonisolated private final class CachedArchive: @unchecked Sendable {
-        let archive: URKArchive
+        let archive: Unrar.Archive
         let filenames: [String]
+        let entriesByFilename: [String: Unrar.Entry]
         let readLock = NSLock()
 
-        init(archive: URKArchive, filenames: [String]) {
+        init(archive: Unrar.Archive, entries: [Unrar.Entry]) {
+            var filenames: [String] = []
+            var entriesByFilename: [String: Unrar.Entry] = [:]
+            for entry in entries where entriesByFilename[entry.fileName] == nil {
+                filenames.append(entry.fileName)
+                entriesByFilename[entry.fileName] = entry
+            }
+
             self.archive = archive
             self.filenames = filenames
+            self.entriesByFilename = entriesByFilename
         }
     }
 
@@ -60,9 +69,9 @@ final class CbrParser: Parser {
             let url = try await file.getUrl()
             let loadedArchive =
                 try await Task.detached(priority: .utility) {
-                    let archive = try URKArchive(url: url)
-                    let filenames = try archive.listFilenames()
-                    return CachedArchive(archive: archive, filenames: filenames)
+                    let archive = try Unrar.Archive(fileURL: url)
+                    let entries = try archive.entries()
+                    return CachedArchive(archive: archive, entries: entries)
                 }
                 .value
             return storeArchive(loadedArchive, for: file.cacheKey)
@@ -104,8 +113,7 @@ final class CbrParser: Parser {
         let parsed: (imagePaths: [String], info: ComicInfo?, coverPath: String?) =
             try await withReadLock(for: file) { cachedArchive in
                 let archive = cachedArchive.archive
-                let filenames = cachedArchive.filenames
-                let imagePaths = Self.sortedImagePaths(in: filenames)
+                let imagePaths = Self.sortedImagePaths(in: cachedArchive.filenames)
 
                 guard !imagePaths.isEmpty else {
                     Logger.cbrParser.error("No supported images found in archive: \(fileName)")
@@ -113,8 +121,8 @@ final class CbrParser: Parser {
                 }
 
                 let info: ComicInfo?
-                if filenames.contains("ComicInfo.xml"),
-                    let infoData = try? archive.extractData(fromFile: "ComicInfo.xml")
+                if let infoEntry = cachedArchive.entriesByFilename["ComicInfo.xml"],
+                    let infoData = try? archive.extract(infoEntry)
                 {
                     Logger.cbrParser.debug("Found ComicInfo.xml, parsing metadata")
                     info = ComicInfoParser.parse(data: infoData)
@@ -178,11 +186,11 @@ final class CbrParser: Parser {
         Logger.cbrParser.debug("Reading image: \(url)")
 
         return try await withReadLock(for: file) { cachedArchive in
-            guard cachedArchive.filenames.contains(url) else {
+            guard let entry = cachedArchive.entriesByFilename[url] else {
                 Logger.cbrParser.error("Entry not found in archive: \(url)")
                 throw MankaiErrorCode.browseArchiveEntryNotFound.makeError()
             }
-            return try cachedArchive.archive.extractData(fromFile: url)
+            return try cachedArchive.archive.extract(entry)
         }
     }
 
