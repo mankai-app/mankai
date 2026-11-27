@@ -1,0 +1,145 @@
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: "17 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-release
+  cancel-in-progress: false
+
+env:
+  GH_REPO: ${{ github.repository }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    name: Check for a new nightly commit
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.check.outputs.commit }}
+      previous_commit: ${{ steps.check.outputs.previous_commit }}
+    steps:
+      - name: Compare the default branch with the nightly tag
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          commit=$(gh api "repos/$GH_REPO/git/ref/heads/$DEFAULT_BRANCH" --jq '.object.sha')
+          previous_commit=$(gh api "repos/$GH_REPO/git/matching-refs/tags/nightly" \
+            --jq '.[] | select(.ref == "refs/tags/nightly") | .object.sha')
+
+          if [[ "$commit" == "$previous_commit" ]]; then
+            # A failed publication can leave the tag pointing at an unpublished build.
+            published_release=$(gh api --paginate "repos/$GH_REPO/releases?per_page=100" \
+              --jq '.[] | select(.tag_name == "nightly" and .draft == false) | .id')
+            if [[ -n "$published_release" ]]; then
+              echo "Nightly already published for $commit."
+              exit 0
+            fi
+          fi
+
+          {
+            echo "commit=$commit"
+            echo "previous_commit=$previous_commit"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    if: needs.check.outputs.commit != ''
+    uses: ./.github/workflows/build-packages.yml
+    with:
+      commit: ${{ needs.check.outputs.commit }}
+
+  release:
+    name: Replace the nightly prerelease
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release scripts
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Download builds
+        uses: actions/download-artifact@v8
+        with:
+          name: mankai-${{ github.run_id }}
+          path: releases
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_COMMIT: ${{ needs.check.outputs.commit }}
+          PREVIOUS_COMMIT: ${{ needs.check.outputs.previous_commit }}
+        run: |
+          test -s releases/mankai.ipa
+          test -s releases/mankai.dmg
+
+          current_commit=$(gh api "repos/$GH_REPO/git/matching-refs/tags/nightly" \
+            --jq '.[] | select(.ref == "refs/tags/nightly") | .object.sha')
+          if [[ "$current_commit" != "$PREVIOUS_COMMIT" && "$current_commit" != "$BUILD_COMMIT" ]]; then
+            echo "The nightly tag moved after this build was queued. Skipping publication."
+            exit 0
+          fi
+
+          nightly_releases=$(gh api --paginate "repos/$GH_REPO/releases?per_page=100" |
+            jq -s '[.[][] | select(.tag_name == "nightly") | {id, draft}]')
+          if [[ "$current_commit" == "$BUILD_COMMIT" ]] &&
+            jq -e 'any(.[]; .draft == false)' <<< "$nightly_releases" >/dev/null; then
+            echo "Nightly already published for $BUILD_COMMIT."
+            exit 0
+          fi
+
+          release_date=$(TZ=Asia/Hong_Kong date +%F)
+
+          stable_release=$(gh api "repos/$GH_REPO/releases/latest")
+          stable_tag=$(jq -er '.tag_name' <<< "$stable_release")
+          stable_date=$(jq -er '.published_at' <<< "$stable_release")
+          stable_url=$(jq -er '.assets[] | select(.name == "mankai.ipa" and .state == "uploaded") | .browser_download_url' <<< "$stable_release")
+          stable_ipa="$RUNNER_TEMP/mankai-stable.ipa"
+          gh release download "$stable_tag" --pattern mankai.ipa --output "$stable_ipa"
+
+          repository_url="$GITHUB_SERVER_URL/$GH_REPO"
+          icon_url="$repository_url/raw/$BUILD_COMMIT/assets/icon.png"
+          python3 .github/scripts/generate-altstore-source.py releases/mankai.ipa \
+            --channel nightly --date "$release_date" --icon-url "$icon_url" \
+            --download-url "$repository_url/releases/download/nightly/mankai.ipa" \
+            > releases/altstore-nightly.json
+          python3 .github/scripts/generate-altstore-source.py "$stable_ipa" \
+            --channel stable --date "$stable_date" --icon-url "$icon_url" \
+            --download-url "$stable_url" > releases/altstore-stable.json
+
+          release_ids=$(jq -r '.[].id' <<< "$nightly_releases")
+          while IFS= read -r release_id; do
+            if [[ -n "$release_id" ]]; then
+              gh api --method DELETE "repos/$GH_REPO/releases/$release_id"
+            fi
+          done <<< "$release_ids"
+
+          if [[ -z "$current_commit" ]]; then
+            gh api --method POST "repos/$GH_REPO/git/refs" \
+              -f ref=refs/tags/nightly -f sha="$BUILD_COMMIT" --silent
+          elif [[ "$current_commit" != "$BUILD_COMMIT" ]]; then
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/nightly" \
+              -f sha="$BUILD_COMMIT" -F force=true --silent
+          fi
+
+          gh release create nightly releases/mankai.ipa releases/mankai.dmg \
+            releases/altstore-nightly.json releases/altstore-stable.json \
+            --verify-tag --prerelease --latest=false \
+            --title "Nightly Build ($release_date)" --notes "Built from commit $BUILD_COMMIT."
