@@ -149,6 +149,7 @@ Dependencies/
 Packages
 xcuserdata
 *.xcodeproj
+!/mankai.xcodeproj/
 
 ### Xcode ###
 
