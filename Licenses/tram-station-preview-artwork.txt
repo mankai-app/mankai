@@ -1,0 +1,8 @@
+The Tram Station by Dédouze (Andry Rasoahaingo).
+
+The artwork is licensed under Creative Commons Attribution-ShareAlike 3.0 Unported.
+https://creativecommons.org/licenses/by-sa/3.0/
+
+https://download.blender.org/archive/gallery/blender-splash-screens/blender-2-82/
+
+Mankai rendered the Blender scene at a higher resolution, cropped the image, and resized it for its image processing preview. The bundled images are distributed under the same license.
