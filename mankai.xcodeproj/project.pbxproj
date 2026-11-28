@@ -709,7 +709,7 @@
 			repositoryURL = "https://github.com/FelixHerrmann/swift-package-list";
 			requirement = {
 				kind = upToNextMinorVersion;
-				minimumVersion = 4.10.0;
+				minimumVersion = 5.0.0;
 			};
 		};
 		E464751130239A9C003786FA /* XCRemoteSwiftPackageReference "ReerCodable" */ = {
